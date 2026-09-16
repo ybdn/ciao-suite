@@ -18,6 +18,10 @@
     <string name="gallery_permission_grant">Autoriser l\'accès</string>
 
     <string name="viewer_back">Retour</string>
+    <string name="viewer_play">Lire</string>
+    <string name="viewer_pause">Pause</string>
+    <string name="viewer_mute">Couper le son</string>
+    <string name="viewer_unmute">Activer le son</string>
     <string name="viewer_plug_ssd">Branchez le SSD pour afficher l\'original.</string>
 
     <string name="ssd_index_refresh">Actualiser le SSD</string>
