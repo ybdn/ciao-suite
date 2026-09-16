@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -26,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.R
+import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
 import dev.ybdn.ciaocloud.presentation.components.NeoButton
@@ -108,7 +108,7 @@ fun TrashScreen(onBack: () -> Unit) {
         if (!items.isNullOrEmpty()) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.padding(16.dp).navigationBarsPadding(),
+                modifier = Modifier.padding(16.dp).stableNavigationBarsPadding(),
             ) {
                 NeoButton(stringResource(R.string.trash_select_all), onClick = viewModel::selectAll, tone = NeoTone.Surface)
                 NeoButton(

@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.R
+import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.model.MediaDetails
@@ -64,7 +64,7 @@ fun InfoSheet(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp)
-                .navigationBarsPadding(),
+                .stableNavigationBarsPadding(),
         ) {
             val loaded = (details as? DetailsState.Loaded)?.details
             Text(captureDateText(item, loaded), style = MaterialTheme.typography.titleLarge)
