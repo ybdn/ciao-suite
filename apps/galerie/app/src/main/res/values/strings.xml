@@ -8,6 +8,9 @@
     <string name="home_scan_summary">%1$d photos, %2$d vidéos détectées (%3$s)</string>
     <string name="home_no_destination">Aucun dossier SSD sélectionné</string>
     <string name="home_transfer_button">Transférer</string>
+    <string name="home_media_permission_denied">L\'accès aux photos et vidéos est nécessaire pour scanner le téléphone. Accordez l\'accès complet dans les paramètres de l\'app.</string>
+    <string name="home_media_permission_partial">Accès limité à une sélection de photos et vidéos : le scan serait incomplet. Relancez le scan pour tout autoriser, ou accordez l\'accès complet dans les paramètres de l\'app.</string>
+    <string name="home_open_app_settings">Ouvrir les paramètres de l\'app</string>
 
     <string name="progress_title">Transfert en cours</string>
     <string name="progress_current_file">Fichier en cours : %1$s</string>
