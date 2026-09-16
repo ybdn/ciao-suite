@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SsdMediaDao {
 
+    // Lecture en transaction : un résultat de plusieurs CursorWindow lu pendant une écriture
+    // concurrente (suppression, export) lève « Couldn't read row … from CursorWindow ».
+    @Transaction
     @Query("SELECT * FROM ssd_media")
     fun observeAll(): Flow<List<SsdMediaEntity>>
 
