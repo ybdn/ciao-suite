@@ -13,12 +13,17 @@ import dev.ybdn.ciaocloud.domain.repository.MediaRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.ResolverStyle
 import java.util.Locale
 import java.util.TimeZone
 
 /**
  * Scanne les photos (`MediaStore.Images`) et vidéos (`MediaStore.Video`) du stockage interne.
- * Date effective : EXIF `DateTimeOriginal` pour les photos, métadonnées `MediaMetadataRetriever`
+ * Date effective : EXIF `DateTimeOriginal` (+ `OffsetTimeOriginal`) pour les photos, métadonnées `MediaMetadataRetriever`
  * pour les vidéos, avec fallback sur la date MediaStore dans les deux cas.
  * Les fichiers illisibles/corrompus sont ignorés (skip + log), sans bloquer le reste du scan.
  */
@@ -55,7 +60,7 @@ class MediaStoreRepositoryImpl(
         collection: Uri,
         mediaType: MediaType,
         excludedRelativePath: String?,
-        capturedDateResolver: (Uri) -> Long?,
+        capturedDateResolver: (Uri) -> CapturedDate?,
     ): List<MediaFile> {
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
@@ -99,6 +104,7 @@ class MediaStoreRepositoryImpl(
                 runCatching {
                     val uri = ContentUris.withAppendedId(collection, id)
                     val dateTaken = it.getLong(dateTakenCol).takeIf { millis -> millis > 0 }
+                    val captured = capturedDateResolver(uri)
                     MediaFile(
                         mediaStoreId = id,
                         uri = uri.toString(),
@@ -106,8 +112,9 @@ class MediaStoreRepositoryImpl(
                         mediaType = mediaType,
                         mimeType = it.getString(mimeCol) ?: "application/octet-stream",
                         sizeBytes = it.getLong(sizeCol),
-                        capturedAtEpochMillis = capturedDateResolver(uri),
+                        capturedAtEpochMillis = captured?.epochMillis,
                         fileDateEpochMillis = dateTaken ?: (it.getLong(dateModifiedCol) * 1000L),
+                        captureUtcOffsetMinutes = captured?.utcOffsetMinutes,
                     )
                 }
                     .onSuccess(results::add)
@@ -118,19 +125,36 @@ class MediaStoreRepositoryImpl(
         return results
     }
 
-    private fun readExifCapturedDate(uri: Uri): Long? = runCatching {
+    /**
+     * `DateTimeOriginal` est une heure locale du lieu de prise de vue, sans fuseau. Si l'appareil a
+     * écrit `OffsetTimeOriginal` (EXIF 2.31, cas des Pixel), l'instant et le décalage sont exacts ;
+     * sinon l'heure est interprétée dans le fuseau du téléphone, et le décalage reste inconnu.
+     */
+    private fun readExifCapturedDate(uri: Uri): CapturedDate? = runCatching {
         context.contentResolver.openInputStream(uri)?.use { stream ->
-            ExifInterface(stream).getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-                ?.let { parseDate(EXIF_DATE_FORMAT, it) }
+            val exif = ExifInterface(stream)
+            val localDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+                ?.let(::parseExifDateTime)
+                ?: return@use null
+            val offset = exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)?.let(::parseExifOffset)
+            val instant = if (offset != null) {
+                localDateTime.toInstant(offset)
+            } else {
+                localDateTime.atZone(ZoneId.systemDefault()).toInstant()
+            }
+            CapturedDate(instant.toEpochMilli(), offset?.totalSeconds?.div(60))
+                .takeIf { it.epochMillis > MIN_PLAUSIBLE_EPOCH_MILLIS }
         }
     }.getOrNull()
 
-    private fun readVideoCapturedDate(uri: Uri): Long? = runCatching {
+    /** L'instant vidéo est en UTC : son décalage est inféré plus tard des photos voisines. */
+    private fun readVideoCapturedDate(uri: Uri): CapturedDate? = runCatching {
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(context, uri)
             retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
                 ?.let { parseDate(VIDEO_DATE_FORMAT, it) }
+                ?.let { CapturedDate(it, utcOffsetMinutes = null) }
         } finally {
             retriever.release()
         }
@@ -145,6 +169,16 @@ class MediaStoreRepositoryImpl(
             .getOrNull()
             ?.takeIf { it > MIN_PLAUSIBLE_EPOCH_MILLIS }
 
+    /** Les 19 premiers caractères seulement : certains appareils ajoutent des fractions de seconde. */
+    private fun parseExifDateTime(value: String): LocalDateTime? =
+        runCatching { LocalDateTime.parse(value.trim().take(19), EXIF_DATE_FORMATTER) }.getOrNull()
+
+    /** Format EXIF "+02:00" / "-05:00". */
+    private fun parseExifOffset(value: String): ZoneOffset? =
+        runCatching { ZoneOffset.of(value.trim()) }.getOrNull()
+
+    private data class CapturedDate(val epochMillis: Long, val utcOffsetMinutes: Int?)
+
     private companion object {
         const val TAG = "MediaStoreRepository"
         const val SQL_IN_CHUNK_SIZE = 500
@@ -157,8 +191,8 @@ class MediaStoreRepositoryImpl(
         val IMAGES_COLLECTION: Uri = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
         val VIDEO_COLLECTION: Uri = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
 
-        /** EXIF ne porte pas de fuseau : interprété dans le fuseau du téléphone. */
-        val EXIF_DATE_FORMAT = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).apply { isLenient = false }
+        val EXIF_DATE_FORMATTER: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("uuuu:MM:dd HH:mm:ss", Locale.US).withResolverStyle(ResolverStyle.STRICT)
 
         val VIDEO_DATE_FORMAT = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")

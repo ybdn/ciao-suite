@@ -6,6 +6,7 @@ import dev.ybdn.ciaocloud.domain.model.TransferStatus
 import dev.ybdn.ciaocloud.domain.repository.DestinationWriter
 import dev.ybdn.ciaocloud.domain.repository.MediaRepository
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
+import dev.ybdn.ciaocloud.domain.util.CaptureOffsetInferrer
 
 /**
  * Scanne les médias locaux et exclut ceux déjà transférés + vérifiés lors d'une session
@@ -19,8 +20,11 @@ class ScanLocalMediaUseCase(
     private val destinationWriter: DestinationWriter,
 ) {
     suspend operator fun invoke(): List<MediaFile> {
-        val localMedia = mediaRepository.scanLocalMedia(
-            excludedRelativePath = destinationWriter.phoneStorageRelativePath(),
+        // Inférence sur tout le scan (y compris les médias déjà vérifiés) : plus de photos de référence.
+        val localMedia = CaptureOffsetInferrer.inferVideoOffsets(
+            mediaRepository.scanLocalMedia(
+                excludedRelativePath = destinationWriter.phoneStorageRelativePath(),
+            ),
         )
         val verifiedIds = transferStateRepository.getByStatus(TransferStatus.VERIFIED)
             .map { it.mediaStoreId }

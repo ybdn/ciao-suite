@@ -10,6 +10,14 @@ data class DestinationWriteResult(
     val checksum: String,
 )
 
+/** Fichier ou dossier présent dans un dossier de destination. */
+data class DestinationEntry(
+    val name: String,
+    /** Taille en octets, -1 si inconnue (ou pour un dossier). */
+    val sizeBytes: Long,
+    val isDirectory: Boolean,
+)
+
 /**
  * Écriture vers la destination (SSD via SAF/DocumentFile). Le domaine ne connaît que des
  * chemins relatifs sous la racine choisie par l'utilisateur, jamais d'URI Android.
@@ -32,8 +40,24 @@ interface DestinationWriter {
     /** Espace disponible sur la destination en octets, ou null si non calculable. */
     suspend fun availableBytes(): Long?
 
-    /** Liste les noms de fichiers déjà présents dans [relativeDirPath], créant le dossier si absent. */
-    suspend fun listExistingFileNames(relativeDirPath: String): Set<String>
+    /**
+     * Liste les entrées déjà présentes dans [relativeDirPath], créant le dossier si absent. Un
+     * dossier existant dont le nom ne diffère que par la casse (ex. `dcim`) est réutilisé tel quel.
+     */
+    suspend fun listExistingEntries(relativeDirPath: String): List<DestinationEntry>
+
+    /**
+     * Compare octet par octet l'original de [sourceUri] au fichier `[relativeDirPath]/[fileName]`,
+     * en s'arrêtant au premier octet différent. [onProgress] reçoit le nombre d'octets déjà lus.
+     *
+     * @return le CRC32 de la source si les contenus sont identiques, null sinon.
+     */
+    suspend fun identicalContentChecksum(
+        sourceUri: String,
+        relativeDirPath: String,
+        fileName: String,
+        onProgress: (bytesRead: Long) -> Unit,
+    ): String?
 
     /**
      * Copie l'original de [sourceUri] (URI content:// du média source, en String) vers

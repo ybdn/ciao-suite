@@ -91,6 +91,12 @@ fun ProgressScreen(
                     modifier = Modifier.weight(1f),
                 )
                 NeoStat(
+                    value = uiState.alreadyPresent.toString(),
+                    caption = stringResource(R.string.progress_stat_already_present),
+                    tone = if (uiState.alreadyPresent > 0) NeoTone.Sky else NeoTone.Surface,
+                    modifier = Modifier.weight(1f),
+                )
+                NeoStat(
                     value = uiState.failed.toString(),
                     caption = stringResource(R.string.progress_stat_failed),
                     tone = if (uiState.failed > 0) NeoTone.Brick else NeoTone.Surface,

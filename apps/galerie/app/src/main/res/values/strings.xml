@@ -32,7 +32,7 @@
     <string name="progress_current_file_bytes">%1$s / %2$s</string>
     <string name="progress_background_hint">Vous pouvez quitter l\'app : le transfert continue en arrière-plan.</string>
     <string name="progress_back_home">Retour à l\'accueil</string>
-    <string name="transfer_summary">%1$d fichiers copiés et vérifiés, %2$d en échec</string>
+    <string name="transfer_summary">%1$d copiés et vérifiés, %2$d déjà présents sur le SSD, %3$d en échec</string>
     <string name="transfer_abort_destination_unavailable">Transfert interrompu : SSD débranché ou inaccessible. Rien n\'a été supprimé du téléphone.</string>
     <string name="transfer_abort_insufficient_space">Transfert interrompu : espace insuffisant sur le SSD (%1$s nécessaires, %2$s disponibles).</string>
     <string name="transfer_abort_insufficient_space_short">Transfert interrompu : espace insuffisant sur le SSD</string>
@@ -42,6 +42,7 @@
     <string name="progress_current_file_label">Fichier en cours</string>
     <string name="progress_stat_succeeded">copiés et vérifiés</string>
     <string name="progress_stat_failed">en échec</string>
+    <string name="progress_stat_already_present">déjà présents sur le SSD</string>
     <string name="progress_files_done">%1$d / %2$d fichiers traités</string>
     <string name="progress_bytes_done">%1$s transférés</string>
     <string name="progress_error">Erreur sur %1$s : %2$s</string>

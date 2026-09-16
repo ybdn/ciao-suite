@@ -8,8 +8,9 @@ import dev.ybdn.ciaocloud.domain.model.TransferStatus
 import dev.ybdn.ciaocloud.domain.repository.DestinationWriteResult
 import dev.ybdn.ciaocloud.domain.repository.DestinationWriter
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
+import dev.ybdn.ciaocloud.domain.util.DestinationDecision
 import dev.ybdn.ciaocloud.domain.util.DestinationPathResolver
-import dev.ybdn.ciaocloud.domain.util.FileNameCollisionResolver
+import dev.ybdn.ciaocloud.domain.util.DuplicateResolver
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -18,6 +19,8 @@ import kotlinx.coroutines.flow.channelFlow
  * Copie un lot de fichiers vers le SSD, dossier par dossier calculé à partir de la date
  * effective, résout les collisions de nom, puis vérifie chaque copie avant de la marquer
  * "vérifiée" en base locale. N'écrit jamais deux fois sur un fichier existant à destination.
+ * Un fichier déjà présent à l'identique dans le dossier du jour n'est pas recopié : il est
+ * directement marqué vérifié.
  *
  * Un fichier illisible échoue seul ; en revanche le lot est interrompu si le SSD devient
  * inaccessible ou plein, pour ne pas enchaîner des échecs sur tous les fichiers restants.
@@ -31,9 +34,10 @@ class TransferMediaUseCase(
         var bytesTransferredSoFar = 0L
         var succeeded = 0
         var failed = 0
+        var alreadyPresent = 0
 
         precheckAbortReason(files)?.let { reason ->
-            send(TransferProgress.BatchCompleted(0, 0, 0, reason))
+            send(TransferProgress.BatchCompleted(0, 0, 0, abortReason = reason))
             return@channelFlow
         }
 
@@ -49,9 +53,9 @@ class TransferMediaUseCase(
             )
 
             val outcome = try {
-                copyAndVerify(file) { bytesCopied ->
+                copyAndVerify(file) { bytesProcessed ->
                     // Événement de progression non critique : perdu si le canal est plein.
-                    trySend(TransferProgress.FileBytesCopied(file, bytesCopied))
+                    trySend(TransferProgress.FileBytesCopied(file, bytesProcessed))
                 }
             } catch (e: CancellationException) {
                 transferStateRepository.markStatus(file.mediaStoreId, TransferStatus.FAILED, "Transfert interrompu")
@@ -86,20 +90,43 @@ class TransferMediaUseCase(
                     )
                 }
 
+                is CopyOutcome.AlreadyPresent -> {
+                    transferStateRepository.upsert(
+                        TransferRecord(
+                            mediaStoreId = file.mediaStoreId,
+                            mediaType = file.mediaType,
+                            status = TransferStatus.VERIFIED,
+                            destinationPath = outcome.destinationPath,
+                            checksum = outcome.checksum,
+                            sizeBytes = file.sizeBytes,
+                        ),
+                    )
+                    alreadyPresent++
+                    send(TransferProgress.FileAlreadyPresent(file, outcome.destinationPath, fileIndex, files.size))
+                }
+
                 is CopyOutcome.Failure -> {
                     transferStateRepository.markStatus(file.mediaStoreId, TransferStatus.FAILED, outcome.reason)
                     failed++
                     send(TransferProgress.FileFailed(file, fileIndex, files.size, outcome.reason))
 
                     abortReasonAfterFailure(file)?.let { reason ->
-                        send(TransferProgress.BatchCompleted(succeeded, failed, bytesTransferredSoFar, reason))
+                        send(
+                            TransferProgress.BatchCompleted(
+                                succeeded,
+                                failed,
+                                bytesTransferredSoFar,
+                                alreadyPresent,
+                                reason,
+                            ),
+                        )
                         return@channelFlow
                     }
                 }
             }
         }
 
-        send(TransferProgress.BatchCompleted(succeeded, failed, bytesTransferredSoFar))
+        send(TransferProgress.BatchCompleted(succeeded, failed, bytesTransferredSoFar, alreadyPresent))
     }
 
     private suspend fun precheckAbortReason(files: List<MediaFile>): TransferAbortReason? {
@@ -117,13 +144,25 @@ class TransferMediaUseCase(
     }
 
     private suspend fun copyAndVerify(file: MediaFile, onProgress: (Long) -> Unit): CopyOutcome {
-        val relativeDirPath = DestinationPathResolver.resolveDestinationDirectory(file.effectiveDateEpochMillis)
+        val relativeDirPath = DestinationPathResolver.resolveDestinationDirectory(
+            epochMillis = file.effectiveDateEpochMillis,
+            utcOffsetMinutes = file.captureUtcOffsetMinutes,
+        )
 
-        // Les systèmes de fichiers des SSD (exFAT/FAT32) ne distinguent pas la casse.
-        val existingNames = destinationWriter.listExistingFileNames(relativeDirPath)
-            .mapTo(HashSet()) { it.lowercase() }
-        val availableName = FileNameCollisionResolver.resolveAvailableName(file.displayName) { candidate ->
-            candidate.lowercase() in existingNames
+        val decision = DuplicateResolver.resolve(
+            desiredName = file.displayName,
+            sourceSizeBytes = file.sizeBytes,
+            existingEntries = destinationWriter.listExistingEntries(relativeDirPath),
+        ) { existingName ->
+            destinationWriter.identicalContentChecksum(file.uri, relativeDirPath, existingName, onProgress)
+        }
+
+        val availableName = when (decision) {
+            is DestinationDecision.AlreadyPresent -> return CopyOutcome.AlreadyPresent(
+                destinationPath = "$relativeDirPath/${decision.existingFileName}",
+                checksum = decision.checksum,
+            )
+            is DestinationDecision.CopyAs -> decision.fileName
         }
 
         val writeResult = destinationWriter.writeFile(
@@ -147,6 +186,7 @@ class TransferMediaUseCase(
 
     private sealed interface CopyOutcome {
         data class Success(val writeResult: DestinationWriteResult) : CopyOutcome
+        data class AlreadyPresent(val destinationPath: String, val checksum: String) : CopyOutcome
         data class Failure(val reason: String) : CopyOutcome
     }
 }

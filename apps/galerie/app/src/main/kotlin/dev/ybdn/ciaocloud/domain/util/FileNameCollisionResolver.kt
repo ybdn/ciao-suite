@@ -32,7 +32,8 @@ object FileNameCollisionResolver {
         return candidate
     }
 
-    private fun splitBaseAndExtension(fileName: String): Pair<String, String> {
+    /** Sépare "IMG_0001.jpg" en ("IMG_0001", "jpg") ; extension vide si le nom n'en a pas. */
+    fun splitBaseAndExtension(fileName: String): Pair<String, String> {
         val dotIndex = fileName.lastIndexOf('.')
         return if (dotIndex <= 0 || dotIndex == fileName.length - 1) {
             fileName to ""

@@ -22,6 +22,14 @@ sealed interface TransferProgress {
         val bytesTransferredSoFar: Long,
     ) : TransferProgress
 
+    /** Un fichier identique existait déjà sur le SSD : aucune copie, le média est tout de même vérifié. */
+    data class FileAlreadyPresent(
+        val file: MediaFile,
+        val destinationPath: String,
+        val fileIndex: Int,
+        val totalFiles: Int,
+    ) : TransferProgress
+
     data class FileFailed(
         val file: MediaFile,
         val fileIndex: Int,
@@ -33,6 +41,8 @@ sealed interface TransferProgress {
         val succeeded: Int,
         val failed: Int,
         val totalBytesTransferred: Long,
+        /** Fichiers déjà présents à l'identique sur le SSD, non recopiés (distincts de [succeeded]). */
+        val alreadyPresent: Int = 0,
         /** Non null si le lot a été interrompu avant la fin. */
         val abortReason: TransferAbortReason? = null,
     ) : TransferProgress

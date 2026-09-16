@@ -104,7 +104,7 @@ class TransferForegroundService : Service() {
                 getString(R.string.transfer_abort_destination_unavailable)
             state.abortReason is TransferAbortReason.InsufficientSpace ->
                 getString(R.string.transfer_abort_insufficient_space_short)
-            else -> getString(R.string.transfer_summary, state.succeeded, state.failed)
+            else -> getString(R.string.transfer_summary, state.succeeded, state.alreadyPresent, state.failed)
         }
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_transfer_done_title))
@@ -194,6 +194,7 @@ data class TransferUiState(
     val bytesTransferred: Long = 0,
     val isCompleted: Boolean = false,
     val succeeded: Int = 0,
+    val alreadyPresent: Int = 0,
     val failed: Int = 0,
     val lastErrorFileName: String? = null,
     val lastError: String? = null,
@@ -218,6 +219,12 @@ data class TransferUiState(
             succeeded = succeeded + 1,
         )
 
+        is TransferProgress.FileAlreadyPresent -> copy(
+            filesDone = progress.fileIndex,
+            totalFiles = progress.totalFiles,
+            alreadyPresent = alreadyPresent + 1,
+        )
+
         is TransferProgress.FileFailed -> copy(
             filesDone = progress.fileIndex,
             totalFiles = progress.totalFiles,
@@ -231,6 +238,7 @@ data class TransferUiState(
             isCompleted = true,
             currentFileName = null,
             succeeded = progress.succeeded,
+            alreadyPresent = progress.alreadyPresent,
             failed = progress.failed,
             bytesTransferred = progress.totalBytesTransferred,
             abortReason = progress.abortReason,
