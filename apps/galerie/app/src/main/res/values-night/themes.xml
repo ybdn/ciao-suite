@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Thème de fenêtre non « clair » en mode nuit : l'option d'accessibilité « Assombrir
+         davantage d'applis » (Android 16+) ignore forceDarkAllowed et inverse les apps à thème
+         clair, ce qui inverserait le thème clair choisi dans l'app. -->
+    <style name="Theme.CiaoCloud" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/page</item>
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
+</resources>
