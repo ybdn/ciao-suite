@@ -9,6 +9,14 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 
+/** Lecture complète des photos et vidéos (sans la position). */
+val MEDIA_READ_PERMISSIONS = arrayOf(
+    Manifest.permission.READ_MEDIA_IMAGES,
+    Manifest.permission.READ_MEDIA_VIDEO,
+)
+
+const val MEDIA_LOCATION_PERMISSION = Manifest.permission.ACCESS_MEDIA_LOCATION
+
 /**
  * Permissions donnant l'accès complet au MediaStore (photos + vidéos). `ACCESS_MEDIA_LOCATION`
  * est indispensable : sans elle, les originaux copiés perdraient leurs données GPS.
@@ -37,6 +45,14 @@ enum class MediaAccess { FULL, PARTIAL, DENIED }
 
 fun Context.hasPermissions(vararg permissions: String): Boolean =
     permissions.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
+
+/** Accès en lecture aux médias, indépendamment de la permission de position. */
+fun Context.mediaReadAccess(): MediaAccess = when {
+    hasPermissions(*MEDIA_READ_PERMISSIONS) -> MediaAccess.FULL
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+        hasPermissions(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) -> MediaAccess.PARTIAL
+    else -> MediaAccess.DENIED
+}
 
 fun Context.mediaAccess(): MediaAccess = when {
     hasPermissions(*FULL_MEDIA_PERMISSIONS) -> MediaAccess.FULL

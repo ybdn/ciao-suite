@@ -35,6 +35,11 @@ fun SettingsScreen() {
     ) { uri -> uri?.let(viewModel::onDestinationSelected) }
 
     NeoScreen(title = stringResource(R.string.settings_title)) {
+        PermissionsCard(
+            destinationUri = destinationUri,
+            onSelectDestination = { selectFolderLauncher.launch(null) },
+        )
+
         NeoCard {
             NeoTag(stringResource(R.string.settings_destination_label), tone = NeoTone.Yellow)
             Text(
