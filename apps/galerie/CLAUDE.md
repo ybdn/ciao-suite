@@ -40,7 +40,7 @@ Note : `TopAppBar` (Material3) est une API expérimentale — opt-in global via 
 
 ## Projet
 
-CiaoCloud (`dev.ybdn.ciaocloud`) est une application Android **strictement personnelle**, sans backend ni compte, qui délestage manuellement photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en les rangeant par date, puis supprime les originaux du téléphone uniquement après vérification de la copie. La spécification complète et faisant autorité est `prompt-initial.md` — s'y référer pour tout détail non résumé ici (gestion des cas limites, format des chemins, workflow CI/CD, etc.).
+CiaoCloud (`dev.ybdn.ciaocloud`) est une application Android **strictement personnelle**, sans backend ni compte, qui délestage manuellement photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en les rangeant par date, puis supprime les originaux du téléphone uniquement après vérification de la copie. La spécification complète et faisant autorité est `prompt-initial.md` — s'y référer pour tout détail non résumé ici (gestion des cas limites, format des chemins, workflow CI/CD, etc.). La v2 (fiabilisation du rangement : casse des dossiers, doublons, fuseau des vidéos ; visionneuse unifiée téléphone + SSD) est spécifiée dans `docs/spec-v2-fiabilisation-visionneuse.md`, qui prime sur `prompt-initial.md` en cas de contradiction.
 
 ## Stack technique
 

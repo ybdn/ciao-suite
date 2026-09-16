@@ -89,7 +89,7 @@ Séparation stricte en 3 couches, dépendances orientées vers le domaine (le do
 
 - Pas de sauvegarde automatique/planifiée (déclenchement manuel exclusivement).
 - Pas de cloud, pas de sync multi-appareil, pas de compte utilisateur.
-- Pas de thumbnails/galerie riche en v1 (juste des compteurs et une liste simple si besoin de debug).
+- Pas de thumbnails/galerie riche en v1 (juste des compteurs et une liste simple si besoin de debug). **Levé en v2** : voir `docs/spec-v2-fiabilisation-visionneuse.md` (visionneuse, doublons, fuseaux horaires).
 - Pas de transcodage/compression vidéo — copie brute uniquement.
 
 ## Livrables attendus de Claude Code
