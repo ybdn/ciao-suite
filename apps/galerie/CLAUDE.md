@@ -31,7 +31,7 @@ export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
 export PATH="$JAVA_HOME/bin:$PATH"
 export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
 ./gradlew :app:assembleDebug        # build debug — vérifié OK
-./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (44 tests, 0 échec)
+./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (46 tests, 0 échec)
 ```
 
 Pas de ktlint/detekt intégré pour l'instant (jugé non prioritaire, cf. README).

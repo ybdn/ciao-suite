@@ -6,6 +6,7 @@ import dev.ybdn.ciaocloud.domain.repository.FavoritesRepository
 import dev.ybdn.ciaocloud.domain.repository.PhoneGallerySource
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaIndex
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
+import dev.ybdn.ciaocloud.domain.util.MediaFileTypes
 import dev.ybdn.ciaocloud.domain.util.TimelineBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +42,9 @@ class ObserveTimelineUseCase(
         } else {
             phone.filterNot { it.relativePath?.startsWith(excludedPath, ignoreCase = true) == true }
         }
-        TimelineBuilder.build(phoneOnly, ssd, records, favorites)
+        // Index construit avant le filtrage des `._*` : ignorés sans attendre une réindexation.
+        val ssdMedia = ssd.filterNot { MediaFileTypes.isAppleDouble(it.displayName) }
+        TimelineBuilder.build(phoneOnly, ssdMedia, records, favorites)
     }
         .conflate()
         .flowOn(Dispatchers.Default)

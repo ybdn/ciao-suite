@@ -28,8 +28,15 @@ object MediaFileTypes {
         "webm" to MediaFileType(MediaType.VIDEO, "video/webm"),
     )
 
-    /** null si l'extension n'est pas celle d'une photo ou vidéo reconnue. */
+    /**
+     * Fichier `._*` (AppleDouble) écrit par macOS sur un volume exFAT/FAT : il porte l'extension du
+     * média qu'il accompagne mais ne contient que des métadonnées Finder.
+     */
+    fun isAppleDouble(fileName: String): Boolean = fileName.startsWith("._")
+
+    /** null si l'extension n'est pas celle d'une photo ou vidéo reconnue, ou pour un fichier AppleDouble. */
     fun fromFileName(fileName: String): MediaFileType? {
+        if (isAppleDouble(fileName)) return null
         val extension = FileNameCollisionResolver.splitBaseAndExtension(fileName).second
         return BY_EXTENSION[extension.lowercase()]
     }
