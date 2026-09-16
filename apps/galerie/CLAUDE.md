@@ -31,7 +31,7 @@ export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
 export PATH="$JAVA_HOME/bin:$PATH"
 export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
 ./gradlew :app:assembleDebug        # build debug — vérifié OK
-./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (9 tests, 0 échec)
+./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (39 tests, 0 échec)
 ```
 
 Pas de ktlint/detekt intégré pour l'instant (jugé non prioritaire, cf. README).
@@ -79,4 +79,12 @@ Pas de DI framework lourd sauf s'il simplifie réellement l'injection dans ViewM
 - UI et messages utilisateur en français.
 - Branches Git : `main` stable/protégée (jamais de commit direct, uniquement via merge/PR depuis `develop`) ; `develop` est la branche de travail par défaut.
 - Commits au format `type: description` (ex: `feat: scan MediaStore photos et vidéos`).
-- Tests unitaires ciblés sur la logique pure uniquement (calcul du chemin année/mois/jour, résolution des collisions de nom) — pas de sur-investissement en tests UI/instrumentation.
+- Tests unitaires ciblés sur la logique pure (chemins, collisions, doublons, fuseau, chronologie) et les use cases via faux repositories — pas de sur-investissement en tests UI/instrumentation.
+- Base Room : migrations explicites uniquement (`data/local/Migrations.kt`), jamais de migration destructive ; schémas exportés dans `app/schemas/` (à commiter).
+- La galerie v2 (lots 1 à 7 de la spec v2) est implémentée. La visionneuse suit la DA néo-brutaliste de l'app (barres `NeoTopBar`/`NeoActionBar`, fond de page du thème), pas un fond noir.
+
+## Tests sur appareil
+
+- L'émulateur et le Pixel peuvent être branchés en même temps : toujours cibler explicitement avec `adb -s emulator-5554` / `ANDROID_SERIAL`. Ne jamais effacer les données (`pm clear`) ni supprimer de médias sur le Pixel réel.
+- Build debug interprété très lent sur l'émulateur : `adb shell cmd package compile -m speed -f dev.ybdn.ciaocloud` avant de juger les performances.
+- `screencap` ne capture pas toujours la surface vidéo : utiliser `adb emu screenrecord screenshot <fichier>`.

@@ -29,12 +29,16 @@ class FileProviderShareableMediaProvider(
         val batchDirectory = File(shareDirectory, System.currentTimeMillis().toString()).apply { mkdirs() }
         items.mapIndexed { index, item ->
             val phone = item.phone
-            if (phone != null) return@mapIndexed ShareableMedia(phone.uri, phone.mimeType)
-
-            val ssd = item.ssd!!
-            val sourceUri = ssdMediaBrowser.documentUri(ssd.relativePath) ?: return@withContext null
+            // Les URI content:// se partagent telles quelles ; une URI file:// (pièce jointe ouverte
+            // depuis une autre app) est interdite hors du processus et doit être copiée.
+            if (phone != null && phone.uri.startsWith("content://")) {
+                return@mapIndexed ShareableMedia(phone.uri, phone.mimeType)
+            }
+            val sourceUri = phone?.uri
+                ?: item.ssd?.let { ssdMediaBrowser.documentUri(it.relativePath) }
+                ?: return@withContext null
             // Un sous-dossier par élément : deux fichiers de même nom (jours différents) ne s'écrasent pas.
-            val target = File(File(batchDirectory, index.toString()).apply { mkdirs() }, ssd.displayName)
+            val target = File(File(batchDirectory, index.toString()).apply { mkdirs() }, item.displayName)
             context.contentResolver.openInputStream(Uri.parse(sourceUri))?.use { input ->
                 target.outputStream().use { output ->
                     val buffer = ByteArray(BUFFER_SIZE)
@@ -48,7 +52,7 @@ class FileProviderShareableMediaProvider(
             } ?: return@withContext null
             ShareableMedia(
                 uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target).toString(),
-                mimeType = ssd.mimeType,
+                mimeType = item.mimeType,
             )
         }
     }

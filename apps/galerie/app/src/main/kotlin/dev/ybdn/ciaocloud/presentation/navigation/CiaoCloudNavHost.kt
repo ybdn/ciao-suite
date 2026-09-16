@@ -33,6 +33,7 @@ import dev.ybdn.ciaocloud.presentation.settings.SettingsScreen
 import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
 import dev.ybdn.ciaocloud.presentation.trash.TrashScreen
 import dev.ybdn.ciaocloud.presentation.viewer.ViewerScreen
+import dev.ybdn.ciaocloud.presentation.viewer.ViewerSource
 
 object CiaoCloudDestinations {
     const val GALLERY = "gallery"
@@ -97,8 +98,10 @@ fun CiaoCloudNavHost(navController: NavHostController = rememberNavController())
                 ),
             ) { entry ->
                 ViewerScreen(
-                    initialKey = entry.arguments?.getString("key").orEmpty(),
-                    filter = GalleryFilter.valueOf(entry.arguments?.getString("filter") ?: GalleryFilter.ALL.name),
+                    source = ViewerSource.Timeline(
+                        initialKey = entry.arguments?.getString("key").orEmpty(),
+                        filter = GalleryFilter.valueOf(entry.arguments?.getString("filter") ?: GalleryFilter.ALL.name),
+                    ),
                     onBack = { navController.popBackStack() },
                 )
             }

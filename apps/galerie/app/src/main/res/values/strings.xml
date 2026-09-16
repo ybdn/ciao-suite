@@ -55,6 +55,7 @@
     <string name="info_status_ssd_only">Uniquement sur le SSD</string>
 
     <string name="viewer_back">Retour</string>
+    <string name="viewer_label">CiaoCloud</string>
     <string name="viewer_play">Lire</string>
     <string name="viewer_pause">Pause</string>
     <string name="viewer_mute">Couper le son</string>

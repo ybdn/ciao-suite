@@ -5,7 +5,9 @@ import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,10 +22,9 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -37,10 +38,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -57,7 +58,13 @@ import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryImages
 import dev.ybdn.ciaocloud.presentation.gallery.formatDuration
+import dev.ybdn.ciaocloud.presentation.components.BorderWidth
+import dev.ybdn.ciaocloud.presentation.components.ControlRadius
+import dev.ybdn.ciaocloud.presentation.components.neoSurface
+import dev.ybdn.ciaocloud.presentation.theme.Ink
+import dev.ybdn.ciaocloud.presentation.theme.LabelMono
 import dev.ybdn.ciaocloud.presentation.theme.Lime
+import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
 import kotlinx.coroutines.delay
 
 /**
@@ -70,6 +77,7 @@ fun VideoPage(
     originalUri: OriginalUri,
     isCurrentPage: Boolean,
     chromeVisible: Boolean,
+    bottomInset: Dp,
     onToggleChrome: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -80,7 +88,7 @@ fun VideoPage(
         contentAlignment = Alignment.Center,
     ) {
         if (isCurrentPage && originalUri is OriginalUri.Available) {
-            VideoPlayer(item = item, uri = originalUri.uri, chromeVisible = chromeVisible)
+            VideoPlayer(item = item, uri = originalUri.uri, chromeVisible = chromeVisible, bottomInset = bottomInset)
         } else {
             AsyncImage(
                 model = remember(item.key) { GalleryImages.thumbnailRequest(context, item) },
@@ -91,7 +99,15 @@ fun VideoPage(
             if (originalUri is OriginalUri.Unavailable) {
                 SsdUnpluggedNotice()
             } else {
-                Icon(Icons.Filled.PlayCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(72.dp))
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = null,
+                    tint = Ink,
+                    modifier = Modifier
+                        .neoSurface(Lime, NeoTheme.palette.outline, ControlRadius)
+                        .padding(12.dp)
+                        .size(40.dp),
+                )
             }
         }
     }
@@ -99,7 +115,7 @@ fun VideoPage(
 
 @OptIn(UnstableApi::class)
 @Composable
-private fun VideoPlayer(item: GalleryItem, uri: String, chromeVisible: Boolean) {
+private fun VideoPlayer(item: GalleryItem, uri: String, chromeVisible: Boolean, bottomInset: Dp) {
     val context = LocalContext.current
     val player = remember(uri) {
         ExoPlayer.Builder(context).build().apply {
@@ -148,17 +164,19 @@ private fun VideoPlayer(item: GalleryItem, uri: String, chromeVisible: Boolean) 
             visible = chromeVisible,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = bottomInset),
         ) {
-            ViewerBottomBarContainer {
-                VideoControls(player)
-            }
+            VideoControls(player)
         }
     }
 }
 
+/** Bandeau de lecture posé sur la barre d'actions : mêmes fond, filet et étiquettes que les barres de l'app. */
 @Composable
 private fun VideoControls(player: Player) {
+    val palette = NeoTheme.palette
     val playPauseState = rememberPlayPauseButtonState(player)
     var durationMs by remember { mutableLongStateOf(0L) }
     var positionMs by remember { mutableLongStateOf(0L) }
@@ -173,57 +191,63 @@ private fun VideoControls(player: Player) {
         }
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = ACTION_BAR_RESERVED_HEIGHT),
-    ) {
-        IconButton(onClick = playPauseState::onClick, enabled = playPauseState.isEnabled) {
-            Icon(
-                imageVector = if (playPauseState.showPlay) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                contentDescription = stringResource(if (playPauseState.showPlay) R.string.viewer_play else R.string.viewer_pause),
-                tint = Color.White,
+    Column(modifier = Modifier.fillMaxWidth().background(palette.page)) {
+        HorizontalDivider(thickness = BorderWidth, color = palette.outline)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(44.dp)
+                    .neoSurface(Lime, palette.outline, ControlRadius, shadowOffset = 0.dp)
+                    .clickable(enabled = playPauseState.isEnabled, onClick = playPauseState::onClick),
+            ) {
+                Icon(
+                    imageVector = if (playPauseState.showPlay) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                    contentDescription = stringResource(if (playPauseState.showPlay) R.string.viewer_play else R.string.viewer_pause),
+                    tint = Ink,
+                )
+            }
+            val fraction = seekingFraction
+                ?: if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+            Text(
+                text = formatDuration(if (seekingFraction != null) (fraction * durationMs).toLong() else positionMs),
+                style = LabelMono,
+                color = palette.content,
             )
-        }
-        val fraction = seekingFraction
-            ?: if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
-        Text(
-            text = formatDuration(if (seekingFraction != null) (fraction * durationMs).toLong() else positionMs),
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White,
-        )
-        Slider(
-            value = fraction,
-            onValueChange = { seekingFraction = it },
-            onValueChangeFinished = {
-                seekingFraction?.let { player.seekTo((it * durationMs).toLong()) }
-                seekingFraction = null
-            },
-            enabled = durationMs > 0,
-            colors = SliderDefaults.colors(
-                thumbColor = Lime,
-                activeTrackColor = Lime,
-                inactiveTrackColor = Color.White.copy(alpha = 0.35f),
-            ),
-            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-        )
-        Text(text = formatDuration(durationMs), style = MaterialTheme.typography.bodySmall, color = Color.White)
-        IconButton(onClick = {
-            muted = !muted
-            player.volume = if (muted) 0f else 1f
-        }) {
-            Icon(
-                imageVector = if (muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                contentDescription = stringResource(if (muted) R.string.viewer_unmute else R.string.viewer_mute),
-                tint = Color.White,
+            Slider(
+                value = fraction,
+                onValueChange = { seekingFraction = it },
+                onValueChangeFinished = {
+                    seekingFraction?.let { player.seekTo((it * durationMs).toLong()) }
+                    seekingFraction = null
+                },
+                enabled = durationMs > 0,
+                colors = SliderDefaults.colors(
+                    thumbColor = palette.outline,
+                    activeTrackColor = Lime,
+                    inactiveTrackColor = palette.surfaceMuted,
+                ),
+                modifier = Modifier.weight(1f),
             )
+            Text(text = formatDuration(durationMs), style = LabelMono, color = palette.content)
+            IconButton(onClick = {
+                muted = !muted
+                player.volume = if (muted) 0f else 1f
+            }) {
+                Icon(
+                    imageVector = if (muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                    contentDescription = stringResource(if (muted) R.string.viewer_unmute else R.string.viewer_mute),
+                    tint = palette.content,
+                )
+            }
         }
     }
 }
 
 private const val POSITION_POLL_MS = 250L
-
-/** Place laissée sous les contrôles vidéo pour la barre d'actions de la visionneuse. */
-val ACTION_BAR_RESERVED_HEIGHT = 72.dp

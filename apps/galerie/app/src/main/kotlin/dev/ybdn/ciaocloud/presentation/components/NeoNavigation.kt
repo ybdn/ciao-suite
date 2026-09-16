@@ -5,6 +5,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -21,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -43,8 +45,49 @@ fun NeoBottomBar(
     selectedRoute: String?,
     onSelect: (NeoNavItem) -> Unit,
 ) {
+    NeoBarContainer {
+        items.forEach { item ->
+            NeoBarItem(
+                icon = item.icon,
+                label = item.label,
+                highlighted = item.route == selectedRoute,
+                role = Role.Tab,
+                onClick = { onSelect(item) },
+            )
+        }
+    }
+}
+
+data class NeoAction(
+    val icon: ImageVector,
+    val label: String,
+    val onClick: () -> Unit,
+    val enabled: Boolean = true,
+    /** État actif (ex. favori) : même aplat citron que l'onglet sélectionné. */
+    val highlighted: Boolean = false,
+)
+
+/** Barre d'actions basse, aux mêmes proportions que [NeoBottomBar]. */
+@Composable
+fun NeoActionBar(actions: List<NeoAction>, modifier: Modifier = Modifier) {
+    NeoBarContainer(modifier) {
+        actions.forEach { action ->
+            NeoBarItem(
+                icon = action.icon,
+                label = action.label,
+                highlighted = action.highlighted,
+                role = Role.Button,
+                enabled = action.enabled,
+                onClick = action.onClick,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NeoBarContainer(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
     val palette = NeoTheme.palette
-    Column(modifier = Modifier.fillMaxWidth().background(palette.page)) {
+    Column(modifier = modifier.fillMaxWidth().background(palette.page)) {
         HorizontalDivider(thickness = BorderWidth, color = palette.outline)
         Row(
             modifier = Modifier
@@ -52,30 +95,40 @@ fun NeoBottomBar(
                 .navigationBarsPadding()
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items.forEach { item ->
-                val selected = item.route == selectedRoute
-                val contentColor = if (selected) Ink else palette.content
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(
-                            if (selected) {
-                                Modifier.neoSurface(Lime, palette.outline, ControlRadius, shadowOffset = 0.dp)
-                            } else {
-                                Modifier
-                            },
-                        )
-                        .clip(RoundedCornerShape(ControlRadius))
-                        .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(item) })
-                        .padding(vertical = 6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(item.icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(24.dp))
-                    Text(item.label.uppercase(), style = LabelMono, color = contentColor, maxLines = 1)
-                }
-            }
-        }
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.NeoBarItem(
+    icon: ImageVector,
+    label: String,
+    highlighted: Boolean,
+    role: Role,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+) {
+    val palette = NeoTheme.palette
+    val contentColor = if (highlighted) Ink else palette.content
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .alpha(if (enabled) 1f else 0.4f)
+            .then(
+                if (highlighted) {
+                    Modifier.neoSurface(Lime, palette.outline, ControlRadius, shadowOffset = 0.dp)
+                } else {
+                    Modifier
+                },
+            )
+            .clip(RoundedCornerShape(ControlRadius))
+            .selectable(selected = highlighted, enabled = enabled, role = role, onClick = onClick)
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(24.dp))
+        Text(label.uppercase(), style = LabelMono, color = contentColor, maxLines = 1)
     }
 }
 

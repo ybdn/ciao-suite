@@ -63,6 +63,34 @@ manuellement). Pour builder en release une fois une configuration de signature a
 Aucune tâche automatique/planifiée : chaque étape (scan, transfert, suppression) est déclenchée
 manuellement par l'utilisateur.
 
+Rangement : un dossier existant dont le nom ne diffère que par la casse (`dcim/`) est réutilisé ;
+un fichier déjà présent à l'identique dans le dossier du jour n'est pas recopié (comptabilisé
+« déjà présent sur le SSD ») ; les vidéos prennent le décalage horaire de la photo la plus proche
+(≤ 12 h) pour être rangées au jour local de la prise de vue.
+
+## Galerie
+
+L'app s'ouvre sur l'onglet **Photos** : chronologie unifiée des médias du téléphone et du SSD.
+
+- Badges : nuage barré = non sauvegardé, carte mémoire = uniquement sur le SSD.
+- L'index du SSD est mis à jour à chaque transfert ; pour les fichiers copiés en dehors de l'app,
+  **Réglages › Actualiser le SSD** (réindexation manuelle des dossiers `DCIM/aaaa/MM/jj`).
+- SSD débranché : les médias archivés restent visibles grâce au cache de vignettes (taille
+  réglable, 500 Mo par défaut) ; l'original demande de rebrancher le SSD.
+- Sélection par appui long : partager, favori, supprimer. Suppression du téléphone = corbeille
+  système (30 jours, écran **Corbeille**) ; suppression du SSD = définitive, double confirmation,
+  et le média redevient « non transféré ».
+
+### Définir CiaoCloud comme visionneuse par défaut
+
+CiaoCloud répond à l'ouverture d'images/vidéos (`VIEW`) et au retour de l'appareil photo
+(`REVIEW`, et `REVIEW_SECURE` écran verrouillé). Pour l'utiliser à la place de Google Photos :
+Paramètres Android › Applis › Applis par défaut (ou, pour une app donnée, « Ouvrir par défaut »),
+puis choisir CiaoCloud au prochain choix d'app proposé.
+
+À vérifier sur le Pixel : l'app Appareil photo Pixel peut ouvrir Google Photos en priorité quand
+elle est installée ; procédure exacte à compléter après test sur l'appareil.
+
 ## Workflow Git
 
 - `main` : branche stable/protégée. Jamais de commit direct — uniquement via merge/PR depuis
@@ -97,6 +125,13 @@ Les tests unitaires ciblent la logique métier pure, sans dépendance Android :
   changement de fuseau horaire).
 - `FileNameCollisionResolverTest` : résolution des collisions de nom à destination
   (suffixes `_1`, `_2`, ...).
+- `DuplicateResolverTest` : détection des doublons déjà présents sur le SSD (taille, contenu,
+  variantes suffixées, casse).
+- `CaptureOffsetInferrerTest` : décalage horaire des vidéos déduit des photos voisines.
+- `TimelineBuilderTest` : fusion téléphone + SSD, tri, groupement par jour, filtres.
+- `Iso6709Test` : coordonnées GPS des vidéos.
+- `TransferMediaUseCaseTest`, `DeleteGalleryItemsUseCaseTest` (avec faux repositories) :
+  indexation, migration de la clé favori, cohérence de l'état de transfert après suppression.
 
 Pas de sur-investissement en tests UI/instrumentation pour ce projet personnel.
 
@@ -105,8 +140,11 @@ Pas de sur-investissement en tests UI/instrumentation pour ce projet personnel.
 Clean Architecture allégée, séparation par package (pas de multi-module Gradle) :
 
 - `domain/` — Kotlin pur, aucune dépendance Android.
-- `data/` — implémentations concrètes (MediaStore, SAF/DocumentFile, Room).
+- `data/` — implémentations concrètes (MediaStore, SAF/DocumentsContract, Room).
 - `presentation/` — Compose + ViewModels.
 - `service/` — `TransferForegroundService`.
 
-Voir [`CLAUDE.md`](CLAUDE.md) et [`prompt-initial.md`](prompt-initial.md) pour le détail complet.
+Base Room versionnée avec migrations explicites (schémas exportés dans `app/schemas/`).
+
+Voir [`CLAUDE.md`](CLAUDE.md), [`prompt-initial.md`](prompt-initial.md) et
+[`docs/spec-v2-fiabilisation-visionneuse.md`](docs/spec-v2-fiabilisation-visionneuse.md) pour le détail complet.

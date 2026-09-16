@@ -34,6 +34,38 @@
             </intent-filter>
         </activity>
 
+        <!-- Visionneuse par défaut : ouverture d'images/vidéos et retour de l'appareil photo. -->
+        <activity
+            android:name=".presentation.viewer.ViewerActivity"
+            android:exported="true"
+            android:label="@string/viewer_label"
+            android:taskAffinity=""
+            android:excludeFromRecents="false"
+            android:theme="@style/Theme.CiaoCloud">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.provider.action.REVIEW" />
+                <action android:name="android.provider.action.REVIEW_SECURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.provider.action.REVIEW" />
+                <action android:name="android.provider.action.REVIEW_SECURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!-- Copies temporaires des médias du SSD partagés vers d'autres apps. -->
         <provider
             android:name="androidx.core.content.FileProvider"

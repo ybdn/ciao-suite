@@ -6,79 +6,77 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.ui.graphics.vector.ImageVector
-import dev.ybdn.ciaocloud.presentation.gallery.DeleteItemsDialog
-import dev.ybdn.ciaocloud.presentation.gallery.GalleryEventsEffect
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.R
-import dev.ybdn.ciaocloud.domain.model.GalleryFilter
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.gallery.formatDay
-import java.time.Instant
-import java.time.ZoneId
+import dev.ybdn.ciaocloud.presentation.components.NeoAction
+import dev.ybdn.ciaocloud.presentation.components.NeoActionBar
+import dev.ybdn.ciaocloud.presentation.components.NeoTopBar
+import dev.ybdn.ciaocloud.presentation.gallery.DeleteItemsDialog
+import dev.ybdn.ciaocloud.presentation.gallery.GalleryEventsEffect
+import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Visionneuse plein écran : fond noir quel que soit le thème, barres système masquables d'un appui. */
+/**
+ * Visionneuse plein écran, dans la DA de l'app : barres du haut et du bas identiques à celles des
+ * autres écrans, masquables d'un appui (avec les barres système).
+ *
+ * @param guardAction exécute une action sensible (partage, suppression) ; en mode verrouillé, elle
+ * exige d'abord le déverrouillage de l'appareil.
+ */
 @Composable
 fun ViewerScreen(
-    initialKey: String,
-    filter: GalleryFilter,
+    source: ViewerSource,
     onBack: () -> Unit,
+    guardAction: (action: () -> Unit) -> Unit = { it() },
 ) {
-    val viewModel = ciaoCloudViewModel { container, app -> ViewerViewModel(container, app, initialKey, filter) }
+    val viewModel = ciaoCloudViewModel { container, app -> ViewerViewModel(container, app, source) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ssdAvailable by viewModel.ssdAvailable.collectAsStateWithLifecycle()
     var chromeVisible by rememberSaveable { mutableStateOf(true) }
     var itemToDelete by remember { mutableStateOf<GalleryItem?>(null) }
     var itemForInfo by remember { mutableStateOf<GalleryItem?>(null) }
     val isBusy by viewModel.actions.isBusy.collectAsStateWithLifecycle()
+    var bottomBarHeightPx by remember { mutableIntStateOf(0) }
+    val bottomBarHeight = with(LocalDensity.current) { bottomBarHeightPx.toDp() }
 
     GalleryEventsEffect(viewModel.actions.events)
     itemForInfo?.let { item ->
@@ -98,8 +96,11 @@ fun ViewerScreen(
     ImmersiveSystemBars(visible = chromeVisible)
     BackHandler(onBack = onBack)
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        if (uiState.isLoading) return@Box
+    Box(modifier = Modifier.fillMaxSize().background(NeoTheme.palette.page)) {
+        if (uiState.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            return@Box
+        }
         if (uiState.items.isEmpty()) {
             LaunchedEffect(Unit) { onBack() }
             return@Box
@@ -130,6 +131,7 @@ fun ViewerScreen(
                     originalUri = originalUri,
                     isCurrentPage = isCurrentPage,
                     chromeVisible = chromeVisible,
+                    bottomInset = bottomBarHeight,
                     onToggleChrome = { chromeVisible = !chromeVisible },
                 )
             }
@@ -141,117 +143,74 @@ fun ViewerScreen(
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.TopCenter),
         ) {
-            currentItem?.let { ViewerTopBar(item = it, onBack = onBack) }
+            currentItem?.let { item ->
+                NeoTopBar(
+                    title = formatShortDate(item),
+                    navigation = {
+                        IconButton(onClick = onBack, modifier = Modifier.padding(start = 8.dp)) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.viewer_back),
+                                tint = NeoTheme.palette.content,
+                            )
+                        }
+                    },
+                )
+            }
         }
 
         AnimatedVisibility(
             visible = chromeVisible && currentItem != null,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { bottomBarHeightPx = it.height },
         ) {
             currentItem?.let { item ->
-                ViewerActionBar(
-                    item = item,
-                    isBusy = isBusy,
-                    onShare = { viewModel.actions.share(listOf(item)) },
-                    onToggleFavorite = { viewModel.actions.toggleFavorite(listOf(item)) },
-                    onDelete = { itemToDelete = item },
-                    onInfo = { itemForInfo = item },
+                val canEdit = viewModel.canEdit(item)
+                NeoActionBar(
+                    actions = listOfNotNull(
+                        NeoAction(
+                            Icons.Outlined.Share,
+                            stringResource(R.string.gallery_share),
+                            onClick = { guardAction { viewModel.actions.share(listOf(item)) } },
+                            enabled = !isBusy,
+                        ),
+                        if (canEdit) {
+                            NeoAction(
+                                if (item.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                stringResource(R.string.gallery_favorite),
+                                onClick = { guardAction { viewModel.actions.toggleFavorite(listOf(item)) } },
+                                highlighted = item.isFavorite,
+                            )
+                        } else {
+                            null
+                        },
+                        NeoAction(Icons.Outlined.Info, stringResource(R.string.gallery_info), onClick = { itemForInfo = item }),
+                        if (canEdit) {
+                            NeoAction(
+                                Icons.Outlined.Delete,
+                                stringResource(R.string.gallery_delete),
+                                onClick = { guardAction { itemToDelete = item } },
+                                enabled = !isBusy,
+                            )
+                        } else {
+                            null
+                        },
+                    ),
                 )
             }
         }
     }
 }
 
-@Composable
-private fun ViewerTopBar(item: GalleryItem, onBack: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))
-            .statusBarsPadding()
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.viewer_back), tint = Color.White)
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = formatDay(item.captureDate),
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = listOfNotNull(item.sortEpochMillis?.let(::formatTime), item.displayName).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.8f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
+private val SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.FRENCH)
 
-@Composable
-private fun ViewerActionBar(
-    item: GalleryItem,
-    isBusy: Boolean,
-    onShare: () -> Unit,
-    onToggleFavorite: () -> Unit,
-    onDelete: () -> Unit,
-    onInfo: () -> Unit,
-) {
-    Row(
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f))))
-            .navigationBarsPadding()
-            .height(ACTION_BAR_RESERVED_HEIGHT),
-    ) {
-        ViewerAction(Icons.Outlined.Share, stringResource(R.string.gallery_share), onShare, enabled = !isBusy)
-        ViewerAction(
-            if (item.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-            stringResource(R.string.gallery_favorite),
-            onToggleFavorite,
-        )
-        ViewerAction(Icons.Outlined.Info, stringResource(R.string.gallery_info), onInfo)
-        ViewerAction(Icons.Outlined.Delete, stringResource(R.string.gallery_delete), onDelete, enabled = !isBusy)
-    }
-}
+/** « 15 sept. 2026 » : tient dans la barre du haut au format des autres écrans. */
+private fun formatShortDate(item: GalleryItem): String = SHORT_DATE_FORMATTER.format(item.captureDate)
 
-@Composable
-private fun ViewerAction(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-    ) {
-        Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = if (enabled) 1f else 0.4f))
-        Text(label, style = MaterialTheme.typography.bodySmall, color = Color.White)
-    }
-}
-
-/** Fond dégradé du bas de la visionneuse, sous les contrôles vidéo et la barre d'actions. */
-@Composable
-fun ViewerBottomBarContainer(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))))
-            .navigationBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-    ) { content() }
-}
-
-/** Masque les barres système quand l'interface est masquée ; icônes claires sur fond noir. */
+/** Masque les barres système en même temps que les barres de la visionneuse. */
 @Composable
 private fun ImmersiveSystemBars(visible: Boolean) {
     val view = LocalView.current
@@ -259,16 +218,8 @@ private fun ImmersiveSystemBars(visible: Boolean) {
     val controller = remember(activity, view) { WindowCompat.getInsetsController(activity.window, view) }
 
     DisposableEffect(controller) {
-        val lightStatusBars = controller.isAppearanceLightStatusBars
-        val lightNavigationBars = controller.isAppearanceLightNavigationBars
-        controller.isAppearanceLightStatusBars = false
-        controller.isAppearanceLightNavigationBars = false
         controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        onDispose {
-            controller.show(WindowInsetsCompat.Type.systemBars())
-            controller.isAppearanceLightStatusBars = lightStatusBars
-            controller.isAppearanceLightNavigationBars = lightNavigationBars
-        }
+        onDispose { controller.show(WindowInsetsCompat.Type.systemBars()) }
     }
     LaunchedEffect(visible) {
         if (visible) {
@@ -278,8 +229,3 @@ private fun ImmersiveSystemBars(visible: Boolean) {
         }
     }
 }
-
-private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH)
-
-private fun formatTime(epochMillis: Long): String =
-    TIME_FORMATTER.format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))

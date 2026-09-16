@@ -9,6 +9,8 @@ import dev.ybdn.ciaocloud.data.saf.SafSsdMediaBrowser
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
 import dev.ybdn.ciaocloud.domain.usecase.GetMediaDetailsUseCase
 import dev.ybdn.ciaocloud.domain.usecase.GetOriginalUriUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ResolveExternalMediaUseCase
+import dev.ybdn.ciaocloud.data.mediastore.ContentExternalMediaResolver
 import dev.ybdn.ciaocloud.data.mediastore.MediaDetailsReaderImpl
 import dev.ybdn.ciaocloud.domain.usecase.ManageThumbnailCacheUseCase
 import dev.ybdn.ciaocloud.domain.usecase.ObserveSsdAvailabilityUseCase
@@ -153,6 +155,8 @@ class AppContainer(private val context: Context) {
     val observeSsdAvailabilityUseCase = ObserveSsdAvailabilityUseCase(ssdMediaBrowser)
 
     val getMediaDetailsUseCase = GetMediaDetailsUseCase(MediaDetailsReaderImpl(context), ssdMediaBrowser)
+
+    val resolveExternalMediaUseCase = ResolveExternalMediaUseCase(ContentExternalMediaResolver(context))
 
     val manageThumbnailCacheUseCase = ManageThumbnailCacheUseCase(ssdThumbnailCache)
 
