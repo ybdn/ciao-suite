@@ -48,6 +48,8 @@ import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
 import dev.ybdn.ciaocloud.presentation.editor.PhotoEditorScreen
+import dev.ybdn.ciaocloud.presentation.editor.SavingDialog
+import dev.ybdn.ciaocloud.domain.model.MediaDetails
 import dev.ybdn.ciaocloud.presentation.editor.messageRes
 import dev.ybdn.ciaocloud.presentation.editor.toast
 import androidx.compose.material.icons.outlined.Edit
@@ -83,19 +85,62 @@ fun ViewerScreen(
     var chromeVisible by rememberSaveable { mutableStateOf(true) }
     var itemToDelete by remember { mutableStateOf<GalleryItem?>(null) }
     var itemForInfo by remember { mutableStateOf<GalleryItem?>(null) }
+    val context = LocalContext.current
     val transferRunning by viewModel.transferRunning.collectAsStateWithLifecycle()
     // Clé de l'élément en cours d'édition (éditeur plein écran), et élément à afficher après une copie.
     var editingKey by rememberSaveable { mutableStateOf<String?>(null) }
     var focusKey by rememberSaveable { mutableStateOf<String?>(null) }
-    val context = LocalContext.current
     val isBusy by viewModel.actions.isBusy.collectAsStateWithLifecycle()
     var bottomBarHeightPx by remember { mutableIntStateOf(0) }
     val bottomBarHeight = with(LocalDensity.current) { bottomBarHeightPx.toDp() }
 
     GalleryEventsEffect(viewModel.actions.events)
     ShareDialogs(viewModel.actions)
-    itemForInfo?.let { item ->
-        InfoSheet(item = item, loadDetails = viewModel::details, onDismiss = { itemForInfo = null })
+    val clipboardLocation by viewModel.clipboardLocation.collectAsStateWithLifecycle()
+    val metadataSaving by viewModel.metadataSaving.collectAsStateWithLifecycle()
+    var metadataEdit by remember { mutableStateOf<Pair<String, MediaDetails?>?>(null) }
+    LaunchedEffect(viewModel) {
+        viewModel.metadataResults.collect { summary ->
+            val message = when {
+                summary.cancelled -> null
+                summary.ssdUnavailable -> context.getString(R.string.editor_plug_ssd)
+                summary.failedNames.isNotEmpty() -> context.getString(R.string.editor_save_failed, summary.failedNames.joinToString())
+                summary.modified > 0 -> context.getString(R.string.metadata_saved)
+                else -> null
+            }
+            message?.let { context.toast(it) }
+        }
+    }
+    if (metadataSaving) SavingDialog()
+
+    itemForInfo?.let { infoItem ->
+        // Élément à jour (chronologie relue après une modification).
+        val item = uiState.items.firstOrNull { it.key == infoItem.key } ?: infoItem
+        val capabilities = remember(item, ssdAvailable, transferRunning) { viewModel.editCapabilities(item) }
+        InfoSheet(
+            item = item,
+            loadDetails = viewModel::details,
+            onDismiss = { itemForInfo = null },
+            metadataAvailability = capabilities.metadata,
+            onEditMetadata = { details -> guardAction { metadataEdit = item.key to details } },
+            onCopyLocation = viewModel::copyLocation,
+        )
+    }
+    metadataEdit?.let { (key, details) ->
+        val item = uiState.items.firstOrNull { it.key == key }
+        if (item == null) {
+            metadataEdit = null
+        } else {
+            MetadataEditorSheet(
+                details = details,
+                clipboardLocation = clipboardLocation,
+                onSave = { changes ->
+                    metadataEdit = null
+                    viewModel.editMetadata(item, changes)
+                },
+                onDismiss = { metadataEdit = null },
+            )
+        }
     }
     itemToDelete?.let { item ->
         DeleteItemsDialog(

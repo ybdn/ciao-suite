@@ -131,6 +131,26 @@
     <string name="editor_replace_format_changes">La copie sera enregistrée en JPEG : l\'original ne peut pas être remplacé.</string>
     <string name="editor_metadata_read_only">Métadonnées non modifiables pour ce format.</string>
     <string name="editor_unsupported">Modification impossible pour ce média.</string>
+    <string name="metadata_edit">Modifier les infos</string>
+    <string name="metadata_title">Modifier les infos</string>
+    <string name="metadata_texts">Textes</string>
+    <string name="metadata_description">Description</string>
+    <string name="metadata_artist">Auteur</string>
+    <string name="metadata_copyright">Copyright</string>
+    <string name="metadata_coordinates">Coordonnées</string>
+    <string name="metadata_altitude">Altitude (m, optionnelle)</string>
+    <string name="metadata_invalid_coordinates">Coordonnées invalides</string>
+    <string name="metadata_paste_location">Coller la position</string>
+    <string name="metadata_remove_location">Supprimer la position</string>
+    <string name="metadata_check_in_maps">Vérifier dans une app de cartes</string>
+    <string name="metadata_copy_location">Copier la position</string>
+    <string name="metadata_location_copied">Position copiée</string>
+    <string name="metadata_remove_sensitive">Supprimer les données sensibles</string>
+    <string name="metadata_remove_sensitive_title">Supprimer les données sensibles ?</string>
+    <string name="metadata_remove_sensitive_list">Seront retirés :\n• position : toutes les données GPS ;\n• appareil : marque, modèle, objectif ;\n• identifiants : numéros de série, propriétaire, identifiant unique ;\n• logiciel et notes du fabricant.</string>
+    <string name="metadata_remove_sensitive_kept">Les dates, paramètres de prise de vue et textes sont conservés. Les données éventuellement présentes dans le XMP ne sont pas nettoyées.</string>
+    <string name="metadata_remove_sensitive_confirm">Supprimer</string>
+    <string name="metadata_saved">Informations mises à jour</string>
     <string name="viewer_plug_ssd">Branchez le SSD pour afficher l\'original.</string>
 
     <string name="ssd_index_refresh">Actualiser le SSD</string>

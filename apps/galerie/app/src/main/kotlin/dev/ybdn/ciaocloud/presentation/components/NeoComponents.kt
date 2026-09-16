@@ -4,6 +4,9 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MarqueeSpacing
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -448,5 +451,47 @@ fun NeoSwitchRow(
                 uncheckedBorderColor = palette.outline,
             ),
         )
+    }
+}
+
+/** Champ de saisie libellé : aplat de surface bordé, sans ombre ; message d'erreur en brique. */
+@Composable
+fun NeoTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    placeholder: String? = null,
+    error: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+) {
+    val palette = NeoTheme.palette
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label.uppercase(), style = LabelMono, color = palette.content)
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = singleLine,
+            minLines = if (singleLine) 1 else 3,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = palette.content),
+            cursorBrush = SolidColor(palette.content),
+            keyboardOptions = keyboardOptions,
+            modifier = Modifier
+                .fillMaxWidth()
+                .neoSurface(palette.surface, if (error != null) Brick else palette.outline, ControlRadius, shadowOffset = 0.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            decorationBox = { inner ->
+                Box {
+                    if (value.isEmpty() && placeholder != null) {
+                        Text(placeholder, style = MaterialTheme.typography.bodyLarge, color = palette.content.copy(alpha = 0.45f))
+                    }
+                    inner()
+                }
+            },
+        )
+        if (error != null) {
+            Text(error, style = MaterialTheme.typography.bodySmall, color = Brick, fontWeight = FontWeight.Medium)
+        }
     }
 }

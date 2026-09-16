@@ -12,6 +12,7 @@ import androidx.exifinterface.media.ExifInterface
 import dev.ybdn.ciaocloud.domain.model.MediaDetails
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciaocloud.domain.repository.MediaDetailsReader
+import dev.ybdn.ciaocloud.domain.util.ExifText
 import dev.ybdn.ciaocloud.domain.util.Iso6709
 import dev.ybdn.ciaocloud.domain.util.MediaMetadataCodes
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +54,8 @@ class MediaDetailsReaderImpl(
     private fun readExif(stream: InputStream): MediaDetails {
         val exif = ExifInterface(stream)
         fun string(tag: String) = exif.getAttribute(tag)?.trim()?.trimEnd('\u0000')?.trim()?.ifEmpty { null }
+        // Textes libres : UTF-8 (écrit par l'app et la plupart des appareils) plutôt que l'ASCII d'ExifInterface.
+        fun text(tag: String) = ExifText.decode(exif.getAttributeBytes(tag))
         fun int(tag: String) = exif.getAttributeInt(tag, -1).takeIf { it >= 0 }
         fun positiveDouble(tag: String) = exif.getAttributeDouble(tag, 0.0).takeIf { it > 0 && it.isFinite() }
         val latLong = exif.latLong
@@ -88,10 +91,10 @@ class MediaDetailsReaderImpl(
             // 0 = distance inconnue, 0xFFFFFFFF = infini.
             subjectDistanceMeters = positiveDouble(ExifInterface.TAG_SUBJECT_DISTANCE)?.takeIf { it < 100_000 },
             rotationDegrees = exif.rotationDegrees,
-            software = string(ExifInterface.TAG_SOFTWARE),
-            artist = string(ExifInterface.TAG_ARTIST),
-            copyright = string(ExifInterface.TAG_COPYRIGHT),
-            description = string(ExifInterface.TAG_IMAGE_DESCRIPTION),
+            software = text(ExifInterface.TAG_SOFTWARE),
+            artist = text(ExifInterface.TAG_ARTIST),
+            copyright = text(ExifInterface.TAG_COPYRIGHT),
+            description = text(ExifInterface.TAG_IMAGE_DESCRIPTION),
             latitude = latLong?.get(0),
             longitude = latLong?.get(1),
             altitudeMeters = exif.getAttribute(ExifInterface.TAG_GPS_ALTITUDE)?.let {

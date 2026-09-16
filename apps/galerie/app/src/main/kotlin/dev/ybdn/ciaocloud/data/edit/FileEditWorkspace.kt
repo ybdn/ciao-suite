@@ -11,6 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.RandomAccessFile
 import java.util.UUID
 
 /**
@@ -69,6 +71,10 @@ class FileEditWorkspace(
 /**
  * Écriture EXIF via `ExifInterface.saveAttributes` (JPEG, PNG, WebP). Seul le bloc EXIF est
  * réécrit : les données d'image qui suivent (carte de gain, vidéo de photo animée) sont recopiées.
+ *
+ * `ExifInterface` encode les textes en US-ASCII (accents remplacés par « ? ») : un texte non ASCII est
+ * d'abord écrit sous forme d'un gabarit de même longueur en octets, puis remplacé en place par son
+ * encodage UTF-8, à l'emplacement exact de la valeur relu par `getAttributeRange`.
  */
 class ExifInterfaceMetadataWriter : MetadataWriter {
 
@@ -78,9 +84,41 @@ class ExifInterfaceMetadataWriter : MetadataWriter {
 
     override suspend fun apply(path: String, plan: ExifWritePlan) = withContext(Dispatchers.IO) {
         if (plan.isEmpty) return@withContext
+        val utf8Values = plan.set.filterValues { value -> value.any { it.code > ASCII_MAX } }
+            .mapValues { (_, value) -> value.toByteArray(Charsets.UTF_8) }
         val exif = ExifInterface(path)
-        plan.set.forEach { (tag, value) -> exif.setAttribute(tag, value) }
+        plan.set.forEach { (tag, value) ->
+            exif.setAttribute(tag, utf8Values[tag]?.let { PLACEHOLDER.toString().repeat(it.size) } ?: value)
+        }
         plan.remove.forEach { tag -> exif.setAttribute(tag, null) }
         exif.saveAttributes()
+        if (utf8Values.isNotEmpty()) writeUtf8Values(path, utf8Values)
+    }
+
+    private fun writeUtf8Values(path: String, values: Map<String, ByteArray>) {
+        val saved = ExifInterface(path)
+        val ranges = values.mapValues { (tag, bytes) ->
+            val range = saved.getAttributeRange(tag) ?: throw IOException("Balise $tag introuvable après écriture")
+            // Longueur relue : texte + NUL final.
+            if (range[1] < bytes.size) throw IOException("Emplacement de $tag trop court")
+            range[0]
+        }
+        RandomAccessFile(path, "rw").use { file ->
+            values.forEach { (tag, bytes) ->
+                val offset = ranges.getValue(tag)
+                val current = ByteArray(bytes.size)
+                file.seek(offset)
+                file.readFully(current)
+                if (current.any { it != PLACEHOLDER.code.toByte() }) throw IOException("Gabarit de $tag introuvable")
+                file.seek(offset)
+                file.write(bytes)
+            }
+            file.fd.sync()
+        }
+    }
+
+    private companion object {
+        const val ASCII_MAX = 0x7F
+        const val PLACEHOLDER = '#'
     }
 }

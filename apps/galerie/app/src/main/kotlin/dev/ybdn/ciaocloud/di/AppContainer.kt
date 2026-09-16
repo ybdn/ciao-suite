@@ -63,6 +63,9 @@ import dev.ybdn.ciaocloud.data.saf.SafSsdMediaWriter
 import dev.ybdn.ciaocloud.domain.usecase.GetEditCapabilitiesUseCase
 import dev.ybdn.ciaocloud.domain.usecase.RecoverInterruptedEditsUseCase
 import dev.ybdn.ciaocloud.domain.usecase.SafeFileEditor
+import dev.ybdn.ciaocloud.domain.usecase.EditMetadataUseCase
+import dev.ybdn.ciaocloud.domain.usecase.OriginalWorkFiles
+import dev.ybdn.ciaocloud.domain.model.LocationClipboard
 import dev.ybdn.ciaocloud.domain.usecase.SavePhotoEditUseCase
 import dev.ybdn.ciaocloud.presentation.system.SystemMediaWriteAccess
 import dev.ybdn.ciaocloud.service.ServiceTransferActivity
@@ -182,12 +185,22 @@ class AppContainer(private val context: Context) {
 
     val getEditCapabilitiesUseCase = GetEditCapabilitiesUseCase(ssdMediaBrowser, ServiceTransferActivity(applicationScope))
 
-    val savePhotoEditUseCase = SavePhotoEditUseCase(
+    private val metadataWriter = ExifInterfaceMetadataWriter()
+
+    private val originalWorkFiles = OriginalWorkFiles(editWorkspace, ssdMediaBrowser)
+
+    val savePhotoEditUseCase = SavePhotoEditUseCase(editWorkspace, metadataWriter, originalWorkFiles, safeFileEditor)
+
+    val editMetadataUseCase = EditMetadataUseCase(
         editWorkspace,
-        ExifInterfaceMetadataWriter(),
-        ssdMediaBrowser,
+        metadataWriter,
+        originalWorkFiles,
+        getEditCapabilitiesUseCase,
+        SystemMediaWriteAccess(context, intentSenderLauncher),
         safeFileEditor,
     )
+
+    val locationClipboard = LocationClipboard()
 
     val refreshSsdIndexUseCase = RefreshSsdIndexUseCase(ssdMediaBrowser, ssdMediaIndex, applicationScope) {
         recoverInterruptedEditsUseCase()

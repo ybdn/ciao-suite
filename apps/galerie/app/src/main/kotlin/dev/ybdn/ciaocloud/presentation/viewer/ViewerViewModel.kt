@@ -8,6 +8,15 @@ import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.FavoriteKeys
 import dev.ybdn.ciaocloud.domain.model.GalleryFilter
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
+import dev.ybdn.ciaocloud.domain.model.GeoPoint
+import dev.ybdn.ciaocloud.domain.model.MetadataChanges
+import dev.ybdn.ciaocloud.domain.model.MetadataEditSummary
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import dev.ybdn.ciaocloud.domain.model.MediaDetails
 import dev.ybdn.ciaocloud.domain.util.TimelineBuilder
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryActions
@@ -67,6 +76,28 @@ class ViewerViewModel(
     val ssdAvailable: StateFlow<Boolean> = appContainer.observeSsdAvailabilityUseCase()
 
     val transferRunning: StateFlow<Boolean> = appContainer.getEditCapabilitiesUseCase.transferRunning
+
+    val clipboardLocation: StateFlow<GeoPoint?> = appContainer.locationClipboard.location
+
+    fun copyLocation(point: GeoPoint) = appContainer.locationClipboard.copy(point)
+
+    private val _metadataSaving = MutableStateFlow(false)
+    val metadataSaving: StateFlow<Boolean> = _metadataSaving.asStateFlow()
+
+    private val _metadataResults = MutableSharedFlow<MetadataEditSummary>(extraBufferCapacity = 1)
+    val metadataResults: SharedFlow<MetadataEditSummary> = _metadataResults.asSharedFlow()
+
+    fun editMetadata(item: GalleryItem, changes: MetadataChanges) {
+        if (_metadataSaving.value || changes.isEmpty) return
+        _metadataSaving.value = true
+        viewModelScope.launch {
+            try {
+                _metadataResults.emit(appContainer.editMetadataUseCase(listOf(item), changes))
+            } finally {
+                _metadataSaving.value = false
+            }
+        }
+    }
 
     /** Actions d'édition de [item] ; à recalculer quand le SSD ou un transfert change d'état. */
     fun editCapabilities(item: GalleryItem): EditCapabilities = appContainer.getEditCapabilitiesUseCase(

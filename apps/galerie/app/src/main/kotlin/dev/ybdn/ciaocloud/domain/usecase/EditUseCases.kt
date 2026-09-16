@@ -5,10 +5,13 @@ import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.EditRecipe
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
+import dev.ybdn.ciaocloud.domain.model.MetadataChanges
+import dev.ybdn.ciaocloud.domain.model.MetadataEditSummary
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
 import dev.ybdn.ciaocloud.domain.model.SaveMode
 import dev.ybdn.ciaocloud.domain.repository.EditJournal
 import dev.ybdn.ciaocloud.domain.repository.EditWorkspace
+import dev.ybdn.ciaocloud.domain.repository.MediaWriteAccess
 import dev.ybdn.ciaocloud.domain.repository.MetadataWriter
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
 import dev.ybdn.ciaocloud.domain.repository.TransferActivity
@@ -53,7 +56,7 @@ class GetEditCapabilitiesUseCase(
 class SavePhotoEditUseCase(
     private val editWorkspace: EditWorkspace,
     private val metadataWriter: MetadataWriter,
-    private val ssdMediaBrowser: SsdMediaBrowser,
+    private val originalWorkFiles: OriginalWorkFiles,
     private val safeFileEditor: SafeFileEditor,
 ) {
     suspend operator fun invoke(
@@ -71,6 +74,31 @@ class SavePhotoEditUseCase(
             return SaveEditOutcome.Unavailable(reason)
         }
 
+        return originalWorkFiles.withCopy(item) { workPath ->
+            val orientation = OrientationCodec.compose(metadataWriter.readOrientation(workPath), recipe.transform)
+            metadataWriter.apply(workPath, ExifWritePlan.orientation(orientation))
+            val fingerprint = editWorkspace.fingerprint(workPath) ?: return@withCopy SaveEditOutcome.Failed(WORK_FILE_MISSING)
+            when (mode) {
+                SaveMode.COPY -> safeFileEditor.createCopy(item, workPath, fingerprint, targetExtension = null, item.mimeType)
+                SaveMode.REPLACE -> safeFileEditor.replace(item, workPath, fingerprint)
+            }
+        }
+    }
+
+    private companion object {
+        const val WORK_FILE_MISSING = "Fichier de travail introuvable"
+    }
+}
+
+/**
+ * Copie de travail de l'original d'un élément (téléphone en priorité, sinon SSD), supprimée après
+ * usage quelle que soit l'issue.
+ */
+class OriginalWorkFiles(
+    private val editWorkspace: EditWorkspace,
+    private val ssdMediaBrowser: SsdMediaBrowser,
+) {
+    suspend fun withCopy(item: GalleryItem, block: suspend (workPath: String) -> SaveEditOutcome): SaveEditOutcome {
         val sourceUri = item.phone?.uri
             ?: item.ssd?.let { ssdMediaBrowser.documentUri(it.relativePath) }
             ?: return SaveEditOutcome.SsdUnavailable
@@ -78,24 +106,67 @@ class SavePhotoEditUseCase(
         val workPath = editWorkspace.newWorkFile(extension)
         return try {
             editWorkspace.copyOriginal(sourceUri, workPath)
-            val orientation = OrientationCodec.compose(metadataWriter.readOrientation(workPath), recipe.transform)
-            metadataWriter.apply(workPath, ExifWritePlan.orientation(orientation))
-            val fingerprint = editWorkspace.fingerprint(workPath) ?: return SaveEditOutcome.Failed(WORK_FILE_MISSING)
-            when (mode) {
-                SaveMode.COPY -> safeFileEditor.createCopy(item, workPath, fingerprint, targetExtension = null, item.mimeType)
-                SaveMode.REPLACE -> safeFileEditor.replace(item, workPath, fingerprint)
-            }
+            block(workPath)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            SaveEditOutcome.Failed(e.message ?: e::class.simpleName ?: WORK_FILE_MISSING)
+            SaveEditOutcome.Failed(e.message ?: e::class.simpleName ?: "Erreur inconnue")
         } finally {
             withContext(NonCancellable) { editWorkspace.delete(workPath) }
         }
     }
+}
+
+/**
+ * Modifie en place les métadonnées d'une ou plusieurs photos (pixels jamais réencodés). Les originaux
+ * du téléphone sont autorisés en une seule confirmation système (par lots de 500) avant toute
+ * écriture ; un échec sur une photo n'arrête pas les suivantes.
+ */
+class EditMetadataUseCase(
+    private val editWorkspace: EditWorkspace,
+    private val metadataWriter: MetadataWriter,
+    private val originalWorkFiles: OriginalWorkFiles,
+    private val getEditCapabilities: GetEditCapabilitiesUseCase,
+    private val writeAccess: MediaWriteAccess,
+    private val safeFileEditor: SafeFileEditor,
+) {
+    suspend operator fun invoke(
+        items: List<GalleryItem>,
+        changes: MetadataChanges,
+        onProgress: (current: Int, total: Int) -> Unit = { _, _ -> },
+    ): MetadataEditSummary {
+        val plan = ExifWritePlan.from(changes)
+        val reasons = items.associateWith { (getEditCapabilities(it).metadata as? EditAvailability.Unavailable)?.reason }
+        val editable = items.filter { reasons[it] == null }
+        if (editable.isEmpty()) {
+            return MetadataEditSummary(
+                skipped = items.size,
+                ssdUnavailable = reasons.values.any { it == EditUnavailableReason.SSD_REQUIRED },
+            )
+        }
+        if (plan.isEmpty) return MetadataEditSummary(skipped = items.size - editable.size)
+
+        for (batch in editable.mapNotNull { it.phone?.uri }.chunked(MAX_URIS_PER_REQUEST)) {
+            if (!writeAccess.request(batch)) return MetadataEditSummary(cancelled = true)
+        }
+
+        var modified = 0
+        val failed = ArrayList<String>()
+        editable.forEachIndexed { index, item ->
+            onProgress(index + 1, editable.size)
+            val outcome = originalWorkFiles.withCopy(item) { workPath ->
+                metadataWriter.apply(workPath, plan)
+                val fingerprint = editWorkspace.fingerprint(workPath)
+                    ?: return@withCopy SaveEditOutcome.Failed("Fichier de travail introuvable")
+                safeFileEditor.replace(item, workPath, fingerprint, accessGranted = true)
+            }
+            if (outcome == SaveEditOutcome.Replaced) modified++ else failed += item.displayName
+        }
+        return MetadataEditSummary(modified = modified, skipped = items.size - editable.size, failedNames = failed)
+    }
 
     private companion object {
-        const val WORK_FILE_MISSING = "Fichier de travail introuvable"
+        const val MAX_URIS_PER_REQUEST = 500
     }
 }
 

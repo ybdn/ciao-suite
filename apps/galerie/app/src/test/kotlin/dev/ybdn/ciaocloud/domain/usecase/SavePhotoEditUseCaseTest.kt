@@ -48,7 +48,7 @@ class SavePhotoEditUseCaseTest {
         phoneWriter, ssdWriter, access, journal, transfers, index, thumbnails, DirectTransactionRunner,
         newId = { "op${ids++}" }, clock = { 99 },
     )
-    private val useCase = SavePhotoEditUseCase(workspace, workspace, browser, editor)
+    private val useCase = SavePhotoEditUseCase(workspace, workspace, OriginalWorkFiles(workspace, browser), editor)
 
     private val day = LocalDate.of(2025, 4, 21)
     private val phone = PhoneMedia(1, phoneUri, "IMG_1.jpg", MediaType.PHOTO, "image/jpeg", 4, 0, 0, 100, 100, null, "DCIM/Camera/")

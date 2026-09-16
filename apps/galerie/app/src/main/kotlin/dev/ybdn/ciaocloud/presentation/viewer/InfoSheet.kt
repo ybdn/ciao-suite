@@ -24,7 +24,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
+import dev.ybdn.ciaocloud.domain.model.EditAvailability
+import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
+import dev.ybdn.ciaocloud.domain.model.GeoPoint
+import dev.ybdn.ciaocloud.presentation.editor.messageRes
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.model.ExposureProgram
 import dev.ybdn.ciaocloud.domain.model.HdrFormat
@@ -53,8 +57,17 @@ fun InfoSheet(
     item: GalleryItem,
     loadDetails: suspend (GalleryItem) -> MediaDetails?,
     onDismiss: () -> Unit,
+    metadataAvailability: EditAvailability = EditAvailability.Unavailable(EditUnavailableReason.UNSUPPORTED_FORMAT),
+    onEditMetadata: (MediaDetails?) -> Unit = {},
+    onCopyLocation: (GeoPoint) -> Unit = {},
 ) {
-    val details by produceState<DetailsState>(DetailsState.Loading, item.key) {
+    // Relu après une modification (date de modification changée).
+    val details by produceState<DetailsState>(
+        DetailsState.Loading,
+        item.key,
+        item.phone?.dateModifiedEpochMillis,
+        item.ssd?.lastModifiedEpochMillis,
+    ) {
         value = DetailsState.Loaded(loadDetails(item))
     }
 
@@ -74,6 +87,22 @@ fun InfoSheet(
         ) {
             val loaded = (details as? DetailsState.Loaded)?.details
             Text(captureDateText(item, loaded), style = MaterialTheme.typography.titleLarge)
+
+            val editReason = (metadataAvailability as? EditAvailability.Unavailable)?.reason
+            if (details is DetailsState.Loaded && (editReason == null || !editReason.hidesAction)) {
+                val context = LocalContext.current
+                NeoButton(
+                    text = stringResource(R.string.metadata_edit),
+                    tone = NeoTone.Yellow,
+                    onClick = {
+                        if (editReason == null) {
+                            onEditMetadata(loaded)
+                        } else {
+                            Toast.makeText(context, editReason.messageRes(), Toast.LENGTH_LONG).show()
+                        }
+                    },
+                )
+            }
 
             NeoCard {
                 NeoTag(stringResource(R.string.info_file), tone = NeoTone.Sky)
@@ -111,6 +140,14 @@ fun InfoSheet(
                     loaded.directionDegrees?.let {
                         InfoLine(stringResource(R.string.info_direction, String.format(Locale.FRENCH, "%.0f", it), cardinalPoint(it)))
                     }
+                    NeoButton(
+                        text = stringResource(R.string.metadata_copy_location),
+                        tone = NeoTone.Surface,
+                        onClick = {
+                            onCopyLocation(GeoPoint(latitude, longitude, loaded.altitudeMeters))
+                            Toast.makeText(context, R.string.metadata_location_copied, Toast.LENGTH_SHORT).show()
+                        },
+                    )
                     NeoButton(
                         text = stringResource(R.string.info_open_maps),
                         tone = NeoTone.Surface,

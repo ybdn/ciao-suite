@@ -29,9 +29,17 @@ class FakeEditWorkspace(private val sources: Map<String, ByteArray>) : EditWorks
         files.remove(path)
     }
     override suspend fun readOrientation(path: String) = files.getValue(path).last().toInt()
+    val appliedPlans = mutableListOf<ExifWritePlan>()
     override suspend fun apply(path: String, plan: ExifWritePlan) {
+        appliedPlans += plan
         val bytes = files.getValue(path)
-        bytes[bytes.size - 1] = plan.set.getValue("Orientation").toByte()
+        val orientation = plan.set["Orientation"]
+        if (orientation != null) {
+            bytes[bytes.size - 1] = orientation.toByte()
+        } else {
+            // Autres balises : contenu modifié, orientation (dernier octet) intacte.
+            files[path] = byteArrayOf(plan.hashCode().toByte()) + bytes
+        }
     }
 }
 
