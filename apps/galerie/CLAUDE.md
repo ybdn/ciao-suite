@@ -8,11 +8,33 @@ Le scaffolding Android est en place : dépôt Git initialisé (branches `main`/`
 
 Le dépôt vit sur un volume externe **exFAT** (`/Volumes/PH4NT0M`) : macOS y génère des fichiers `._*` (AppleDouble) à chaque écriture. Ils sont ignorés par `.gitignore` — les supprimer avant tout `git status`/commit si `git status` en affiche (`find . -name '._*' -not -path './.git/*' -delete`).
 
-Commandes de référence (nécessitent un JDK 17 ; aucun JDK n'était installé sur la machine ayant créé ce scaffolding, donc **aucun build local n'a encore été vérifié** — à faire en priorité avant toute nouvelle fonctionnalité) :
+**Important — répertoires `build/` hors exFAT.** Gradle/AGP ne peuvent pas écrire leurs sorties directement sur ce volume exFAT (`parseDebugLocalResources` échoue avec `'.../._drawable' is not a directory` : l'OS remplace un dossier de ressources par son sidecar AppleDouble en pleine écriture). `build/` (racine) et `app/build/` sont donc des **symlinks** vers `~/AndroidBuilds/CiaoCloud/{root-build,app-build}` sur le disque interne (APFS). Ils sont ignorés par `.gitignore` (entrée `build` sans slash, car un pattern `build/` ne matche pas un symlink). Si ces symlinks disparaissent (ex. `git clean`), les recréer avant de builder :
 
-- Build debug : `./gradlew :app:assembleDebug`
-- Tests unitaires (logique pure domain) : `./gradlew :app:testDebugUnitTest`
-- Pas de ktlint/detekt intégré pour l'instant (jugé non prioritaire, cf. README).
+```bash
+mkdir -p ~/AndroidBuilds/CiaoCloud/app-build ~/AndroidBuilds/CiaoCloud/root-build
+ln -s ~/AndroidBuilds/CiaoCloud/app-build app/build
+ln -s ~/AndroidBuilds/CiaoCloud/root-build build
+```
+
+**Environnement de build vérifié et fonctionnel** (installé le 2026-09-16) :
+
+- JDK 17 via `brew install openjdk@17` (pas de cask/sudo nécessaire). `JAVA_HOME=/opt/homebrew/opt/openjdk@17`, ajouté au `PATH` dans `~/.zshrc`.
+- Android SDK via `brew install --cask android-commandlinetools`, racine `/opt/homebrew/share/android-commandlinetools`. Composants installés : `platform-tools`, `platforms;android-35`, `build-tools;35.0.0` (+ `build-tools;34.0.0` auto-résolu par AGP). Licences acceptées (`sdkmanager --licenses`).
+- `local.properties` (non versionné, à la racine) doit contenir `sdk.dir=/opt/homebrew/share/android-commandlinetools`.
+
+Commandes de référence :
+
+```bash
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
+export PATH="$JAVA_HOME/bin:$PATH"
+export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
+./gradlew :app:assembleDebug        # build debug — vérifié OK
+./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (9 tests, 0 échec)
+```
+
+Pas de ktlint/detekt intégré pour l'instant (jugé non prioritaire, cf. README).
+
+Note : `TopAppBar` (Material3) est une API expérimentale — opt-in global via `freeCompilerArgs` dans `app/build.gradle.kts` (`-opt-in=androidx.compose.material3.ExperimentalMaterial3Api`), plutôt que d'annoter chaque écran individuellement.
 
 ## Projet
 

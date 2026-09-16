@@ -28,6 +28,7 @@ keystore.properties
 # Gradle
 .gradle
 build/
+build
 gradle-app.setting
 !gradle-wrapper.jar
 !gradle-wrapper.properties
