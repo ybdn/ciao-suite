@@ -5,29 +5,47 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 
-private val PrimaryColor = Color(0xFF1B2A4A)
-private val SecondaryColor = Color(0xFF3D5A80)
+private val LocalNeoPalette = staticCompositionLocalOf { LightPalette }
 
-private val LightColors = lightColorScheme(
-    primary = PrimaryColor,
-    secondary = SecondaryColor,
-)
-
-private val DarkColors = darkColorScheme(
-    primary = SecondaryColor,
-    secondary = PrimaryColor,
-)
+object NeoTheme {
+    val palette: NeoPalette
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalNeoPalette.current
+}
 
 @Composable
 fun CiaoCloudTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColors else LightColors
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content,
-    )
+    val palette = if (darkTheme) DarkPalette else LightPalette
+    // Le schéma Material ne sert qu'aux composants Material restants (indicateurs de chargement,
+    // couleur de texte par défaut) : il reprend la palette néo-brutaliste.
+    val colorScheme = if (darkTheme) {
+        darkColorScheme(
+            primary = palette.content, onPrimary = palette.page,
+            background = palette.page, onBackground = palette.content,
+            surface = palette.page, onSurface = palette.content,
+            outline = palette.outline, error = Brick, onError = Ink,
+        )
+    } else {
+        lightColorScheme(
+            primary = palette.content, onPrimary = palette.page,
+            background = palette.page, onBackground = palette.content,
+            surface = palette.page, onSurface = palette.content,
+            outline = palette.outline, error = Brick, onError = Ink,
+        )
+    }
+    CompositionLocalProvider(LocalNeoPalette provides palette) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = CiaoCloudTypography,
+            content = content,
+        )
+    }
 }

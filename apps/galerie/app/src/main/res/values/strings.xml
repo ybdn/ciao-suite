@@ -3,12 +3,19 @@
     <string name="app_name">CiaoCloud</string>
 
     <string name="home_title">CiaoCloud</string>
+    <string name="home_marquee">Déleste • Range par date • Vérifie • Libère l\'espace • </string>
+    <string name="home_step_destination">Destination</string>
+    <string name="home_step_scan">Scan</string>
+    <string name="home_step_transfer">Transfert</string>
+    <string name="home_step_free">Libérer</string>
+    <string name="home_stat_free_space">libres sur le SSD</string>
+    <string name="home_stat_photos">photos</string>
+    <string name="home_stat_videos">vidéos</string>
+    <string name="home_stat_total_size">à transférer</string>
     <string name="home_select_destination">Choisir le dossier SSD</string>
     <string name="home_scan_button">Scanner les médias</string>
-    <string name="home_scan_summary">%1$d photos, %2$d vidéos détectées (%3$s)</string>
     <string name="home_no_destination">Aucun dossier SSD sélectionné</string>
     <string name="home_destination_ready">SSD : %1$s</string>
-    <string name="home_destination_free_space">Espace libre sur le SSD : %1$s</string>
     <string name="home_destination_unavailable">SSD inaccessible : branchez-le, ou choisissez à nouveau son dossier.</string>
     <string name="home_scanning">Analyse des photos et vidéos…</string>
     <string name="home_scan_nothing">Aucun nouveau média à transférer.</string>
@@ -30,13 +37,18 @@
     <string name="transfer_abort_insufficient_space">Transfert interrompu : espace insuffisant sur le SSD (%1$s nécessaires, %2$s disponibles).</string>
     <string name="transfer_abort_insufficient_space_short">Transfert interrompu : espace insuffisant sur le SSD</string>
     <string name="transfer_fatal_error">Transfert interrompu par une erreur : %1$s</string>
-    <string name="progress_current_file">Fichier en cours : %1$s</string>
+    <string name="progress_files_count">%1$d/%2$d</string>
+    <string name="progress_files_caption">fichiers traités</string>
+    <string name="progress_current_file_label">Fichier en cours</string>
+    <string name="progress_stat_succeeded">copiés et vérifiés</string>
+    <string name="progress_stat_failed">en échec</string>
     <string name="progress_files_done">%1$d / %2$d fichiers traités</string>
     <string name="progress_bytes_done">%1$s transférés</string>
     <string name="progress_error">Erreur sur %1$s : %2$s</string>
 
     <string name="delete_confirm_title">Libérer l\'espace du téléphone</string>
-    <string name="delete_confirm_summary">%1$d fichiers vérifiés sur le SSD, %2$s libérables</string>
+    <string name="delete_confirm_stat_freeable">libérables sur le téléphone</string>
+    <string name="delete_confirm_stat_verified">fichiers vérifiés sur le SSD</string>
     <string name="delete_confirm_button">Supprimer les originaux</string>
     <string name="delete_confirm_cancel">Annuler</string>
     <string name="delete_confirm_nothing">Aucun fichier vérifié en attente de suppression.</string>
@@ -48,6 +60,10 @@
     <string name="settings_title">Paramètres</string>
     <string name="settings_destination_label">Dossier SSD actuel</string>
     <string name="settings_change_destination">Changer de dossier</string>
+    <string name="settings_appearance_label">Apparence</string>
+    <string name="settings_theme_system">Système</string>
+    <string name="settings_theme_light">Clair</string>
+    <string name="settings_theme_dark">Sombre</string>
 
     <string name="notification_channel_transfer">Transfert CiaoCloud</string>
     <string name="notification_transfer_title">Transfert vers le SSD</string>

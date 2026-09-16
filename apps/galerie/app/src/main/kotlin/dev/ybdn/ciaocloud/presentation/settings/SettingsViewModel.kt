@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.ybdn.ciaocloud.di.AppContainer
+import dev.ybdn.ciaocloud.domain.model.ThemeMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -21,6 +22,16 @@ class SettingsViewModel(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = null,
     )
+
+    val themeMode: StateFlow<ThemeMode> = appContainer.settingsDataStore.themeMode.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ThemeMode.SYSTEM,
+    )
+
+    fun onThemeModeSelected(mode: ThemeMode) {
+        viewModelScope.launch { appContainer.settingsDataStore.setThemeMode(mode) }
+    }
 
     fun onDestinationSelected(uri: Uri) {
         getApplication<Application>().contentResolver.takePersistableUriPermission(
