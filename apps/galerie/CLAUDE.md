@@ -1,0 +1,50 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## État du dépôt
+
+Ce dépôt ne contient pour l'instant que `prompt-initial.md`, la spécification complète du projet. Aucun scaffolding Android n'a encore été créé, aucun dépôt Git n'a été initialisé. La première tâche pour toute session travaillant ici est probablement de réaliser les livrables listés en fin de `prompt-initial.md` (init Git, scaffolding Gradle/Kotlin, CI GitHub Actions, README, tests). Une fois le scaffolding créé, ce fichier devra être mis à jour avec les vraies commandes de build/lint/test (Gradle Wrapper, ktlint/detekt, etc.).
+
+## Projet
+
+CiaoCloud (`dev.ybdn.ciaocloud`) est une application Android **strictement personnelle**, sans backend ni compte, qui délestage manuellement photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en les rangeant par date, puis supprime les originaux du téléphone uniquement après vérification de la copie. La spécification complète et faisant autorité est `prompt-initial.md` — s'y référer pour tout détail non résumé ici (gestion des cas limites, format des chemins, workflow CI/CD, etc.).
+
+## Stack technique
+
+- Kotlin + Jetpack Compose (natif, pas de framework cross-platform)
+- Coroutines + Flow pour le scan, le transfert et le reporting de progression
+- Room pour persister l'état de transfert (éviter re-scan/doublons)
+- DataStore (pas SharedPreferences) pour l'URI SAF persistée et les préférences
+- `androidx.exifinterface` pour la lecture EXIF, `MediaMetadataRetriever` pour les métadonnées vidéo
+- `minSdk`/`targetSdk` : dernière version stable Android (app mono-device, pas de contrainte de compatibilité descendante)
+- Aucune dépendance réseau/backend/authentification
+
+## Architecture : Clean Architecture allégée, séparation par package (pas de multi-module Gradle)
+
+Dépendances orientées vers le domaine ; le domaine ne connaît rien d'Android.
+
+- **domain/** — Kotlin pur, aucune dépendance Android. Modèles métier (`MediaFile`, `TransferStatus`), interfaces de repository (`MediaRepository`, `DestinationWriter`), use cases : `ScanLocalMediaUseCase`, `TransferMediaUseCase`, `VerifyTransferUseCase`, `DeleteVerifiedMediaUseCase`.
+- **data/** — implémentations concrètes : `MediaStoreRepositoryImpl` (scan photos/vidéos via `MediaStore`), `SafDestinationWriter` (écriture/arborescence sur le SSD via `DocumentFile`/SAF), `TransferStateDao` + entités Room.
+- **presentation/** — Compose + ViewModels (écrans Accueil/Scan, Progression, Confirmation suppression, Paramètres). Les ViewModels n'appellent que les use cases du domaine, jamais `data/` directement.
+- **service/** — `TransferForegroundService`, orchestrateur technique qui invoque les use cases du domaine et expose la progression via `Flow`/notification.
+
+Pas de DI framework lourd sauf s'il simplifie réellement l'injection dans ViewModels/Service (Hilt acceptable, sinon injection manuelle).
+
+## Règles métier clés
+
+- Arborescence de destination : `SSD/DCIM/{année}/{mois}/{jour}/nom_du_fichier.ext`, mois/jour toujours sur 2 chiffres. Photos et vidéos partagent la même arborescence.
+- Date utilisée : EXIF `DateTimeOriginal` en priorité pour les photos (fallback date fichier MediaStore) ; métadonnées `MediaMetadataRetriever` pour les vidéos (fallback date fichier MediaStore).
+- Collisions de nom à destination : suffixe (`_1`, `_2`...), jamais d'écrasement.
+- Suppression des originaux uniquement après vérification de copie (taille + hash CRC32/MD5), via `MediaStore.createDeleteRequest()` (API 30+) plutôt que gestion manuelle de `RecoverableSecurityException`.
+- Transfert exécuté dans un Foreground Service avec notification de progression (survie au passage en arrière-plan sur gros volumes).
+- Reprise après interruption : l'état "transféré" (ID MediaStore + hash + statut + type) est persisté en Room pour ne jamais re-proposer un fichier déjà transféré et vérifié.
+- Aucune tâche automatique/planifiée : déclenchement manuel exclusivement à chaque étape (scan, transfert, suppression).
+
+## Conventions
+
+- Code (noms de classes, fonctions, variables) en anglais technique standard, conventions Android/Kotlin.
+- UI et messages utilisateur en français.
+- Branches Git : `main` stable/protégée (jamais de commit direct, uniquement via merge/PR depuis `develop`) ; `develop` est la branche de travail par défaut.
+- Commits au format `type: description` (ex: `feat: scan MediaStore photos et vidéos`).
+- Tests unitaires ciblés sur la logique pure uniquement (calcul du chemin année/mois/jour, résolution des collisions de nom) — pas de sur-investissement en tests UI/instrumentation.

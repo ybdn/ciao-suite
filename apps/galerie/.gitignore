@@ -1,0 +1,36 @@
+*.iml
+.gradle/
+
+# Fichiers AppleDouble générés par macOS sur volumes exFAT/réseau
+._*
+.Spotlight-V100
+.Trashes
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Android Studio
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Signing
+*.jks
+*.keystore
+keystore.properties
+
+# Gradle
+.gradle
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Log files
+*.log

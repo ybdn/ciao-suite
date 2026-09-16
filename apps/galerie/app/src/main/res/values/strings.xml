@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CiaoCloud</string>
+
+    <string name="home_title">CiaoCloud</string>
+    <string name="home_select_destination">Choisir le dossier SSD</string>
+    <string name="home_scan_button">Scanner les médias</string>
+    <string name="home_scan_summary">%1$d photos, %2$d vidéos détectées (%3$s)</string>
+    <string name="home_no_destination">Aucun dossier SSD sélectionné</string>
+    <string name="home_transfer_button">Transférer</string>
+
+    <string name="progress_title">Transfert en cours</string>
+    <string name="progress_current_file">Fichier en cours : %1$s</string>
+    <string name="progress_files_done">%1$d / %2$d fichiers traités</string>
+    <string name="progress_bytes_done">%1$s transférés</string>
+    <string name="progress_error">Erreur sur %1$s : %2$s</string>
+
+    <string name="delete_confirm_title">Libérer l\'espace du téléphone</string>
+    <string name="delete_confirm_summary">%1$d fichiers vérifiés sur le SSD, %2$s libérables</string>
+    <string name="delete_confirm_button">Supprimer les originaux</string>
+    <string name="delete_confirm_cancel">Annuler</string>
+
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_destination_label">Dossier SSD actuel</string>
+    <string name="settings_change_destination">Changer de dossier</string>
+
+    <string name="notification_channel_transfer">Transfert CiaoCloud</string>
+    <string name="notification_transfer_title">Transfert vers le SSD</string>
+</resources>
