@@ -143,7 +143,7 @@ Le lien téléphone ↔ SSD repose sur l'enregistrement de transfert Room (`medi
 
 ### B5. Visionneuse plein écran
 
-- `HorizontalPager` sur la liste filtrée courante ; fond noir quel que soit le thème ; barres système masquables d'un appui.
+- `HorizontalPager` sur la liste filtrée courante ; **même DA que le reste de l'app** (décision utilisateur, remplace le fond noir initialement prévu) : barre du haut identique à `NeoTopBar`, barre d'actions aux proportions de la barre de navigation, fond de page du thème ; barres de l'app et barres système masquables d'un appui.
 - **Photos** : zoom par pincement et double-appui, **décodage par tuiles** (sous-échantillonnage) pour les photos de 50 Mpx ; formats JPEG, HEIC, AVIF, PNG, WebP, DNG (aperçu).
 - **Vidéos** : lecteur intégré — lecture/pause, barre de progression avec déplacement, son on/off, pause automatique en changeant de page ou en quittant l'écran. Lecture depuis l'URI MediaStore ou SAF.
 - Élément SSD seul, SSD débranché : vignette agrandie + message « Branchez le SSD pour afficher l'original ».
@@ -153,7 +153,7 @@ Le lien téléphone ↔ SSD repose sur l'enregistrement de transfert Room (`medi
 
 - `ACTION_SEND` / `ACTION_SEND_MULTIPLE` avec `FLAG_GRANT_READ_URI_PERMISSION`.
 - URI MediaStore : partagées directement.
-- URI SAF (SSD) : partage direct de l'URI de document ; **si l'app destinataire ne peut pas la lire**, repli par copie temporaire dans le cache de l'app exposée via `FileProvider` (nettoyée au lancement suivant).
+- URI SAF (SSD) et URI `file://` : copie temporaire dans le cache de l'app exposée via `FileProvider` (nettoyée au lancement suivant). *Écart assumé :* l'échec de lecture d'une URI de document par l'app destinataire n'est pas détectable, le repli prévu ne pourrait donc jamais se déclencher ; la copie systématique garantit un partage qui fonctionne.
 
 ### B7. Supprimer
 
