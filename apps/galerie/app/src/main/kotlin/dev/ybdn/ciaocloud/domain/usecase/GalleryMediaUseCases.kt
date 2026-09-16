@@ -1,6 +1,8 @@
 package dev.ybdn.ciaocloud.domain.usecase
 
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
+import dev.ybdn.ciaocloud.domain.model.MediaDetails
+import dev.ybdn.ciaocloud.domain.repository.MediaDetailsReader
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
 import dev.ybdn.ciaocloud.domain.repository.SsdThumbnailCache
 import kotlinx.coroutines.flow.StateFlow
@@ -29,4 +31,17 @@ class ManageThumbnailCacheUseCase(
     suspend fun sizeBytes(): Long = ssdThumbnailCache.sizeBytes()
 
     suspend fun clear() = ssdThumbnailCache.clear()
+}
+
+/** Métadonnées détaillées de l'original (téléphone en priorité, sinon SSD branché). */
+class GetMediaDetailsUseCase(
+    private val mediaDetailsReader: MediaDetailsReader,
+    private val ssdMediaBrowser: SsdMediaBrowser,
+) {
+    suspend operator fun invoke(item: GalleryItem): MediaDetails? {
+        item.phone?.let { return mediaDetailsReader.read(it.uri, it.mediaType, isMediaStoreUri = true) }
+        val ssd = item.ssd ?: return null
+        val uri = ssdMediaBrowser.documentUri(ssd.relativePath) ?: return null
+        return mediaDetailsReader.read(uri, ssd.mediaType, isMediaStoreUri = false)
+    }
 }

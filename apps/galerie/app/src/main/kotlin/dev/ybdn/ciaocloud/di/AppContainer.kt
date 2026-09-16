@@ -7,7 +7,9 @@ import coil3.memory.MemoryCache
 import dev.ybdn.ciaocloud.data.datastore.SettingsDataStore
 import dev.ybdn.ciaocloud.data.saf.SafSsdMediaBrowser
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
+import dev.ybdn.ciaocloud.domain.usecase.GetMediaDetailsUseCase
 import dev.ybdn.ciaocloud.domain.usecase.GetOriginalUriUseCase
+import dev.ybdn.ciaocloud.data.mediastore.MediaDetailsReaderImpl
 import dev.ybdn.ciaocloud.domain.usecase.ManageThumbnailCacheUseCase
 import dev.ybdn.ciaocloud.domain.usecase.ObserveSsdAvailabilityUseCase
 import dev.ybdn.ciaocloud.domain.usecase.RefreshSsdIndexUseCase
@@ -149,6 +151,8 @@ class AppContainer(private val context: Context) {
     val getOriginalUriUseCase = GetOriginalUriUseCase(ssdMediaBrowser)
 
     val observeSsdAvailabilityUseCase = ObserveSsdAvailabilityUseCase(ssdMediaBrowser)
+
+    val getMediaDetailsUseCase = GetMediaDetailsUseCase(MediaDetailsReaderImpl(context), ssdMediaBrowser)
 
     val manageThumbnailCacheUseCase = ManageThumbnailCacheUseCase(ssdThumbnailCache)
 

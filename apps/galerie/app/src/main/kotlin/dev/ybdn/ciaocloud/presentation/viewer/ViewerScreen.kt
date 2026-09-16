@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.ybdn.ciaocloud.presentation.gallery.DeleteItemsDialog
@@ -76,9 +77,13 @@ fun ViewerScreen(
     val ssdAvailable by viewModel.ssdAvailable.collectAsStateWithLifecycle()
     var chromeVisible by rememberSaveable { mutableStateOf(true) }
     var itemToDelete by remember { mutableStateOf<GalleryItem?>(null) }
+    var itemForInfo by remember { mutableStateOf<GalleryItem?>(null) }
     val isBusy by viewModel.actions.isBusy.collectAsStateWithLifecycle()
 
     GalleryEventsEffect(viewModel.actions.events)
+    itemForInfo?.let { item ->
+        InfoSheet(item = item, loadDetails = viewModel::details, onDismiss = { itemForInfo = null })
+    }
     itemToDelete?.let { item ->
         DeleteItemsDialog(
             items = listOf(item),
@@ -152,6 +157,7 @@ fun ViewerScreen(
                     onShare = { viewModel.actions.share(listOf(item)) },
                     onToggleFavorite = { viewModel.actions.toggleFavorite(listOf(item)) },
                     onDelete = { itemToDelete = item },
+                    onInfo = { itemForInfo = item },
                 )
             }
         }
@@ -198,6 +204,7 @@ private fun ViewerActionBar(
     onShare: () -> Unit,
     onToggleFavorite: () -> Unit,
     onDelete: () -> Unit,
+    onInfo: () -> Unit,
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -214,6 +221,7 @@ private fun ViewerActionBar(
             stringResource(R.string.gallery_favorite),
             onToggleFavorite,
         )
+        ViewerAction(Icons.Outlined.Info, stringResource(R.string.gallery_info), onInfo)
         ViewerAction(Icons.Outlined.Delete, stringResource(R.string.gallery_delete), onDelete, enabled = !isBusy)
     }
 }

@@ -41,6 +41,19 @@
     <string name="trash_select_all">Tout sélectionner</string>
     <string name="trash_expires_days">%1$d j</string>
 
+    <string name="info_file">Fichier</string>
+    <string name="info_dimensions">%1$d × %2$d (%3$.1f Mpx)</string>
+    <string name="info_camera">Prise de vue</string>
+    <string name="info_location">Position</string>
+    <string name="info_open_maps">Ouvrir dans une app de cartes</string>
+    <string name="info_no_maps_app">Aucune app de cartes installée.</string>
+    <string name="info_storage">Emplacements</string>
+    <string name="info_on_phone">Téléphone : %1$s</string>
+    <string name="info_on_ssd">SSD : %1$s</string>
+    <string name="info_status_backed_up">Sauvegardé sur le SSD</string>
+    <string name="info_status_not_backed_up">Non sauvegardé sur le SSD</string>
+    <string name="info_status_ssd_only">Uniquement sur le SSD</string>
+
     <string name="viewer_back">Retour</string>
     <string name="viewer_play">Lire</string>
     <string name="viewer_pause">Pause</string>

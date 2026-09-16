@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dev.ybdn.ciaocloud.di.AppContainer
 import dev.ybdn.ciaocloud.domain.model.GalleryFilter
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
+import dev.ybdn.ciaocloud.domain.model.MediaDetails
 import dev.ybdn.ciaocloud.domain.util.TimelineBuilder
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryActions
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +45,8 @@ class ViewerViewModel(
     val actions = GalleryActions(appContainer, viewModelScope)
 
     val ssdAvailable: StateFlow<Boolean> = appContainer.observeSsdAvailabilityUseCase()
+
+    suspend fun details(item: GalleryItem): MediaDetails? = appContainer.getMediaDetailsUseCase(item)
 
     /** URI de l'original, null si seul le SSD le détient et qu'il est débranché. */
     suspend fun originalUri(item: GalleryItem): String? = appContainer.getOriginalUriUseCase(item)
