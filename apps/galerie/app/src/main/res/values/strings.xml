@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CiaoCloud</string>
+    <string name="app_name">C!ao</string>
 
     <string name="tab_photos">Photos</string>
-    <string name="tab_offload">Délester</string>
+    <string name="tab_offload">Exporter</string>
     <string name="tab_settings">Réglages</string>
 
     <string name="gallery_title">Photos</string>
@@ -55,7 +55,7 @@
     <string name="info_status_ssd_only">Uniquement sur le SSD</string>
 
     <string name="viewer_back">Retour</string>
-    <string name="viewer_label">CiaoCloud</string>
+    <string name="viewer_label">C!ao</string>
     <string name="viewer_play">Lire</string>
     <string name="viewer_pause">Pause</string>
     <string name="viewer_mute">Couper le son</string>
@@ -68,7 +68,7 @@
     <string name="ssd_index_unavailable">SSD inaccessible : branchez-le, ou choisissez à nouveau son dossier.</string>
     <string name="ssd_index_failed">Échec de l\'indexation : %1$s</string>
 
-    <string name="home_title">CiaoCloud</string>
+    <string name="home_title">C!ao</string>
     <string name="home_marquee">Déleste • Range par date • Vérifie • Libère l\'espace • </string>
     <string name="home_step_destination">Destination</string>
     <string name="home_step_scan">Scan</string>
@@ -138,10 +138,10 @@
     <string name="settings_thumbnail_cache_hint">Nouvelle taille appliquée au prochain démarrage de l\'app.</string>
     <string name="settings_thumbnail_cache_clear">Vider le cache</string>
 
-    <string name="notification_channel_transfer">Transfert CiaoCloud</string>
+    <string name="notification_channel_transfer">Transfert C!ao</string>
     <string name="notification_transfer_title">Transfert vers le SSD</string>
     <string name="notification_transfer_preparing">Préparation…</string>
-    <string name="notification_transfer_done_title">Transfert CiaoCloud terminé</string>
+    <string name="notification_transfer_done_title">Transfert C!ao terminé</string>
     <string name="notification_transfer_error">Transfert interrompu par une erreur</string>
 
     <plurals name="gallery_selection_count">

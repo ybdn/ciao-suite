@@ -40,7 +40,7 @@ Note : `TopAppBar` (Material3) est une API expérimentale — opt-in global via 
 
 ## Projet
 
-CiaoCloud (`dev.ybdn.ciaocloud`) est une application Android **strictement personnelle**, sans backend ni compte, qui délestage manuellement photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en les rangeant par date, puis supprime les originaux du téléphone uniquement après vérification de la copie. La spécification complète et faisant autorité est `prompt-initial.md` — s'y référer pour tout détail non résumé ici (gestion des cas limites, format des chemins, workflow CI/CD, etc.). La v2 (fiabilisation du rangement : casse des dossiers, doublons, fuseau des vidéos ; visionneuse unifiée téléphone + SSD) est spécifiée dans `docs/spec-v2-fiabilisation-visionneuse.md`, qui prime sur `prompt-initial.md` en cas de contradiction.
+C!ao (anciennement CiaoCloud ; package `dev.ybdn.ciaocloud`) est une application Android **strictement personnelle**, sans backend ni compte, qui délestage manuellement photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en les rangeant par date, puis supprime les originaux du téléphone uniquement après vérification de la copie. La spécification complète et faisant autorité est `prompt-initial.md` — s'y référer pour tout détail non résumé ici (gestion des cas limites, format des chemins, workflow CI/CD, etc.). La v2 (fiabilisation du rangement : casse des dossiers, doublons, fuseau des vidéos ; visionneuse unifiée téléphone + SSD) est spécifiée dans `docs/spec-v2-fiabilisation-visionneuse.md`, qui prime sur `prompt-initial.md` en cas de contradiction.
 
 ## Stack technique
 
@@ -74,6 +74,8 @@ Pas de DI framework lourd sauf s'il simplifie réellement l'injection dans ViewM
 - Aucune tâche automatique/planifiée : déclenchement manuel exclusivement à chaque étape (scan, transfert, suppression).
 
 ## Conventions
+
+- Nom affiché de l'app : **C!ao** (`app_name`). Les identifiants techniques gardent « ciaocloud »/« CiaoCloud » volontairement : `applicationId`/package `dev.ybdn.ciaocloud` (le changer créerait une nouvelle app et perdrait base Room, DataStore et permission SAF), fichier DataStore `ciaocloud_settings`, base `ciaocloud.db`, canal de notification `ciaocloud_transfer`, classes `CiaoCloud*`, thème `Theme.CiaoCloud`, dossiers de build et AVD.
 
 - Code (noms de classes, fonctions, variables) en anglais technique standard, conventions Android/Kotlin.
 - UI et messages utilisateur en français.

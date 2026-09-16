@@ -1,4 +1,4 @@
-# CiaoCloud
+# C!ao
 
 Application Android **strictement personnelle**, sans backend ni compte, qui délestage
 manuellement les photos et vidéos du stockage local d'un téléphone vers un SSD externe branché
@@ -44,7 +44,7 @@ manuellement). Pour builder en release une fois une configuration de signature a
 ## Autoriser l'accès au SSD (première utilisation)
 
 1. Brancher le SSD au téléphone via l'adaptateur USB-C OTG.
-2. Ouvrir CiaoCloud, puis appuyer sur **Choisir le dossier SSD** (écran d'accueil ou Paramètres).
+2. Ouvrir C!ao, puis appuyer sur **Choisir le dossier SSD** (écran d'accueil ou Paramètres).
 3. Dans le sélecteur système, naviguer jusqu'à la racine du SSD et confirmer.
 4. L'autorisation est persistée (`takePersistableUriPermission`) : elle n'est pas redemandée aux
    lancements suivants, tant que le SSD reste accessible avec le même volume/chemin. Si la
@@ -81,12 +81,12 @@ L'app s'ouvre sur l'onglet **Photos** : chronologie unifiée des médias du tél
   système (30 jours, écran **Corbeille**) ; suppression du SSD = définitive, double confirmation,
   et le média redevient « non transféré ».
 
-### Définir CiaoCloud comme visionneuse par défaut
+### Définir C!ao comme visionneuse par défaut
 
-CiaoCloud répond à l'ouverture d'images/vidéos (`VIEW`) et au retour de l'appareil photo
+C!ao répond à l'ouverture d'images/vidéos (`VIEW`) et au retour de l'appareil photo
 (`REVIEW`, et `REVIEW_SECURE` écran verrouillé). Pour l'utiliser à la place de Google Photos :
 Paramètres Android › Applis › Applis par défaut (ou, pour une app donnée, « Ouvrir par défaut »),
-puis choisir CiaoCloud au prochain choix d'app proposé.
+puis choisir C!ao au prochain choix d'app proposé.
 
 À vérifier sur le Pixel : l'app Appareil photo Pixel peut ouvrir Google Photos en priorité quand
 elle est installée ; procédure exacte à compléter après test sur l'appareil.

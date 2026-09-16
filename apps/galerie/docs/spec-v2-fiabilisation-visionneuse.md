@@ -1,4 +1,4 @@
-# CiaoCloud v2 — Fiabilisation du rangement et visionneuse
+# C!ao v2 — Fiabilisation du rangement et visionneuse
 
 > Spécification rédigée le 2026-09-16. Elle **complète** `prompt-initial.md`, qui reste la référence pour tout ce qui n'est pas traité ici. En cas de contradiction, ce document fait foi (notamment : la galerie, exclue de la v1, entre dans le périmètre).
 
@@ -98,7 +98,7 @@ L'app s'ouvre désormais sur la galerie. Barre de navigation basse, style néo-b
 | Onglet | Contenu |
 |---|---|
 | **Photos** | Chronologie unifiée (nouvel écran principal) |
-| **Délester** | Parcours actuel en étapes 01–04 (écrans existants inchangés) |
+| **Exporter** | Parcours actuel en étapes 01–04 (écrans existants inchangés) |
 | **Réglages** | Écran Paramètres actuel + réglages galerie |
 
 Écrans secondaires : visionneuse plein écran, panneau d'infos, favoris (filtre), corbeille.

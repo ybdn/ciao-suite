@@ -1,10 +1,10 @@
-# Projet : CiaoCloud — Application Android personnelle de délestage photos/vidéos vers SSD
+# Projet : C!ao — Application Android personnelle de délestage photos/vidéos vers SSD
 
 ## Contexte
 
 Application Android **strictement personnelle**, installée en APK unique sur un Google Pixel 10 Pro (dernier Android disponible). Pas de multi-utilisateur, pas de compte, pas de cloud, pas de backend. L'app tourne 100% en local sur l'appareil.
 
-- **Nom de l'app** : CiaoCloud
+- **Nom de l'app** : C!ao (anciennement CiaoCloud)
 - **Application ID** : `dev.ybdn.ciaocloud`
 
 ## Objectif fonctionnel
