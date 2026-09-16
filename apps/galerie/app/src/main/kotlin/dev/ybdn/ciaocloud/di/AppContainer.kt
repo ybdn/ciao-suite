@@ -43,6 +43,8 @@ import dev.ybdn.ciaocloud.domain.usecase.TransferMediaUseCase
 import dev.ybdn.ciaocloud.domain.usecase.VerifyTransferUseCase
 import dev.ybdn.ciaocloud.data.mediastore.MediaStoreTrashedSource
 import dev.ybdn.ciaocloud.data.share.FileProviderShareableMediaProvider
+import dev.ybdn.ciaocloud.data.share.ReencodingMetadataStripper
+import dev.ybdn.ciaocloud.domain.usecase.ShareMetadataSettingUseCase
 import dev.ybdn.ciaocloud.domain.repository.TrashedMediaSource
 import dev.ybdn.ciaocloud.domain.usecase.DeleteFromTrashUseCase
 import dev.ybdn.ciaocloud.domain.usecase.DeleteGalleryItemsUseCase
@@ -178,7 +180,13 @@ class AppContainer(private val context: Context) {
 
     val toggleFavoriteUseCase = ToggleFavoriteUseCase(favoritesRepository)
 
-    val prepareShareUseCase = PrepareShareUseCase(FileProviderShareableMediaProvider(context, ssdMediaBrowser))
+    val prepareShareUseCase = PrepareShareUseCase(
+        settingsDataStore,
+        FileProviderShareableMediaProvider(context, ReencodingMetadataStripper(context)),
+        ssdMediaBrowser,
+    )
+
+    val shareMetadataSettingUseCase = ShareMetadataSettingUseCase(settingsDataStore)
 
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(context)

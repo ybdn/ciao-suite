@@ -16,6 +16,7 @@ import dev.ybdn.ciaocloud.presentation.components.NeoButton
 import dev.ybdn.ciaocloud.presentation.components.NeoCard
 import dev.ybdn.ciaocloud.presentation.components.NeoScreen
 import dev.ybdn.ciaocloud.presentation.components.NeoSegmentedChoice
+import dev.ybdn.ciaocloud.presentation.components.NeoSwitchRow
 import dev.ybdn.ciaocloud.presentation.components.NeoTag
 import dev.ybdn.ciaocloud.presentation.components.NeoTone
 import dev.ybdn.ciaocloud.presentation.gallery.SsdIndexControls
@@ -29,6 +30,7 @@ fun SettingsScreen() {
     val ssdIndexState by viewModel.ssdIndexState.collectAsState()
     val cacheMaxBytes by viewModel.thumbnailCacheMaxBytes.collectAsState()
     val cacheUsedBytes by viewModel.thumbnailCacheUsedBytes.collectAsState()
+    val shareStripMetadata by viewModel.shareStripMetadata.collectAsState()
 
     val selectFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -70,6 +72,16 @@ fun SettingsScreen() {
                 selectedIndex = modes.indexOf(themeMode),
                 onSelect = { viewModel.onThemeModeSelected(modes[it]) },
             )
+        }
+
+        NeoCard {
+            NeoTag(stringResource(R.string.settings_privacy_label), tone = NeoTone.Coral)
+            NeoSwitchRow(
+                label = stringResource(R.string.settings_share_strip_metadata),
+                checked = shareStripMetadata,
+                onCheckedChange = viewModel::onShareStripMetadataChanged,
+            )
+            Text(stringResource(R.string.settings_share_strip_metadata_hint), style = MaterialTheme.typography.bodySmall)
         }
 
         NeoCard {

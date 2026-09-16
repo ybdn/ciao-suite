@@ -25,12 +25,15 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -411,6 +414,39 @@ fun NeoProgressBar(
                 .fillMaxWidth(animatedProgress)
                 .clip(RoundedCornerShape(SmallRadius - BorderWidth))
                 .background(color),
+        )
+    }
+}
+
+/** Interrupteur libellé : toute la ligne est cliquable, piste citron une fois activé. */
+@Composable
+fun NeoSwitchRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = NeoTheme.palette
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(vertical = 4.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.titleMedium, color = palette.content, modifier = Modifier.weight(1f))
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Ink,
+                checkedTrackColor = Lime,
+                checkedBorderColor = palette.outline,
+                uncheckedThumbColor = palette.outline,
+                uncheckedTrackColor = palette.surfaceMuted,
+                uncheckedBorderColor = palette.outline,
+            ),
         )
     }
 }

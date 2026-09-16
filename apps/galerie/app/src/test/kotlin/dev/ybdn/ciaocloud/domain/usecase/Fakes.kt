@@ -94,7 +94,7 @@ class FakeSsdMediaBrowser(available: Boolean = true) : SsdMediaBrowser {
     override val isAvailable: StateFlow<Boolean> = MutableStateFlow(available)
     override suspend fun refreshAvailability() = isAvailable.value
     override suspend fun listDayFolderMedia(onProgress: (Int, Int) -> Unit): List<SsdFileEntry>? = emptyList()
-    override suspend fun documentUri(relativePath: String) = "content://ssd/$relativePath"
+    override suspend fun documentUri(relativePath: String) = if (isAvailable.value) "content://ssd/$relativePath" else null
     override suspend fun delete(relativePath: String) = true.also { deleted += relativePath }
 }
 

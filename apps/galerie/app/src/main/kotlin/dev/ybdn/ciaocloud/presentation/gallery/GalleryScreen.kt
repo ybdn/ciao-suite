@@ -71,6 +71,7 @@ fun GalleryScreen(
     val selectionMode = selectedKeys.isNotEmpty()
 
     GalleryEventsEffect(viewModel.actions.events)
+    ShareDialogs(viewModel.actions)
     BackHandler(enabled = selectionMode, onBack = viewModel::clearSelection)
 
     if (showDeleteDialog) {

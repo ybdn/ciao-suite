@@ -309,6 +309,7 @@ Réglage désactivé : comportement actuel inchangé (v2 B6).
 
 Chaque copie est relue avant d'être partagée :
 - photo : `ExifInterface` ne doit renvoyer **aucune** des balises de date, GPS, appareil, numéro de série, logiciel, texte, et aucun XMP ;
+  - *Précision d'implémentation (2026-09-16) :* un XMP limité aux descripteurs techniques de la carte de gain (`hdrgm`, `Container`, `Item`) est admis, car l'encodeur Ultra HDR l'écrit et D3 conserve la carte de gain ; toute autre propriété XMP fait échouer le média.
 - vidéo : `MediaMetadataRetriever` ne doit renvoyer ni `METADATA_KEY_LOCATION` ni `METADATA_KEY_DATE` exploitable (la date « epoch 0 » ou absente est acceptée).
 
 Si une donnée subsiste, la copie est **supprimée et traitée comme un échec** (D6). Jamais de repli silencieux vers l'original.
@@ -396,4 +397,6 @@ Chaque lot est livrable et testable seul, sur `develop`.
 - Affichage de l'UTF-8 dans les balises EXIF texte par les autres apps (Google Photos, Windows, macOS) : à contrôler au lot 5.
 - Partage sans métadonnées : le **nom du fichier** révèle la date de prise de vue (`PXL_aaaaMMjj_…`). Ajouter une option « Renommer les fichiers partagés » (ex. `photo_1.jpg`) ?
 - `MediaMuxer` accepte-t-il les pistes des vidéos Pixel (HEVC 10 bits HDR, Dolby Vision, audio multicanal) et conserve-t-il les métadonnées HDR dynamiques ? À mesurer au lot 7 ; les pistes refusées font échouer le média (D6), sans repli vers l'original.
+  - *Constat 2026-09-16 :* non vérifiable sur l'émulateur (vidéos H.264 SDR uniquement). **À vérifier sur le Pixel** : partager une vidéo 4K HDR 10 bits et une vidéo Dolby Vision, contrôler avec `exiftool`/`mdls` que la copie se lit, reste HDR et ne porte ni lieu ni date.
 - Date de création écrite par `MediaMuxer` dans l'en-tête MP4 : vérifier qu'elle ne reprend pas la date source (sinon, la remettre à zéro).
+  - *Constat 2026-09-16 (émulateur, Android 15) :* les dates de création et de modification de `mvhd`, `tkhd` et `mdhd` sont désormais **remises à zéro systématiquement** après remultiplexage (`Mp4Timestamps`), quelle que soit la valeur écrite par `MediaMuxer` ; `exiftool` affiche `0000:00:00` et aucune position (`©xyz`) sur la copie. Seule balise restante : `AndroidVersion` (Keys), écrite par la plateforme, non personnelle. Rotation d'affichage conservée. MOV source → copie `.mp4` vérifiée.

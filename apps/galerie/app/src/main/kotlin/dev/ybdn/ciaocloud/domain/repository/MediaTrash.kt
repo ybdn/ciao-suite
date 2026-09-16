@@ -1,6 +1,5 @@
 package dev.ybdn.ciaocloud.domain.repository
 
-import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.PhoneMedia
 import kotlinx.coroutines.flow.Flow
 
@@ -26,18 +25,3 @@ data class TrashedMedia(
     /** Date de suppression définitive automatique par le système. */
     val expiresAtEpochMillis: Long,
 )
-
-/** Fichier prêt à être partagé avec une autre app. */
-data class ShareableMedia(
-    val uri: String,
-    val mimeType: String,
-)
-
-/** Prépare des URI lisibles par une app tierce (copie temporaire pour les médias du SSD). */
-interface ShareableMediaProvider {
-    /** null si un média du SSD est inaccessible (SSD débranché). */
-    suspend fun prepare(items: List<GalleryItem>): List<ShareableMedia>?
-
-    /** Supprime les copies temporaires des partages précédents. */
-    suspend fun clearTemporaryCopies()
-}

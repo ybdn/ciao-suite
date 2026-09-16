@@ -42,6 +42,16 @@ class SettingsViewModel(
     private val _thumbnailCacheUsedBytes = MutableStateFlow<Long?>(null)
     val thumbnailCacheUsedBytes: StateFlow<Long?> = _thumbnailCacheUsedBytes.asStateFlow()
 
+    val shareStripMetadata: StateFlow<Boolean> = appContainer.shareMetadataSettingUseCase.observe().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = false,
+    )
+
+    fun onShareStripMetadataChanged(enabled: Boolean) {
+        viewModelScope.launch { appContainer.shareMetadataSettingUseCase.set(enabled) }
+    }
+
     val ssdIndexState: StateFlow<SsdIndexState> = appContainer.refreshSsdIndexUseCase.state
 
     init {

@@ -51,6 +51,7 @@ import dev.ybdn.ciaocloud.presentation.components.NeoActionBar
 import dev.ybdn.ciaocloud.presentation.components.NeoTopBar
 import dev.ybdn.ciaocloud.presentation.gallery.DeleteItemsDialog
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryEventsEffect
+import dev.ybdn.ciaocloud.presentation.gallery.ShareDialogs
 import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -79,6 +80,7 @@ fun ViewerScreen(
     val bottomBarHeight = with(LocalDensity.current) { bottomBarHeightPx.toDp() }
 
     GalleryEventsEffect(viewModel.actions.events)
+    ShareDialogs(viewModel.actions)
     itemForInfo?.let { item ->
         InfoSheet(item = item, loadDetails = viewModel::details, onDismiss = { itemForInfo = null })
     }

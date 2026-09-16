@@ -197,6 +197,13 @@
     <string name="settings_thumbnail_cache_usage">%1$s utilisés sur %2$s</string>
     <string name="settings_thumbnail_cache_hint">Nouvelle taille appliquée au prochain démarrage de l\'app.</string>
     <string name="settings_thumbnail_cache_clear">Vider le cache</string>
+    <string name="settings_privacy_label">Confidentialité</string>
+    <string name="settings_share_strip_metadata">Partager sans métadonnées</string>
+    <string name="settings_share_strip_metadata_hint">Les photos et vidéos partagées sont envoyées sous forme de copies sans date, lieu, appareil ni autres métadonnées. Vos originaux ne sont pas modifiés.</string>
+
+    <string name="share_strip_progress">Retrait des métadonnées… (%1$d/%2$d)</string>
+    <string name="share_strip_share_others">Partager les autres</string>
+    <string name="share_strip_insufficient_space">Espace insuffisant pour préparer le partage (%1$s nécessaires)</string>
 
     <string name="notification_channel_transfer">Transfert C!ao</string>
     <string name="notification_transfer_title">Transfert vers le SSD</string>
@@ -231,5 +238,9 @@
     <plurals name="gallery_deleted_ssd_failed">
         <item quantity="one">%1$d fichier n\'a pas pu être supprimé du SSD</item>
         <item quantity="other">%1$d fichiers n\'ont pas pu être supprimés du SSD</item>
+    </plurals>
+    <plurals name="share_strip_failed_title">
+        <item quantity="one">%1$d média n\'a pas pu être nettoyé</item>
+        <item quantity="other">%1$d médias n\'ont pas pu être nettoyés</item>
     </plurals>
 </resources>

@@ -29,11 +29,18 @@ import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.repository.ShareableMedia
 import dev.ybdn.ciaocloud.domain.usecase.DeleteItemsOutcome
 import dev.ybdn.ciaocloud.domain.usecase.DeleteTarget
+import dev.ybdn.ciaocloud.domain.usecase.ShareOutcome
+import dev.ybdn.ciaocloud.presentation.components.NeoProgressBar
+import dev.ybdn.ciaocloud.presentation.util.formatBytes
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.presentation.components.NeoButton
 import dev.ybdn.ciaocloud.presentation.components.NeoCard
 import dev.ybdn.ciaocloud.presentation.components.NeoNotice
 import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -47,7 +54,17 @@ sealed interface GalleryEvent {
     data class Share(val media: List<ShareableMedia>) : GalleryEvent
     data class Deleted(val outcome: DeleteItemsOutcome) : GalleryEvent
     data object ShareSsdUnavailable : GalleryEvent
+    data class ShareInsufficientSpace(val requiredBytes: Long) : GalleryEvent
     data class Error(val message: String) : GalleryEvent
+}
+
+/** Dialogue bloquant d'un partage sans métadonnées. */
+sealed interface ShareDialogState {
+    /** Retrait des métadonnées du média [current] sur [total]. */
+    data class Progress(val current: Int, val total: Int) : ShareDialogState
+
+    /** Médias non nettoyés : partager les autres ou annuler. */
+    data class Failures(val outcome: ShareOutcome.PartiallyFailed) : ShareDialogState
 }
 
 /** Actions communes à la grille et à la visionneuse : partager, favori, supprimer. */
@@ -62,27 +79,68 @@ class GalleryActions(
     private val _events = MutableSharedFlow<GalleryEvent>(extraBufferCapacity = 4)
     val events: SharedFlow<GalleryEvent> = _events.asSharedFlow()
 
-    fun share(items: List<GalleryItem>) = runBusy {
-        val media = appContainer.prepareShareUseCase(items)
-        _events.emit(if (media == null) GalleryEvent.ShareSsdUnavailable else GalleryEvent.Share(media))
+    private val _shareDialog = MutableStateFlow<ShareDialogState?>(null)
+    val shareDialog: StateFlow<ShareDialogState?> = _shareDialog.asStateFlow()
+
+    private var shareJob: Job? = null
+
+    fun share(items: List<GalleryItem>) {
+        shareJob = runBusy {
+            try {
+                val outcome = appContainer.prepareShareUseCase(items) { current, total ->
+                    _shareDialog.value = ShareDialogState.Progress(current, total)
+                }
+                _shareDialog.value = null
+                when (outcome) {
+                    is ShareOutcome.Ready -> _events.emit(GalleryEvent.Share(outcome.media))
+                    is ShareOutcome.PartiallyFailed -> _shareDialog.value = ShareDialogState.Failures(outcome)
+                    is ShareOutcome.InsufficientSpace -> _events.emit(GalleryEvent.ShareInsufficientSpace(outcome.requiredBytes))
+                    ShareOutcome.SsdUnavailable -> _events.emit(GalleryEvent.ShareSsdUnavailable)
+                }
+            } finally {
+                if (_shareDialog.value is ShareDialogState.Progress) _shareDialog.value = null
+            }
+        }
+    }
+
+    /** Annule la préparation en cours : les copies déjà produites sont supprimées, rien n'est partagé. */
+    fun cancelShare() {
+        shareJob?.cancel()
+    }
+
+    /** Partage les médias nettoyés malgré l'échec des autres. */
+    fun shareRemaining() {
+        val failures = _shareDialog.value as? ShareDialogState.Failures ?: return
+        _shareDialog.value = null
+        _events.tryEmit(GalleryEvent.Share(failures.outcome.media))
+    }
+
+    fun dismissShareFailures() {
+        val failures = _shareDialog.value as? ShareDialogState.Failures ?: return
+        _shareDialog.value = null
+        scope.launch { appContainer.prepareShareUseCase.discard(failures.outcome) }
     }
 
     fun toggleFavorite(items: List<GalleryItem>) {
         scope.launch { appContainer.toggleFavoriteUseCase(items) }
     }
 
-    fun delete(items: List<GalleryItem>, target: DeleteTarget, onDone: () -> Unit = {}) = runBusy {
-        val outcome = appContainer.deleteGalleryItemsUseCase(items, target)
-        _events.emit(GalleryEvent.Deleted(outcome))
-        if (outcome is DeleteItemsOutcome.Done) onDone()
+    fun delete(items: List<GalleryItem>, target: DeleteTarget, onDone: () -> Unit = {}) {
+        runBusy {
+            val outcome = appContainer.deleteGalleryItemsUseCase(items, target)
+            _events.emit(GalleryEvent.Deleted(outcome))
+            if (outcome is DeleteItemsOutcome.Done) onDone()
+        }
     }
 
-    private fun runBusy(block: suspend () -> Unit) {
-        if (_isBusy.value) return
+    private fun runBusy(block: suspend () -> Unit): Job? {
+        if (_isBusy.value) return null
         _isBusy.value = true
-        scope.launch {
+        return scope.launch {
             try {
                 block()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _events.emit(GalleryEvent.Error(e.message ?: e::class.simpleName.orEmpty()))
             } finally {
@@ -102,6 +160,8 @@ fun GalleryEventsEffect(events: SharedFlow<GalleryEvent>) {
                 is GalleryEvent.Share -> context.shareMedia(event.media)
                 is GalleryEvent.Deleted -> context.deletedMessage(event.outcome)?.let { context.toast(it) }
                 GalleryEvent.ShareSsdUnavailable -> context.toast(context.getString(R.string.gallery_share_ssd_unavailable))
+                is GalleryEvent.ShareInsufficientSpace ->
+                    context.toast(context.getString(R.string.share_strip_insufficient_space, formatBytes(event.requiredBytes)))
                 is GalleryEvent.Error -> context.toast(context.getString(R.string.gallery_action_error, event.message))
             }
         }
@@ -207,6 +267,53 @@ fun DeleteItemsDialog(
                     NeoButton(
                         stringResource(R.string.delete_confirm_cancel),
                         onClick = { pendingSsdTarget = null },
+                        tone = NeoTone.Surface,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Dialogues du partage sans métadonnées : progression bloquante avec annulation, puis bilan des
+ * médias non nettoyés. Jamais de repli vers l'original.
+ */
+@Composable
+fun ShareDialogs(actions: GalleryActions) {
+    val state by actions.shareDialog.collectAsStateWithLifecycle()
+    when (val dialog = state) {
+        null -> Unit
+        is ShareDialogState.Progress -> Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+        ) {
+            NeoCard(modifier = Modifier.padding(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        stringResource(R.string.share_strip_progress, dialog.current, dialog.total),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    NeoProgressBar(progress = (dialog.current - 1).toFloat() / dialog.total)
+                    NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = actions::cancelShare, tone = NeoTone.Surface)
+                }
+            }
+        }
+        is ShareDialogState.Failures -> Dialog(onDismissRequest = actions::dismissShareFailures) {
+            val failed = dialog.outcome.failedNames
+            NeoCard(modifier = Modifier.padding(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        pluralStringResource(R.plurals.share_strip_failed_title, failed.size, failed.size),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    NeoNotice(failed.joinToString("\n"), tone = NeoTone.Coral)
+                    if (dialog.outcome.media.isNotEmpty()) {
+                        NeoButton(stringResource(R.string.share_strip_share_others), onClick = actions::shareRemaining)
+                    }
+                    NeoButton(
+                        stringResource(R.string.delete_confirm_cancel),
+                        onClick = actions::dismissShareFailures,
                         tone = NeoTone.Surface,
                     )
                 }

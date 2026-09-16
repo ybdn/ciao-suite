@@ -5,8 +5,6 @@ import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.TransferStatus
 import dev.ybdn.ciaocloud.domain.repository.FavoritesRepository
 import dev.ybdn.ciaocloud.domain.repository.MediaTrash
-import dev.ybdn.ciaocloud.domain.repository.ShareableMedia
-import dev.ybdn.ciaocloud.domain.repository.ShareableMediaProvider
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaIndex
 import dev.ybdn.ciaocloud.domain.repository.SsdThumbnailCache
@@ -135,14 +133,6 @@ class ToggleFavoriteUseCase(
         val favorite = !items.all { it.isFavorite }
         favoritesRepository.setFavorite(items.map { it.favoriteKey }, favorite)
     }
-}
-
-class PrepareShareUseCase(
-    private val shareableMediaProvider: ShareableMediaProvider,
-) {
-    suspend operator fun invoke(items: List<GalleryItem>): List<ShareableMedia>? = shareableMediaProvider.prepare(items)
-
-    suspend fun clearTemporaryCopies() = shareableMediaProvider.clearTemporaryCopies()
 }
 
 class ObserveTrashUseCase(
