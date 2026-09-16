@@ -183,6 +183,8 @@ Le lien téléphone ↔ SSD repose sur l'enregistrement de transfert Room (`medi
 **Panneau d'infos** (feuille glissante) :
 - Date et heure de prise de vue avec décalage horaire, nom de fichier, taille, dimensions, durée (vidéo).
 - Appareil, objectif, ISO, ouverture, vitesse (EXIF).
+- Compléments EXIF quand présents : focale éq. 24×36, correction d'exposition, mode, mesure, scène, flash, balance des blancs, zoom numérique, distance du sujet ; altitude et direction GPS ; logiciel, auteur, droits, description.
+- Vidéo : codec, cadence, débit, HDR (HDR10/HLG), piste audio (codec, fréquence, canaux), conteneur.
 - Coordonnées GPS en texte + bouton « Ouvrir dans une app de cartes » (intent `geo:`), aucune carte intégrée. Requiert `ACCESS_MEDIA_LOCATION` (déjà déclarée).
 - Emplacements : « Téléphone : Pictures/… », « SSD : DCIM/2025/04/21/… », statut de sauvegarde.
 

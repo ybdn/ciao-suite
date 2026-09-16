@@ -26,7 +26,12 @@ import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
+import dev.ybdn.ciaocloud.domain.model.ExposureProgram
+import dev.ybdn.ciaocloud.domain.model.HdrFormat
 import dev.ybdn.ciaocloud.domain.model.MediaDetails
+import dev.ybdn.ciaocloud.domain.model.MeteringMode
+import dev.ybdn.ciaocloud.domain.model.SceneType
+import dev.ybdn.ciaocloud.domain.util.MediaMetadataCodes
 import dev.ybdn.ciaocloud.presentation.components.NeoButton
 import dev.ybdn.ciaocloud.presentation.components.NeoCard
 import dev.ybdn.ciaocloud.presentation.components.NeoTag
@@ -40,8 +45,9 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.abs
 
-/** Panneau d'infos : date et décalage, fichier, prise de vue, GPS et emplacements. */
+/** Panneau d'infos : date et décalage, fichier, prise de vue, vidéo, GPS, image et emplacements. */
 @Composable
 fun InfoSheet(
     item: GalleryItem,
@@ -89,12 +95,8 @@ fun InfoSheet(
 
             if (details == DetailsState.Loading) CircularProgressIndicator()
 
-            loaded?.let { cameraLines(it) }?.takeIf { it.isNotEmpty() }?.let { lines ->
-                NeoCard {
-                    NeoTag(stringResource(R.string.info_camera), tone = NeoTone.Yellow)
-                    lines.forEach { InfoLine(it) }
-                }
-            }
+            loaded?.let { cameraLines(it) }?.let { lines -> InfoCard(R.string.info_camera, NeoTone.Yellow, lines) }
+            loaded?.let { videoLines(it) }?.let { lines -> InfoCard(R.string.info_video, NeoTone.Coral, lines) }
 
             val latitude = loaded?.latitude
             val longitude = loaded?.longitude
@@ -103,6 +105,12 @@ fun InfoSheet(
                 NeoCard {
                     NeoTag(stringResource(R.string.info_location), tone = NeoTone.Teal)
                     InfoLine(String.format(Locale.US, "%.6f, %.6f", latitude, longitude), monospace = true)
+                    loaded.altitudeMeters?.let {
+                        InfoLine(stringResource(R.string.info_altitude, String.format(Locale.FRENCH, "%.0f", it)))
+                    }
+                    loaded.directionDegrees?.let {
+                        InfoLine(stringResource(R.string.info_direction, String.format(Locale.FRENCH, "%.0f", it), cardinalPoint(it)))
+                    }
                     NeoButton(
                         text = stringResource(R.string.info_open_maps),
                         tone = NeoTone.Surface,
@@ -117,6 +125,8 @@ fun InfoSheet(
                     )
                 }
             }
+
+            loaded?.let { imageLines(it) }?.let { lines -> InfoCard(R.string.info_image, NeoTone.Sky, lines) }
 
             NeoCard {
                 NeoTag(stringResource(R.string.info_storage), tone = NeoTone.Lime)
@@ -139,6 +149,16 @@ fun InfoSheet(
 private sealed interface DetailsState {
     data object Loading : DetailsState
     data class Loaded(val details: MediaDetails?) : DetailsState
+}
+
+/** Carte titrée, omise quand aucune ligne n'est renseignée. */
+@Composable
+private fun InfoCard(titleRes: Int, tone: NeoTone, lines: List<String>) {
+    if (lines.isEmpty()) return
+    NeoCard {
+        NeoTag(stringResource(titleRes), tone = tone)
+        lines.forEach { InfoLine(it) }
+    }
 }
 
 @Composable
@@ -164,6 +184,7 @@ private fun captureDateText(item: GalleryItem, details: MediaDetails?): String {
     return "${formatDay(item.captureDate)} · ${TIME_FORMATTER.format(zoned)}"
 }
 
+@Composable
 private fun cameraLines(details: MediaDetails): List<String> = buildList {
     val device = listOfNotNull(details.cameraMake, details.cameraModel)
         .distinct()
@@ -171,15 +192,118 @@ private fun cameraLines(details: MediaDetails): List<String> = buildList {
         .let { parts -> if (parts.size == 2 && parts[1].startsWith(parts[0], ignoreCase = true)) listOf(parts[1]) else parts }
         .joinToString(" ")
     if (device.isNotEmpty()) add(device)
-    details.lensModel?.let(::add)
+    val lens = listOfNotNull(details.lensMake?.takeUnless { make -> details.lensModel?.startsWith(make, ignoreCase = true) == true }, details.lensModel)
+        .joinToString(" ")
+    if (lens.isNotEmpty()) add(lens)
+    val focal = details.focalLengthMm?.let { String.format(Locale.FRENCH, "%.1f mm", it) }
     val exposure = listOfNotNull(
         details.fNumber?.let { String.format(Locale.FRENCH, "ƒ/%.1f", it) },
         details.exposureTimeSeconds?.let(::formatExposure),
-        details.focalLengthMm?.let { String.format(Locale.FRENCH, "%.1f mm", it) },
+        when {
+            focal != null && details.focalLength35mm != null -> stringResource(R.string.info_focal_35mm, focal, details.focalLength35mm)
+            else -> focal
+        },
         details.iso?.let { "ISO $it" },
     ).joinToString(" · ")
     if (exposure.isNotEmpty()) add(exposure)
+    details.exposureBiasEv?.takeIf { abs(it) >= 0.05 }?.let {
+        add(stringResource(R.string.info_exposure_bias, String.format(Locale.FRENCH, "%+.1f", it)))
+    }
+    details.exposureProgram?.let { add(stringResource(R.string.info_exposure_program, stringResource(it.labelRes))) }
+    details.meteringMode?.let { add(stringResource(R.string.info_metering, stringResource(it.labelRes))) }
+    details.sceneType?.let { add(stringResource(R.string.info_scene, stringResource(it.labelRes))) }
+    details.flashFired?.let { add(stringResource(if (it) R.string.info_flash_fired else R.string.info_flash_not_fired)) }
+    details.whiteBalanceManual?.let {
+        add(stringResource(if (it) R.string.info_white_balance_manual else R.string.info_white_balance_auto))
+    }
+    details.digitalZoomRatio?.let { add(stringResource(R.string.info_digital_zoom, String.format(Locale.FRENCH, "%.1f", it))) }
+    details.subjectDistanceMeters?.let { add(stringResource(R.string.info_subject_distance, String.format(Locale.FRENCH, "%.2f", it))) }
 }
+
+@Composable
+private fun videoLines(details: MediaDetails): List<String> = buildList {
+    val video = listOfNotNull(
+        details.videoCodecMimeType?.let(MediaMetadataCodes::codecName),
+        details.frameRate?.let { stringResource(R.string.info_frame_rate, formatDecimal(it)) },
+        details.bitrateBitsPerSecond?.let {
+            if (it >= 1_000_000) {
+                stringResource(R.string.info_bitrate_mbps, String.format(Locale.FRENCH, "%.1f", it / 1_000_000.0))
+            } else {
+                stringResource(R.string.info_bitrate_kbps, it / 1000)
+            }
+        },
+        details.hdrFormat?.let {
+            when (it) {
+                HdrFormat.HDR10 -> "HDR10"
+                HdrFormat.HLG -> "HDR HLG"
+            }
+        },
+    ).joinToString(" · ")
+    if (video.isNotEmpty()) add(video)
+    if (details.hasAudio == false) {
+        add(stringResource(R.string.info_no_audio))
+    } else {
+        val audio = listOfNotNull(
+            details.audioCodecMimeType?.let(MediaMetadataCodes::codecName),
+            details.audioSampleRateHz?.let { formatDecimal(it / 1000.0) + " kHz" },
+            details.audioChannels?.let {
+                when (it) {
+                    1 -> stringResource(R.string.info_audio_mono)
+                    2 -> stringResource(R.string.info_audio_stereo)
+                    else -> stringResource(R.string.info_audio_channels, it)
+                }
+            },
+        ).joinToString(" · ")
+        if (audio.isNotEmpty()) add(stringResource(R.string.info_audio_codec, audio))
+    }
+    details.containerMimeType?.let { add(stringResource(R.string.info_container, MediaMetadataCodes.containerName(it))) }
+}
+
+@Composable
+private fun imageLines(details: MediaDetails): List<String> = buildList {
+    details.description?.let(::add)
+    details.rotationDegrees?.takeIf { it != 0 }?.let { add(stringResource(R.string.info_rotation, it)) }
+    details.software?.let { add(stringResource(R.string.info_software, it)) }
+    details.artist?.let { add(stringResource(R.string.info_artist, it)) }
+    details.copyright?.let { add(stringResource(R.string.info_copyright, it)) }
+}
+
+private val ExposureProgram.labelRes: Int
+    get() = when (this) {
+        ExposureProgram.MANUAL -> R.string.info_exposure_program_manual
+        ExposureProgram.NORMAL -> R.string.info_exposure_program_normal
+        ExposureProgram.APERTURE_PRIORITY -> R.string.info_exposure_program_aperture
+        ExposureProgram.SHUTTER_PRIORITY -> R.string.info_exposure_program_shutter
+        ExposureProgram.CREATIVE -> R.string.info_exposure_program_creative
+        ExposureProgram.ACTION -> R.string.info_exposure_program_action
+        ExposureProgram.PORTRAIT -> R.string.info_exposure_program_portrait
+        ExposureProgram.LANDSCAPE -> R.string.info_exposure_program_landscape
+    }
+
+private val MeteringMode.labelRes: Int
+    get() = when (this) {
+        MeteringMode.AVERAGE -> R.string.info_metering_average
+        MeteringMode.CENTER_WEIGHTED -> R.string.info_metering_center
+        MeteringMode.SPOT -> R.string.info_metering_spot
+        MeteringMode.MULTI_SPOT -> R.string.info_metering_multi_spot
+        MeteringMode.PATTERN -> R.string.info_metering_pattern
+        MeteringMode.PARTIAL -> R.string.info_metering_partial
+    }
+
+private val SceneType.labelRes: Int
+    get() = when (this) {
+        SceneType.LANDSCAPE -> R.string.info_scene_landscape
+        SceneType.PORTRAIT -> R.string.info_scene_portrait
+        SceneType.NIGHT -> R.string.info_scene_night
+    }
+
+/** « 30 », « 29,97 », « 44,1 » : décimales seulement si utiles. */
+private fun formatDecimal(value: Double): String =
+    String.format(Locale.FRENCH, "%.2f", value).trimEnd('0').trimEnd(',')
+
+private val CARDINAL_POINTS = listOf("N", "NE", "E", "SE", "S", "SO", "O", "NO")
+
+private fun cardinalPoint(degrees: Double): String = CARDINAL_POINTS[(Math.round(degrees / 45.0).toInt()) % 8]
 
 /** « 1/120 s » sous la seconde, « 2,5 s » au-delà. */
 private fun formatExposure(seconds: Double): String =
