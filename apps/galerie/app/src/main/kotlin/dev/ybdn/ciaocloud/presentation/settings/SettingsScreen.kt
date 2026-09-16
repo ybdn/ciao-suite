@@ -47,13 +47,12 @@ fun SettingsScreen() {
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Monospace,
             )
+            NeoButton(
+                text = stringResource(R.string.settings_change_destination),
+                onClick = { selectFolderLauncher.launch(null) },
+                tone = NeoTone.Surface,
+            )
         }
-
-        NeoButton(
-            text = stringResource(R.string.settings_change_destination),
-            onClick = { selectFolderLauncher.launch(null) },
-            tone = NeoTone.Surface,
-        )
 
         NeoCard {
             NeoTag(stringResource(R.string.settings_appearance_label), tone = NeoTone.Sky)
