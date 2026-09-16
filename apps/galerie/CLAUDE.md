@@ -4,7 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## État du dépôt
 
-Ce dépôt ne contient pour l'instant que `prompt-initial.md`, la spécification complète du projet. Aucun scaffolding Android n'a encore été créé, aucun dépôt Git n'a été initialisé. La première tâche pour toute session travaillant ici est probablement de réaliser les livrables listés en fin de `prompt-initial.md` (init Git, scaffolding Gradle/Kotlin, CI GitHub Actions, README, tests). Une fois le scaffolding créé, ce fichier devra être mis à jour avec les vraies commandes de build/lint/test (Gradle Wrapper, ktlint/detekt, etc.).
+Le scaffolding Android est en place : dépôt Git initialisé (branches `main`/`develop`), structure Gradle/Kotlin/Compose complète en Clean Architecture (`domain/data/presentation/service`), CI GitHub Actions, README et tests unitaires ciblés. Voir `README.md` pour le détail des commandes.
+
+Le dépôt vit sur un volume externe **exFAT** (`/Volumes/PH4NT0M`) : macOS y génère des fichiers `._*` (AppleDouble) à chaque écriture. Ils sont ignorés par `.gitignore` — les supprimer avant tout `git status`/commit si `git status` en affiche (`find . -name '._*' -not -path './.git/*' -delete`).
+
+Commandes de référence (nécessitent un JDK 17 ; aucun JDK n'était installé sur la machine ayant créé ce scaffolding, donc **aucun build local n'a encore été vérifié** — à faire en priorité avant toute nouvelle fonctionnalité) :
+
+- Build debug : `./gradlew :app:assembleDebug`
+- Tests unitaires (logique pure domain) : `./gradlew :app:testDebugUnitTest`
+- Pas de ktlint/detekt intégré pour l'instant (jugé non prioritaire, cf. README).
 
 ## Projet
 
