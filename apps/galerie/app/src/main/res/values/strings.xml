@@ -17,6 +17,30 @@
     <string name="gallery_permission_partial">Accès limité à une sélection de photos et vidéos : la galerie est incomplète.</string>
     <string name="gallery_permission_grant">Autoriser l\'accès</string>
 
+    <string name="gallery_trash">Corbeille</string>
+    <string name="gallery_selection_close">Annuler la sélection</string>
+    <string name="gallery_share">Partager</string>
+    <string name="gallery_favorite">Favori</string>
+    <string name="gallery_delete">Supprimer</string>
+    <string name="gallery_info">Infos</string>
+    <string name="gallery_share_ssd_unavailable">Branchez le SSD pour partager ces médias.</string>
+    <string name="gallery_delete_ssd_unavailable">SSD inaccessible : rien n\'a été supprimé.</string>
+    <string name="gallery_action_error">Échec : %1$s</string>
+    <string name="gallery_delete_phone">Supprimer du téléphone</string>
+    <string name="gallery_delete_phone_hint">Placés dans la corbeille du téléphone, récupérables pendant 30 jours.</string>
+    <string name="gallery_delete_ssd">Supprimer du SSD</string>
+    <string name="gallery_delete_everywhere">Supprimer partout</string>
+    <string name="gallery_delete_ssd_confirm_title">Suppression définitive</string>
+    <string name="gallery_delete_ssd_confirm_button">Supprimer définitivement</string>
+
+    <string name="trash_title">Corbeille</string>
+    <string name="trash_empty">La corbeille est vide.</string>
+    <string name="trash_hint">Médias supprimés du téléphone, effacés automatiquement après 30 jours.</string>
+    <string name="trash_restore">Restaurer</string>
+    <string name="trash_delete_forever">Supprimer définitivement</string>
+    <string name="trash_select_all">Tout sélectionner</string>
+    <string name="trash_expires_days">%1$d j</string>
+
     <string name="viewer_back">Retour</string>
     <string name="viewer_play">Lire</string>
     <string name="viewer_pause">Pause</string>
@@ -105,4 +129,33 @@
     <string name="notification_transfer_preparing">Préparation…</string>
     <string name="notification_transfer_done_title">Transfert CiaoCloud terminé</string>
     <string name="notification_transfer_error">Transfert interrompu par une erreur</string>
+
+    <plurals name="gallery_selection_count">
+        <item quantity="one">%1$d sélectionné</item>
+        <item quantity="other">%1$d sélectionnés</item>
+    </plurals>
+    <plurals name="gallery_delete_title">
+        <item quantity="one">Supprimer %1$d élément ?</item>
+        <item quantity="other">Supprimer %1$d éléments ?</item>
+    </plurals>
+    <plurals name="gallery_delete_not_backed_up">
+        <item quantity="one">%1$d média n\'est pas sauvegardé sur le SSD.</item>
+        <item quantity="other">%1$d médias ne sont pas sauvegardés sur le SSD.</item>
+    </plurals>
+    <plurals name="gallery_delete_ssd_confirm">
+        <item quantity="one">%1$d fichier sera effacé du SSD, sans corbeille. Cette action est irréversible.</item>
+        <item quantity="other">%1$d fichiers seront effacés du SSD, sans corbeille. Cette action est irréversible.</item>
+    </plurals>
+    <plurals name="gallery_deleted_phone">
+        <item quantity="one">%1$d média mis à la corbeille</item>
+        <item quantity="other">%1$d médias mis à la corbeille</item>
+    </plurals>
+    <plurals name="gallery_deleted_ssd">
+        <item quantity="one">%1$d fichier supprimé du SSD</item>
+        <item quantity="other">%1$d fichiers supprimés du SSD</item>
+    </plurals>
+    <plurals name="gallery_deleted_ssd_failed">
+        <item quantity="one">%1$d fichier n\'a pas pu être supprimé du SSD</item>
+        <item quantity="other">%1$d fichiers n\'ont pas pu être supprimés du SSD</item>
+    </plurals>
 </resources>

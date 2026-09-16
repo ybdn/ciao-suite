@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,8 +47,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.presentation.theme.Brick
@@ -153,7 +156,12 @@ fun NeoScreen(
 }
 
 @Composable
-fun NeoTopBar(title: String) {
+fun NeoTopBar(
+    title: String,
+    titleStyle: TextStyle = MaterialTheme.typography.headlineMedium,
+    navigation: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     val palette = NeoTheme.palette
     Column(
         modifier = Modifier
@@ -161,12 +169,23 @@ fun NeoTopBar(title: String) {
             .background(palette.page)
             .statusBarsPadding(),
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = palette.content,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.defaultMinSize(minHeight = 64.dp).padding(end = 8.dp),
+        ) {
+            navigation()
+            Text(
+                text = title,
+                style = titleStyle,
+                color = palette.content,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(horizontal = 20.dp, vertical = 14.dp),
+            )
+            CompositionLocalProvider(LocalContentColor provides palette.content) {
+                actions()
+            }
+        }
         HorizontalDivider(thickness = BorderWidth, color = palette.outline)
     }
 }

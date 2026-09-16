@@ -15,5 +15,13 @@ interface TransferStateRepository {
 
     suspend fun upsert(record: TransferRecord)
 
+    /** Enregistrements dont la copie est [destinationPath] (casse ignorée, comme sur le SSD). */
+    suspend fun getByDestinationPath(destinationPath: String): List<TransferRecord>
+
+    suspend fun getByMediaStoreIds(mediaStoreIds: Collection<Long>): List<TransferRecord>
+
+    /** Oublie l'état de transfert : le média redevient « jamais transféré ». */
+    suspend fun delete(mediaStoreId: Long)
+
     suspend fun markStatus(mediaStoreId: Long, status: TransferStatus, errorMessage: String? = null)
 }

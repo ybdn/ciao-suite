@@ -226,4 +226,4 @@ private fun VideoControls(player: Player) {
 private const val POSITION_POLL_MS = 250L
 
 /** Place laissée sous les contrôles vidéo pour la barre d'actions de la visionneuse. */
-val ACTION_BAR_RESERVED_HEIGHT = 0.dp
+val ACTION_BAR_RESERVED_HEIGHT = 72.dp

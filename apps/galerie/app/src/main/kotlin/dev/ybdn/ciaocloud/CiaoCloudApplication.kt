@@ -14,6 +14,7 @@ class CiaoCloudApplication : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
         appContainer = AppContainer(this)
+        appContainer.clearTemporaryShareCopies()
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader = appContainer.imageLoader

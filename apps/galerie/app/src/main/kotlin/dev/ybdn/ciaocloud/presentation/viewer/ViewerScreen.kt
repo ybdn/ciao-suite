@@ -6,6 +6,15 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.ui.graphics.vector.ImageVector
+import dev.ybdn.ciaocloud.presentation.gallery.DeleteItemsDialog
+import dev.ybdn.ciaocloud.presentation.gallery.GalleryEventsEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,6 +75,20 @@ fun ViewerScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ssdAvailable by viewModel.ssdAvailable.collectAsStateWithLifecycle()
     var chromeVisible by rememberSaveable { mutableStateOf(true) }
+    var itemToDelete by remember { mutableStateOf<GalleryItem?>(null) }
+    val isBusy by viewModel.actions.isBusy.collectAsStateWithLifecycle()
+
+    GalleryEventsEffect(viewModel.actions.events)
+    itemToDelete?.let { item ->
+        DeleteItemsDialog(
+            items = listOf(item),
+            onDelete = { target ->
+                itemToDelete = null
+                viewModel.actions.delete(listOf(item), target)
+            },
+            onDismiss = { itemToDelete = null },
+        )
+    }
 
     ImmersiveSystemBars(visible = chromeVisible)
     BackHandler(onBack = onBack)
@@ -115,6 +138,23 @@ fun ViewerScreen(
         ) {
             currentItem?.let { ViewerTopBar(item = it, onBack = onBack) }
         }
+
+        AnimatedVisibility(
+            visible = chromeVisible && currentItem != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            currentItem?.let { item ->
+                ViewerActionBar(
+                    item = item,
+                    isBusy = isBusy,
+                    onShare = { viewModel.actions.share(listOf(item)) },
+                    onToggleFavorite = { viewModel.actions.toggleFavorite(listOf(item)) },
+                    onDelete = { itemToDelete = item },
+                )
+            }
+        }
     }
 }
 
@@ -151,7 +191,47 @@ private fun ViewerTopBar(item: GalleryItem, onBack: () -> Unit) {
     }
 }
 
-/** Barre d'actions du bas, réservée aux actions de la visionneuse (partager, supprimer…). */
+@Composable
+private fun ViewerActionBar(
+    item: GalleryItem,
+    isBusy: Boolean,
+    onShare: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f))))
+            .navigationBarsPadding()
+            .height(ACTION_BAR_RESERVED_HEIGHT),
+    ) {
+        ViewerAction(Icons.Outlined.Share, stringResource(R.string.gallery_share), onShare, enabled = !isBusy)
+        ViewerAction(
+            if (item.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+            stringResource(R.string.gallery_favorite),
+            onToggleFavorite,
+        )
+        ViewerAction(Icons.Outlined.Delete, stringResource(R.string.gallery_delete), onDelete, enabled = !isBusy)
+    }
+}
+
+@Composable
+private fun ViewerAction(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = if (enabled) 1f else 0.4f))
+        Text(label, style = MaterialTheme.typography.bodySmall, color = Color.White)
+    }
+}
+
+/** Fond dégradé du bas de la visionneuse, sous les contrôles vidéo et la barre d'actions. */
 @Composable
 fun ViewerBottomBarContainer(content: @Composable () -> Unit) {
     Box(

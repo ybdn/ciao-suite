@@ -7,6 +7,7 @@ import dev.ybdn.ciaocloud.di.AppContainer
 import dev.ybdn.ciaocloud.domain.model.GalleryFilter
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.util.TimelineBuilder
+import dev.ybdn.ciaocloud.presentation.gallery.GalleryActions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,8 @@ class ViewerViewModel(
         }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ViewerUiState())
+
+    val actions = GalleryActions(appContainer, viewModelScope)
 
     val ssdAvailable: StateFlow<Boolean> = appContainer.observeSsdAvailabilityUseCase()
 

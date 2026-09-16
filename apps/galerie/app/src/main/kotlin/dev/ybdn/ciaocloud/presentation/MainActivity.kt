@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
@@ -22,12 +21,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val appContainer = (application as CiaoCloudApplication).appContainer
 
-        val deletionLauncher = registerForActivityResult(
-            ActivityResultContracts.StartIntentSenderForResult(),
-        ) { result ->
-            appContainer.mediaDeletionRequester.onDeletionResult(result.resultCode)
-        }
-        appContainer.mediaDeletionRequester.bindLauncher(deletionLauncher)
+        appContainer.intentSenderLauncher.register(this)
 
         setContent {
             // Rien n'est affiché tant que la préférence n'est pas lue (quelques ms) : évite un

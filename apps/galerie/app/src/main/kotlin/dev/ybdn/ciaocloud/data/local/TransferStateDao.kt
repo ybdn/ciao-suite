@@ -19,6 +19,15 @@ interface TransferStateDao {
     @Query("SELECT * FROM transfer_state WHERE status = :status")
     suspend fun getByStatus(status: TransferStatus): List<TransferStateEntity>
 
+    @Query("SELECT * FROM transfer_state WHERE destinationPath = :destinationPath COLLATE NOCASE")
+    suspend fun getByDestinationPath(destinationPath: String): List<TransferStateEntity>
+
+    @Query("SELECT * FROM transfer_state WHERE mediaStoreId IN (:mediaStoreIds)")
+    suspend fun getByMediaStoreIds(mediaStoreIds: List<Long>): List<TransferStateEntity>
+
+    @Query("DELETE FROM transfer_state WHERE mediaStoreId = :mediaStoreId")
+    suspend fun delete(mediaStoreId: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: TransferStateEntity)
 

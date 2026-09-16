@@ -1,6 +1,18 @@
 package dev.ybdn.ciaocloud.presentation.gallery
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.remember
+import androidx.compose.ui.res.pluralStringResource
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,11 +59,30 @@ import dev.ybdn.ciaocloud.presentation.util.openAppSettings
 @Composable
 fun GalleryScreen(
     onOpenItem: (key: String, filter: GalleryFilter) -> Unit,
+    onOpenTrash: () -> Unit,
 ) {
     val viewModel = ciaoCloudViewModel { container, app -> GalleryViewModel(container, app) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ssdAvailable by viewModel.ssdAvailable.collectAsStateWithLifecycle()
     val ssdIndexState by viewModel.ssdIndexState.collectAsStateWithLifecycle()
+    val selectedKeys by viewModel.selectedKeys.collectAsStateWithLifecycle()
+    val isBusy by viewModel.actions.isBusy.collectAsStateWithLifecycle()
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    val selectionMode = selectedKeys.isNotEmpty()
+
+    GalleryEventsEffect(viewModel.actions.events)
+    BackHandler(enabled = selectionMode, onBack = viewModel::clearSelection)
+
+    if (showDeleteDialog) {
+        DeleteItemsDialog(
+            items = remember(selectedKeys) { viewModel.selectedItemsSnapshot() },
+            onDelete = { target ->
+                showDeleteDialog = false
+                viewModel.deleteSelection(target)
+            },
+            onDismiss = { showDeleteDialog = false },
+        )
+    }
     val context = LocalContext.current
     var mediaAccess by rememberSaveable { mutableStateOf(context.mediaAccess()) }
 
@@ -74,7 +105,38 @@ fun GalleryScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        NeoTopBar(stringResource(R.string.gallery_title))
+        if (selectionMode) {
+            NeoTopBar(
+                title = pluralStringResource(R.plurals.gallery_selection_count, selectedKeys.size, selectedKeys.size),
+                titleStyle = MaterialTheme.typography.titleMedium,
+                navigation = {
+                    IconButton(onClick = viewModel::clearSelection, modifier = Modifier.padding(start = 8.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.gallery_selection_close))
+                    }
+                },
+                actions = {
+                    if (isBusy) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                    IconButton(onClick = viewModel::shareSelection, enabled = !isBusy) {
+                        Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.gallery_share))
+                    }
+                    IconButton(onClick = viewModel::toggleFavoriteOnSelection) {
+                        Icon(Icons.Outlined.FavoriteBorder, contentDescription = stringResource(R.string.gallery_favorite))
+                    }
+                    IconButton(onClick = { showDeleteDialog = true }, enabled = !isBusy) {
+                        Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.gallery_delete))
+                    }
+                },
+            )
+        } else {
+            NeoTopBar(
+                title = stringResource(R.string.gallery_title),
+                actions = {
+                    IconButton(onClick = onOpenTrash) {
+                        Icon(Icons.Outlined.DeleteSweep, contentDescription = stringResource(R.string.gallery_trash))
+                    }
+                },
+            )
+        }
 
         val filters = GalleryFilter.entries
         NeoChipRow(
@@ -131,7 +193,11 @@ fun GalleryScreen(
                 else -> GalleryGrid(
                     entries = uiState.entries,
                     ssdAvailable = ssdAvailable,
-                    onOpenItem = { key -> onOpenItem(key, uiState.filter) },
+                    selectedKeys = selectedKeys,
+                    onOpenItem = { key ->
+                        if (selectionMode) viewModel.toggleSelection(key) else onOpenItem(key, uiState.filter)
+                    },
+                    onLongPressItem = viewModel::toggleSelection,
                 )
             }
         }
@@ -142,7 +208,9 @@ fun GalleryScreen(
 private fun GalleryGrid(
     entries: List<GalleryEntry>,
     ssdAvailable: Boolean,
+    selectedKeys: Set<String>,
     onOpenItem: (String) -> Unit,
+    onLongPressItem: (String) -> Unit,
 ) {
     val gridState = rememberLazyGridState()
     var columns by rememberSaveable { mutableIntStateOf(DEFAULT_COLUMNS) }
@@ -182,7 +250,9 @@ private fun GalleryGrid(
                     is GalleryEntry.Media -> GalleryTile(
                         item = entry.item,
                         dimmed = !ssdAvailable && entry.item.location == GalleryLocation.SSD,
+                        selected = if (selectedKeys.isEmpty()) null else entry.item.key in selectedKeys,
                         onClick = { onOpenItem(entry.item.key) },
+                        onLongClick = { onLongPressItem(entry.item.key) },
                     )
                 }
             }

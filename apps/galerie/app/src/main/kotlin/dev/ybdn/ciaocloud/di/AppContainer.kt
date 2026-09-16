@@ -37,11 +37,23 @@ import dev.ybdn.ciaocloud.domain.usecase.ObserveTimelineUseCase
 import dev.ybdn.ciaocloud.domain.usecase.ScanLocalMediaUseCase
 import dev.ybdn.ciaocloud.domain.usecase.TransferMediaUseCase
 import dev.ybdn.ciaocloud.domain.usecase.VerifyTransferUseCase
-import dev.ybdn.ciaocloud.presentation.delete.SystemMediaDeletionRequester
+import dev.ybdn.ciaocloud.data.mediastore.MediaStoreTrashedSource
+import dev.ybdn.ciaocloud.data.share.FileProviderShareableMediaProvider
+import dev.ybdn.ciaocloud.domain.repository.TrashedMediaSource
+import dev.ybdn.ciaocloud.domain.usecase.DeleteFromTrashUseCase
+import dev.ybdn.ciaocloud.domain.usecase.DeleteGalleryItemsUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ObserveTrashUseCase
+import dev.ybdn.ciaocloud.domain.usecase.PrepareShareUseCase
+import dev.ybdn.ciaocloud.domain.usecase.RestoreFromTrashUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ToggleFavoriteUseCase
+import dev.ybdn.ciaocloud.presentation.system.IntentSenderLauncher
+import dev.ybdn.ciaocloud.presentation.system.SystemMediaDeletionRequester
+import dev.ybdn.ciaocloud.presentation.system.SystemMediaTrash
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * Conteneur d'injection manuelle : pas de framework DI (Hilt jugé non nécessaire pour une app
@@ -90,7 +102,14 @@ class AppContainer(private val context: Context) {
         settingsDataStore.thumbnailCacheMaxBytes.first()
     }
 
-    val mediaDeletionRequester = SystemMediaDeletionRequester(context)
+    /** Confirmations système MediaStore ; chaque activité s'y enregistre à sa création. */
+    val intentSenderLauncher = IntentSenderLauncher()
+
+    private val mediaDeletionRequester = SystemMediaDeletionRequester(context, intentSenderLauncher)
+
+    private val mediaTrash = SystemMediaTrash(context, intentSenderLauncher)
+
+    private val trashedMediaSource: TrashedMediaSource = MediaStoreTrashedSource(context)
 
     val scanSession = ScanSession()
 
@@ -133,6 +152,26 @@ class AppContainer(private val context: Context) {
 
     val manageThumbnailCacheUseCase = ManageThumbnailCacheUseCase(ssdThumbnailCache)
 
+    val deleteGalleryItemsUseCase = DeleteGalleryItemsUseCase(
+        mediaTrash,
+        ssdMediaBrowser,
+        ssdMediaIndex,
+        ssdThumbnailCache,
+        transferStateRepository,
+        favoritesRepository,
+        transactionRunner,
+    )
+
+    val restoreFromTrashUseCase = RestoreFromTrashUseCase(mediaTrash, transferStateRepository, ssdMediaIndex)
+
+    val deleteFromTrashUseCase = DeleteFromTrashUseCase(mediaTrash)
+
+    val observeTrashUseCase = ObserveTrashUseCase(trashedMediaSource)
+
+    val toggleFavoriteUseCase = ToggleFavoriteUseCase(favoritesRepository)
+
+    val prepareShareUseCase = PrepareShareUseCase(FileProviderShareableMediaProvider(context, ssdMediaBrowser))
+
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(context)
             .components {
@@ -145,6 +184,11 @@ class AppContainer(private val context: Context) {
                 MemoryCache.Builder().maxSizePercent(context, MEMORY_CACHE_PERCENT).build()
             }
             .build()
+    }
+
+    /** Les copies partagées lors de la session précédente ne servent plus. */
+    fun clearTemporaryShareCopies() {
+        applicationScope.launch { prepareShareUseCase.clearTemporaryCopies() }
     }
 
     private companion object {

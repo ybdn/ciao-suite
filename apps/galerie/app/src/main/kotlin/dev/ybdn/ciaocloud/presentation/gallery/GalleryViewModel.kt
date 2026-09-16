@@ -13,7 +13,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import dev.ybdn.ciaocloud.domain.usecase.DeleteTarget
 import kotlinx.coroutines.launch
 import dev.ybdn.ciaocloud.domain.usecase.SsdIndexState
 import java.time.LocalDate
@@ -70,6 +73,34 @@ class GalleryViewModel(
     fun onResume() {
         viewModelScope.launch { appContainer.observeSsdAvailabilityUseCase.refresh() }
     }
+
+    val actions = GalleryActions(appContainer, viewModelScope)
+
+    private val _selectedKeys = MutableStateFlow<Set<String>>(emptySet())
+    /** Clés des éléments sélectionnés ; la sélection est active dès qu'elle n'est pas vide. */
+    val selectedKeys: StateFlow<Set<String>> = _selectedKeys.asStateFlow()
+
+    fun toggleSelection(key: String) {
+        _selectedKeys.update { if (key in it) it - key else it + key }
+    }
+
+    fun clearSelection() {
+        _selectedKeys.value = emptySet()
+    }
+
+    /** Éléments sélectionnés encore présents (une suppression externe peut en retirer). */
+    private fun selectedItems(): List<GalleryItem> {
+        val keys = _selectedKeys.value
+        return uiState.value.entries.mapNotNull { (it as? GalleryEntry.Media)?.item?.takeIf { item -> item.key in keys } }
+    }
+
+    fun selectedItemsSnapshot(): List<GalleryItem> = selectedItems()
+
+    fun shareSelection() = actions.share(selectedItems())
+
+    fun toggleFavoriteOnSelection() = actions.toggleFavorite(selectedItems())
+
+    fun deleteSelection(target: DeleteTarget) = actions.delete(selectedItems(), target, onDone = ::clearSelection)
 
     /** « Actualiser le SSD » : réindexation complète, déclenchée manuellement. */
     fun refreshSsdIndex() = appContainer.refreshSsdIndexUseCase.start()

@@ -31,6 +31,7 @@ import dev.ybdn.ciaocloud.presentation.home.HomeScreen
 import dev.ybdn.ciaocloud.presentation.progress.ProgressScreen
 import dev.ybdn.ciaocloud.presentation.settings.SettingsScreen
 import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciaocloud.presentation.trash.TrashScreen
 import dev.ybdn.ciaocloud.presentation.viewer.ViewerScreen
 
 object CiaoCloudDestinations {
@@ -39,6 +40,7 @@ object CiaoCloudDestinations {
     const val PROGRESS = "progress"
     const val DELETE_CONFIRM = "delete_confirm"
     const val SETTINGS = "settings"
+    const val TRASH = "trash"
     const val VIEWER = "viewer/{key}?filter={filter}"
 
     fun viewer(key: String, filter: GalleryFilter): String = "viewer/${Uri.encode(key)}?filter=${filter.name}"
@@ -78,7 +80,11 @@ fun CiaoCloudNavHost(navController: NavHostController = rememberNavController())
             composable(CiaoCloudDestinations.GALLERY) {
                 GalleryScreen(
                     onOpenItem = { key, filter -> navController.navigate(CiaoCloudDestinations.viewer(key, filter)) },
+                    onOpenTrash = { navController.navigate(CiaoCloudDestinations.TRASH) },
                 )
+            }
+            composable(CiaoCloudDestinations.TRASH) {
+                TrashScreen(onBack = { navController.popBackStack() })
             }
             composable(
                 route = CiaoCloudDestinations.VIEWER,
