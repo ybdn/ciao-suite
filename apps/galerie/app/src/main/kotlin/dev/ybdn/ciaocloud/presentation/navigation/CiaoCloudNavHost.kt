@@ -23,12 +23,20 @@ fun CiaoCloudNavHost(navController: NavHostController = rememberNavController())
         composable(CiaoCloudDestinations.HOME) {
             HomeScreen(
                 onNavigateToTransfer = { navController.navigate(CiaoCloudDestinations.PROGRESS) },
+                onNavigateToDeleteConfirm = { navController.navigate(CiaoCloudDestinations.DELETE_CONFIRM) },
                 onNavigateToSettings = { navController.navigate(CiaoCloudDestinations.SETTINGS) },
             )
         }
         composable(CiaoCloudDestinations.PROGRESS) {
             ProgressScreen(
-                onTransferCompleted = { navController.navigate(CiaoCloudDestinations.DELETE_CONFIRM) },
+                // L'écran de progression est retiré de la pile : un retour arrière depuis la
+                // confirmation ramène à l'accueil, jamais sur un écran de transfert terminé.
+                onNavigateToDeleteConfirm = {
+                    navController.navigate(CiaoCloudDestinations.DELETE_CONFIRM) {
+                        popUpTo(CiaoCloudDestinations.HOME)
+                    }
+                },
+                onBackToHome = { navController.popBackStack(CiaoCloudDestinations.HOME, inclusive = false) },
             )
         }
         composable(CiaoCloudDestinations.DELETE_CONFIRM) {

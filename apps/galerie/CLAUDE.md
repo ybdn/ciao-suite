@@ -20,6 +20,8 @@ ln -s ~/AndroidBuilds/CiaoCloud/root-build build
 
 - JDK 17 via `brew install openjdk@17` (pas de cask/sudo nécessaire). `JAVA_HOME=/opt/homebrew/opt/openjdk@17`, ajouté au `PATH` dans `~/.zshrc`.
 - Android SDK via `brew install --cask android-commandlinetools`, racine `/opt/homebrew/share/android-commandlinetools`. Composants installés : `platform-tools`, `platforms;android-35`, `build-tools;35.0.0` (+ `build-tools;34.0.0` auto-résolu par AGP). Licences acceptées (`sdkmanager --licenses`).
+- Émulateur : AVD `ciaocloud35` (Android 15, `system-images;android-35;google_apis;arm64-v8a`), lancement `$ANDROID_SDK_ROOT/emulator/emulator -avd ciaocloud35`.
+- Appareil réel : Pixel 10 Pro (Android 17) via `adb`. Son unique port USB-C sert au câble du Mac : pour tester sans SSD, choisir un dossier du stockage interne (ex. `Documents/CiaoCloudTest`) comme destination.
 - `local.properties` (non versionné, à la racine) doit contenir `sdk.dir=/opt/homebrew/share/android-commandlinetools`.
 
 Commandes de référence :

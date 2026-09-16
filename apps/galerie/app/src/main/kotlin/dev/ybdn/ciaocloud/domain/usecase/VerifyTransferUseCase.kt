@@ -1,6 +1,7 @@
 package dev.ybdn.ciaocloud.domain.usecase
 
 import dev.ybdn.ciaocloud.domain.model.MediaFile
+import dev.ybdn.ciaocloud.domain.repository.DestinationWriteResult
 import dev.ybdn.ciaocloud.domain.repository.DestinationWriter
 
 sealed interface VerifyResult {
@@ -9,27 +10,28 @@ sealed interface VerifyResult {
 }
 
 /**
- * Vérifie une copie déjà écrite sur le SSD en comparant taille + checksum avec le fichier
- * source, avant de marquer le transfert comme vérifié.
+ * Vérifie une copie déjà écrite sur le SSD en la relisant : sa taille doit correspondre à la
+ * source et son checksum à celui calculé pendant l'écriture, avant de marquer le transfert
+ * comme vérifié.
  */
 class VerifyTransferUseCase(
     private val destinationWriter: DestinationWriter,
 ) {
     suspend operator fun invoke(
         sourceFile: MediaFile,
-        expectedChecksum: String,
+        writeResult: DestinationWriteResult,
         relativeDirPath: String,
-        fileName: String,
     ): VerifyResult {
-        val readBack = destinationWriter.readBackForVerification(relativeDirPath, fileName)
+        val readBack = destinationWriter.readBackForVerification(relativeDirPath, writeResult.writtenFileName)
             ?: return VerifyResult.Failure("Fichier copié introuvable pour vérification")
 
-        if (readBack.bytesWritten != sourceFile.sizeBytes) {
+        if (writeResult.bytesWritten != sourceFile.sizeBytes || readBack.bytesWritten != sourceFile.sizeBytes) {
             return VerifyResult.Failure(
-                "Taille différente : source=${sourceFile.sizeBytes}, copie=${readBack.bytesWritten}",
+                "Taille différente : source=${sourceFile.sizeBytes}, écrite=${writeResult.bytesWritten}, " +
+                    "relue=${readBack.bytesWritten}",
             )
         }
-        if (readBack.checksum != expectedChecksum) {
+        if (readBack.checksum != writeResult.checksum) {
             return VerifyResult.Failure("Checksum différent après copie")
         }
         return VerifyResult.Success(readBack.checksum)

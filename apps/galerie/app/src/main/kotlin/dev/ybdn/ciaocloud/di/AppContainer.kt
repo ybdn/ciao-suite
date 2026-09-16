@@ -7,10 +7,12 @@ import dev.ybdn.ciaocloud.data.local.CiaoCloudDatabase
 import dev.ybdn.ciaocloud.data.mediastore.MediaStoreRepositoryImpl
 import dev.ybdn.ciaocloud.data.repository.TransferStateRepositoryImpl
 import dev.ybdn.ciaocloud.data.saf.SafDestinationWriter
+import dev.ybdn.ciaocloud.domain.model.ScanSession
 import dev.ybdn.ciaocloud.domain.repository.DestinationWriter
 import dev.ybdn.ciaocloud.domain.repository.MediaRepository
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
 import dev.ybdn.ciaocloud.domain.usecase.DeleteVerifiedMediaUseCase
+import dev.ybdn.ciaocloud.domain.usecase.GetDestinationStatusUseCase
 import dev.ybdn.ciaocloud.domain.usecase.ScanLocalMediaUseCase
 import dev.ybdn.ciaocloud.domain.usecase.TransferMediaUseCase
 import dev.ybdn.ciaocloud.domain.usecase.VerifyTransferUseCase
@@ -42,7 +44,11 @@ class AppContainer(private val context: Context) {
 
     val mediaDeletionRequester = SystemMediaDeletionRequester(context)
 
-    val scanLocalMediaUseCase = ScanLocalMediaUseCase(mediaRepository, transferStateRepository)
+    val scanSession = ScanSession()
+
+    val scanLocalMediaUseCase = ScanLocalMediaUseCase(mediaRepository, transferStateRepository, scanSession, destinationWriter)
+
+    val getDestinationStatusUseCase = GetDestinationStatusUseCase(destinationWriter)
 
     private val verifyTransferUseCase = VerifyTransferUseCase(destinationWriter)
 
@@ -54,6 +60,7 @@ class AppContainer(private val context: Context) {
 
     val deleteVerifiedMediaUseCase = DeleteVerifiedMediaUseCase(
         transferStateRepository,
+        mediaRepository,
         mediaDeletionRequester,
     )
 }

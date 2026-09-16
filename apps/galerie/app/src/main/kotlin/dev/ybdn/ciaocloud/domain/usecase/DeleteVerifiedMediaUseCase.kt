@@ -1,40 +1,47 @@
 package dev.ybdn.ciaocloud.domain.usecase
 
-import dev.ybdn.ciaocloud.domain.model.TransferRecord
 import dev.ybdn.ciaocloud.domain.model.TransferStatus
 import dev.ybdn.ciaocloud.domain.repository.MediaDeletionRequester
+import dev.ybdn.ciaocloud.domain.repository.MediaRepository
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
 
 /**
  * Ne supprime que les originaux dont la copie est vérifiée, via `MediaStore.createDeleteRequest()`
  * (confirmation système), puis marque les enregistrements correspondants comme supprimés.
+ * Les originaux déjà disparus du téléphone (supprimés ailleurs) sont simplement marqués.
  */
 class DeleteVerifiedMediaUseCase(
     private val transferStateRepository: TransferStateRepository,
+    private val mediaRepository: MediaRepository,
     private val mediaDeletionRequester: MediaDeletionRequester,
 ) {
     suspend operator fun invoke(): DeleteOutcome {
-        val verifiedRecords: List<TransferRecord> =
-            transferStateRepository.getByStatus(TransferStatus.VERIFIED)
+        val verifiedRecords = transferStateRepository.getByStatus(TransferStatus.VERIFIED)
+        if (verifiedRecords.isEmpty()) return DeleteOutcome(requested = 0, deleted = 0)
 
-        if (verifiedRecords.isEmpty()) {
-            return DeleteOutcome(requested = 0, granted = false)
+        val existingIds = mediaRepository.findExistingIds(verifiedRecords.map { it.mediaStoreId })
+        val (toDelete, alreadyGone) = verifiedRecords.partition { it.mediaStoreId in existingIds }
+        alreadyGone.forEach { transferStateRepository.markStatus(it.mediaStoreId, TransferStatus.DELETED) }
+
+        var deleted = 0
+        // Une confirmation système par lot : évite de dépasser la taille max d'une transaction Binder.
+        for (batch in toDelete.chunked(MAX_URIS_PER_REQUEST)) {
+            if (!mediaDeletionRequester.requestDelete(batch)) break
+            batch.forEach { transferStateRepository.markStatus(it.mediaStoreId, TransferStatus.DELETED) }
+            deleted += batch.size
         }
 
-        val mediaStoreIds = verifiedRecords.map { it.mediaStoreId }
-        val granted = mediaDeletionRequester.requestDelete(mediaStoreIds)
+        return DeleteOutcome(requested = toDelete.size, deleted = deleted)
+    }
 
-        if (granted) {
-            mediaStoreIds.forEach { id ->
-                transferStateRepository.markStatus(id, TransferStatus.DELETED)
-            }
-        }
-
-        return DeleteOutcome(requested = mediaStoreIds.size, granted = granted)
+    private companion object {
+        const val MAX_URIS_PER_REQUEST = 1000
     }
 }
 
 data class DeleteOutcome(
     val requested: Int,
-    val granted: Boolean,
-)
+    val deleted: Int,
+) {
+    val isComplete: Boolean get() = deleted == requested
+}

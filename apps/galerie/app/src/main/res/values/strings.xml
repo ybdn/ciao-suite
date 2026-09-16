@@ -7,12 +7,29 @@
     <string name="home_scan_button">Scanner les médias</string>
     <string name="home_scan_summary">%1$d photos, %2$d vidéos détectées (%3$s)</string>
     <string name="home_no_destination">Aucun dossier SSD sélectionné</string>
+    <string name="home_destination_ready">SSD : %1$s</string>
+    <string name="home_destination_free_space">Espace libre sur le SSD : %1$s</string>
+    <string name="home_destination_unavailable">SSD inaccessible : branchez-le, ou choisissez à nouveau son dossier.</string>
+    <string name="home_scanning">Analyse des photos et vidéos…</string>
+    <string name="home_scan_nothing">Aucun nouveau média à transférer.</string>
+    <string name="home_scan_error">Échec du scan : %1$s</string>
+    <string name="home_insufficient_space">Espace insuffisant sur le SSD pour tout transférer.</string>
+    <string name="home_transfer_running_button">Voir le transfert en cours</string>
     <string name="home_transfer_button">Transférer</string>
     <string name="home_media_permission_denied">L\'accès aux photos et vidéos est nécessaire pour scanner le téléphone. Accordez l\'accès complet dans les paramètres de l\'app.</string>
     <string name="home_media_permission_partial">Accès limité à une sélection de photos et vidéos : le scan serait incomplet. Relancez le scan pour tout autoriser, ou accordez l\'accès complet dans les paramètres de l\'app.</string>
     <string name="home_open_app_settings">Ouvrir les paramètres de l\'app</string>
 
     <string name="progress_title">Transfert en cours</string>
+    <string name="progress_title_done">Transfert terminé</string>
+    <string name="progress_current_file_bytes">%1$s / %2$s</string>
+    <string name="progress_background_hint">Vous pouvez quitter l\'app : le transfert continue en arrière-plan.</string>
+    <string name="progress_back_home">Retour à l\'accueil</string>
+    <string name="transfer_summary">%1$d fichiers copiés et vérifiés, %2$d en échec</string>
+    <string name="transfer_abort_destination_unavailable">Transfert interrompu : SSD débranché ou inaccessible. Rien n\'a été supprimé du téléphone.</string>
+    <string name="transfer_abort_insufficient_space">Transfert interrompu : espace insuffisant sur le SSD (%1$s nécessaires, %2$s disponibles).</string>
+    <string name="transfer_abort_insufficient_space_short">Transfert interrompu : espace insuffisant sur le SSD</string>
+    <string name="transfer_fatal_error">Transfert interrompu par une erreur : %1$s</string>
     <string name="progress_current_file">Fichier en cours : %1$s</string>
     <string name="progress_files_done">%1$d / %2$d fichiers traités</string>
     <string name="progress_bytes_done">%1$s transférés</string>
@@ -22,6 +39,11 @@
     <string name="delete_confirm_summary">%1$d fichiers vérifiés sur le SSD, %2$s libérables</string>
     <string name="delete_confirm_button">Supprimer les originaux</string>
     <string name="delete_confirm_cancel">Annuler</string>
+    <string name="delete_confirm_nothing">Aucun fichier vérifié en attente de suppression.</string>
+    <string name="delete_confirm_explanation">Seuls les fichiers dont la copie sur le SSD a été vérifiée seront supprimés. Android demandera une confirmation.</string>
+    <string name="delete_refused">Suppression refusée ou annulée.</string>
+    <string name="delete_partial">%1$d fichiers supprimés sur %2$d : suppression interrompue.</string>
+    <string name="delete_error">Échec de la suppression : %1$s</string>
 
     <string name="settings_title">Paramètres</string>
     <string name="settings_destination_label">Dossier SSD actuel</string>
@@ -29,4 +51,7 @@
 
     <string name="notification_channel_transfer">Transfert CiaoCloud</string>
     <string name="notification_transfer_title">Transfert vers le SSD</string>
+    <string name="notification_transfer_preparing">Préparation…</string>
+    <string name="notification_transfer_done_title">Transfert CiaoCloud terminé</string>
+    <string name="notification_transfer_error">Transfert interrompu par une erreur</string>
 </resources>

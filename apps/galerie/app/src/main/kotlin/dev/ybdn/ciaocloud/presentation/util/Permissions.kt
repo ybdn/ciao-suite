@@ -9,10 +9,14 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 
-/** Permissions donnant l'accès complet au MediaStore (photos + vidéos). */
+/**
+ * Permissions donnant l'accès complet au MediaStore (photos + vidéos). `ACCESS_MEDIA_LOCATION`
+ * est indispensable : sans elle, les originaux copiés perdraient leurs données GPS.
+ */
 private val FULL_MEDIA_PERMISSIONS = arrayOf(
     Manifest.permission.READ_MEDIA_IMAGES,
     Manifest.permission.READ_MEDIA_VIDEO,
+    Manifest.permission.ACCESS_MEDIA_LOCATION,
 )
 
 /**
