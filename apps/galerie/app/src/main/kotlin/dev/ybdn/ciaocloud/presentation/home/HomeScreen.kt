@@ -45,7 +45,6 @@ import dev.ybdn.ciaocloud.presentation.util.openAppSettings
 fun HomeScreen(
     onNavigateToTransfer: () -> Unit,
     onNavigateToDeleteConfirm: () -> Unit,
-    onNavigateToSettings: () -> Unit,
 ) {
     val viewModel = ciaoCloudViewModel { container, app -> HomeViewModel(container, app) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -197,11 +196,6 @@ fun HomeScreen(
             onClick = onNavigateToDeleteConfirm,
             tone = NeoTone.Surface,
             enabled = !uiState.isTransferRunning,
-        )
-        NeoButton(
-            text = stringResource(R.string.settings_title),
-            onClick = onNavigateToSettings,
-            tone = NeoTone.Muted,
         )
     }
 }

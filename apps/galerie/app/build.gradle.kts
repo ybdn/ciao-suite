@@ -62,6 +62,11 @@ android {
     }
 }
 
+ksp {
+    // Schémas Room versionnés : base des migrations explicites (jamais de migration destructive).
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -74,6 +79,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.documentfile)
 
@@ -84,6 +90,13 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.exifinterface)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Galerie : aucune de ces bibliothèques ne tire de module réseau.
+    implementation(libs.coil.compose)
+    implementation(libs.coil.video)
+    implementation(libs.telephoto.zoomable.image.coil3)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui.compose)
 
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)

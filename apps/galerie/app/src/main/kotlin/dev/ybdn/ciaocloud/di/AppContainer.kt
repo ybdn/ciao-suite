@@ -2,21 +2,37 @@ package dev.ybdn.ciaocloud.di
 
 import android.content.Context
 import androidx.room.Room
+import coil3.ImageLoader
+import coil3.memory.MemoryCache
 import dev.ybdn.ciaocloud.data.datastore.SettingsDataStore
+import dev.ybdn.ciaocloud.presentation.image.PhoneThumbnailFetcher
 import dev.ybdn.ciaocloud.data.local.CiaoCloudDatabase
+import dev.ybdn.ciaocloud.data.local.MIGRATION_1_2
+import dev.ybdn.ciaocloud.data.mediastore.MediaStoreGallerySource
 import dev.ybdn.ciaocloud.data.mediastore.MediaStoreRepositoryImpl
+import dev.ybdn.ciaocloud.data.repository.RoomFavoritesRepository
+import dev.ybdn.ciaocloud.data.repository.RoomSsdMediaIndex
+import dev.ybdn.ciaocloud.data.repository.RoomTransactionRunner
 import dev.ybdn.ciaocloud.data.repository.TransferStateRepositoryImpl
 import dev.ybdn.ciaocloud.data.saf.SafDestinationWriter
 import dev.ybdn.ciaocloud.domain.model.ScanSession
 import dev.ybdn.ciaocloud.domain.repository.DestinationWriter
+import dev.ybdn.ciaocloud.domain.repository.FavoritesRepository
 import dev.ybdn.ciaocloud.domain.repository.MediaRepository
+import dev.ybdn.ciaocloud.domain.repository.PhoneGallerySource
+import dev.ybdn.ciaocloud.domain.repository.SsdMediaIndex
+import dev.ybdn.ciaocloud.domain.repository.TransactionRunner
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
 import dev.ybdn.ciaocloud.domain.usecase.DeleteVerifiedMediaUseCase
 import dev.ybdn.ciaocloud.domain.usecase.GetDestinationStatusUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ObserveTimelineUseCase
 import dev.ybdn.ciaocloud.domain.usecase.ScanLocalMediaUseCase
 import dev.ybdn.ciaocloud.domain.usecase.TransferMediaUseCase
 import dev.ybdn.ciaocloud.domain.usecase.VerifyTransferUseCase
 import dev.ybdn.ciaocloud.presentation.delete.SystemMediaDeletionRequester
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 
 /**
@@ -25,22 +41,36 @@ import kotlinx.coroutines.flow.first
  */
 class AppContainer(private val context: Context) {
 
+    /** Portée des flux partagés entre écrans (chronologie), vivant aussi longtemps que le processus. */
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     val settingsDataStore = SettingsDataStore(context)
 
     private val database = Room.databaseBuilder(
         context,
         CiaoCloudDatabase::class.java,
         CiaoCloudDatabase.DATABASE_NAME,
-    ).build()
+    )
+        // Migrations explicites uniquement : l'état de transfert doit toujours survivre.
+        .addMigrations(MIGRATION_1_2)
+        .build()
 
     val mediaRepository: MediaRepository = MediaStoreRepositoryImpl(context)
 
     val transferStateRepository: TransferStateRepository =
         TransferStateRepositoryImpl(database.transferStateDao())
 
+    val ssdMediaIndex: SsdMediaIndex = RoomSsdMediaIndex(database.ssdMediaDao())
+
+    val favoritesRepository: FavoritesRepository = RoomFavoritesRepository(database.favoriteDao())
+
+    private val transactionRunner: TransactionRunner = RoomTransactionRunner(database)
+
     val destinationWriter: DestinationWriter = SafDestinationWriter(context) {
         settingsDataStore.destinationRootUri.first()
     }
+
+    private val phoneGallerySource: PhoneGallerySource = MediaStoreGallerySource(context)
 
     val mediaDeletionRequester = SystemMediaDeletionRequester(context)
 
@@ -63,4 +93,29 @@ class AppContainer(private val context: Context) {
         mediaRepository,
         mediaDeletionRequester,
     )
+
+    val observeTimelineUseCase = ObserveTimelineUseCase(
+        phoneGallerySource,
+        ssdMediaIndex,
+        transferStateRepository,
+        favoritesRepository,
+        destinationWriter,
+        applicationScope,
+    )
+
+    val imageLoader: ImageLoader by lazy {
+        ImageLoader.Builder(context)
+            .components {
+                add(PhoneThumbnailFetcher.Key())
+                add(PhoneThumbnailFetcher.Factory(context.contentResolver))
+            }
+            .memoryCache {
+                MemoryCache.Builder().maxSizePercent(context, MEMORY_CACHE_PERCENT).build()
+            }
+            .build()
+    }
+
+    private companion object {
+        const val MEMORY_CACHE_PERCENT = 0.25
+    }
 }

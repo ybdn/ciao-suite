@@ -2,6 +2,23 @@
 <resources>
     <string name="app_name">CiaoCloud</string>
 
+    <string name="tab_photos">Photos</string>
+    <string name="tab_offload">Délester</string>
+    <string name="tab_settings">Réglages</string>
+
+    <string name="gallery_title">Photos</string>
+    <string name="gallery_filter_all">Tout</string>
+    <string name="gallery_filter_favorites">Favoris</string>
+    <string name="gallery_filter_not_backed_up">Non sauvegardés</string>
+    <string name="gallery_filter_videos">Vidéos</string>
+    <string name="gallery_empty">Aucune photo ni vidéo.</string>
+    <string name="gallery_empty_filter">Aucun média pour ce filtre.</string>
+    <string name="gallery_permission_needed">L\'accès aux photos et vidéos est nécessaire pour afficher la galerie du téléphone.</string>
+    <string name="gallery_permission_partial">Accès limité à une sélection de photos et vidéos : la galerie est incomplète.</string>
+    <string name="gallery_permission_grant">Autoriser l\'accès</string>
+
+    <string name="viewer_back">Retour</string>
+
     <string name="home_title">CiaoCloud</string>
     <string name="home_marquee">Déleste • Range par date • Vérifie • Libère l\'espace • </string>
     <string name="home_step_destination">Destination</string>

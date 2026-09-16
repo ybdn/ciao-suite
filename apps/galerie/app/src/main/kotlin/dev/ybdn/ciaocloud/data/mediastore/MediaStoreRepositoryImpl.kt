@@ -186,10 +186,8 @@ class MediaStoreRepositoryImpl(
         /** 1990-01-01 : toute date antérieure est considérée comme absente. */
         const val MIN_PLAUSIBLE_EPOCH_MILLIS = 631_152_000_000L
 
-        // Volume interne uniquement : le SSD branché en USB est lui aussi indexé par MediaStore
-        // et ne doit jamais être scanné (ni proposé à la suppression).
-        val IMAGES_COLLECTION: Uri = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        val VIDEO_COLLECTION: Uri = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val IMAGES_COLLECTION: Uri = MediaStoreCollections.IMAGES
+        val VIDEO_COLLECTION: Uri = MediaStoreCollections.VIDEO
 
         val EXIF_DATE_FORMATTER: DateTimeFormatter =
             DateTimeFormatter.ofPattern("uuuu:MM:dd HH:mm:ss", Locale.US).withResolverStyle(ResolverStyle.STRICT)
