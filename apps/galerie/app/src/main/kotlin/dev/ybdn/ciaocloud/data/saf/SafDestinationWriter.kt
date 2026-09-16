@@ -42,6 +42,12 @@ class SafDestinationWriter(
     private val entriesCache = HashMap<String, MutableMap<String, SafEntry>>()
 
     override suspend fun isDestinationAvailable(): Boolean = withContext(Dispatchers.IO) {
+        // Vérifiée avant chaque lot : le SSD a pu être modifié entre deux transferts (édition, copie,
+        // renommage), les contenus de dossiers mémorisés ne sont plus fiables.
+        cacheMutex.withLock {
+            directoryCache.clear()
+            entriesCache.clear()
+        }
         val rootUri = rootUriProvider() ?: return@withContext false
         val hasPermission = resolver.persistedUriPermissions.any { it.uri == rootUri && it.isWritePermission }
         hasPermission && runCatching {

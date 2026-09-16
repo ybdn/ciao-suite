@@ -52,7 +52,7 @@ fun GalleryTile(
     showBackupBadge: Boolean = true,
 ) {
     val context = LocalContext.current
-    val request = remember(item.key, item.phone?.dateModifiedEpochMillis) { GalleryImages.thumbnailRequest(context, item) }
+    val request = remember(item.key, item.phone?.dateModifiedEpochMillis, item.ssd?.lastModifiedEpochMillis) { GalleryImages.thumbnailRequest(context, item) }
 
     Box(
         modifier = modifier

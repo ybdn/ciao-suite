@@ -12,7 +12,11 @@ import dev.ybdn.ciaocloud.domain.model.GalleryItem
  */
 object GalleryImages {
 
-    fun thumbnailCacheKey(item: GalleryItem): String = "thumbnail:${item.key}"
+    /** Inclut la date de modification : une photo remplacée (édition) n'affiche pas l'ancienne image. */
+    fun thumbnailCacheKey(item: GalleryItem): String = "thumbnail:${item.key}:${modificationStamp(item)}"
+
+    private fun modificationStamp(item: GalleryItem): Long =
+        item.phone?.dateModifiedEpochMillis ?: item.ssd?.lastModifiedEpochMillis ?: 0
 
     fun thumbnailRequest(context: Context, item: GalleryItem): ImageRequest {
         val phone = item.phone
@@ -30,6 +34,7 @@ object GalleryImages {
     fun originalRequest(context: Context, item: GalleryItem, originalUri: String): ImageRequest =
         ImageRequest.Builder(context)
             .data(originalUri)
+            .memoryCacheKey("original:$originalUri:${modificationStamp(item)}")
             .placeholderMemoryCacheKey(thumbnailCacheKey(item))
             .build()
 }

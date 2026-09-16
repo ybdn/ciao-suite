@@ -43,7 +43,15 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.R
+import dev.ybdn.ciaocloud.domain.model.EditAvailability
+import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
+import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
+import dev.ybdn.ciaocloud.presentation.editor.PhotoEditorScreen
+import dev.ybdn.ciaocloud.presentation.editor.messageRes
+import dev.ybdn.ciaocloud.presentation.editor.toast
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.ui.draw.alpha
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
 import dev.ybdn.ciaocloud.presentation.components.NeoAction
@@ -75,6 +83,11 @@ fun ViewerScreen(
     var chromeVisible by rememberSaveable { mutableStateOf(true) }
     var itemToDelete by remember { mutableStateOf<GalleryItem?>(null) }
     var itemForInfo by remember { mutableStateOf<GalleryItem?>(null) }
+    val transferRunning by viewModel.transferRunning.collectAsStateWithLifecycle()
+    // Clé de l'élément en cours d'édition (éditeur plein écran), et élément à afficher après une copie.
+    var editingKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var focusKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     val isBusy by viewModel.actions.isBusy.collectAsStateWithLifecycle()
     var bottomBarHeightPx by remember { mutableIntStateOf(0) }
     val bottomBarHeight = with(LocalDensity.current) { bottomBarHeightPx.toDp() }
@@ -112,6 +125,15 @@ fun ViewerScreen(
         val pagerState = rememberPagerState(initialPage = uiState.initialIndex) { items.size }
         val currentItem = items.getOrNull(pagerState.currentPage)
 
+        // Copie enregistrée : on l'affiche dès qu'elle apparaît dans la chronologie.
+        LaunchedEffect(items, focusKey) {
+            val index = focusKey?.let { key -> items.indexOfFirst { it.key == key } } ?: -1
+            if (index >= 0) {
+                pagerState.scrollToPage(index)
+                focusKey = null
+            }
+        }
+
         HorizontalPager(
             state = pagerState,
             key = { page -> items.getOrNull(page)?.key ?: page },
@@ -146,8 +168,17 @@ fun ViewerScreen(
             modifier = Modifier.align(Alignment.TopCenter),
         ) {
             currentItem?.let { item ->
+                val capabilities = remember(item, ssdAvailable, transferRunning) { viewModel.editCapabilities(item) }
                 NeoTopBar(
                     title = formatShortDate(item),
+                    actions = {
+                        EditAction(capabilities) {
+                            guardAction {
+                                chromeVisible = true
+                                editingKey = item.key
+                            }
+                        }
+                    },
                     navigation = {
                         IconButton(onClick = onBack, modifier = Modifier.padding(start = 8.dp)) {
                             Icon(
@@ -204,6 +235,46 @@ fun ViewerScreen(
                 )
             }
         }
+
+        val editingItem = editingKey?.let { key -> items.firstOrNull { it.key == key } }
+        if (editingItem != null) {
+            PhotoEditorScreen(
+                item = editingItem,
+                onClose = { editingKey = null },
+                onSaved = { outcome ->
+                    editingKey = null
+                    when (outcome) {
+                        is SaveEditOutcome.Copied -> {
+                            focusKey = outcome.key
+                            context.toast(context.getString(R.string.editor_copy_saved))
+                        }
+                        else -> context.toast(context.getString(R.string.editor_replaced))
+                    }
+                },
+            )
+        }
+    }
+}
+
+/**
+ * Crayon « Modifier » : masqué si l'édition est sans objet (vidéo, format), grisé avec un message si
+ * elle est momentanément impossible (SSD débranché, transfert en cours).
+ */
+@Composable
+private fun EditAction(capabilities: EditCapabilities, onEdit: () -> Unit) {
+    val context = LocalContext.current
+    // Lot 1 : seules les rotations sans perte sont enregistrables.
+    val lossless = capabilities.losslessRotation
+    if (lossless is EditAvailability.Unavailable && lossless.reason.hidesAction) return
+    val entry = listOf(capabilities.editCopy, capabilities.replace)
+    val blockedReason = entry.filterIsInstance<EditAvailability.Unavailable>().takeIf { it.size == entry.size }?.first()?.reason
+    IconButton(
+        onClick = {
+            if (blockedReason == null) onEdit() else context.toast(context.getString(blockedReason.messageRes()))
+        },
+        modifier = Modifier.alpha(if (blockedReason == null) 1f else 0.4f),
+    ) {
+        Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.editor_open))
     }
 }
 

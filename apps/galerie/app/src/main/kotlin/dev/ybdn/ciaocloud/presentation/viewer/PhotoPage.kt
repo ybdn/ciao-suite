@@ -26,7 +26,7 @@ fun ZoomablePhotoPage(
     onToggleChrome: () -> Unit,
 ) {
     val context = LocalContext.current
-    val request = remember(item.key, originalUri) {
+    val request = remember(item.key, originalUri, item.phone?.dateModifiedEpochMillis, item.ssd?.lastModifiedEpochMillis) {
         when (originalUri) {
             is OriginalUri.Available -> GalleryImages.originalRequest(context, item, originalUri.uri)
             // En attendant l'URI, ou SSD débranché : vignette agrandie.

@@ -32,6 +32,8 @@ class RefreshSsdIndexUseCase(
     private val ssdMediaBrowser: SsdMediaBrowser,
     private val ssdMediaIndex: SsdMediaIndex,
     private val scope: CoroutineScope,
+    /** Reprise des éditions interrompues, avant de lire le SSD (fichiers `.ciao-new`/`.ciao-old`). */
+    private val recoverInterruptedEdits: suspend () -> Unit = {},
 ) {
     private val _state = MutableStateFlow<SsdIndexState>(SsdIndexState.Idle)
     val state: StateFlow<SsdIndexState> = _state.asStateFlow()
@@ -43,6 +45,7 @@ class RefreshSsdIndexUseCase(
         _state.value = SsdIndexState.Running(0, 0)
         job = scope.launch {
             _state.value = try {
+                recoverInterruptedEdits()
                 val files = ssdMediaBrowser.listDayFolderMedia { folders, found ->
                     _state.value = SsdIndexState.Running(folders, found)
                 }

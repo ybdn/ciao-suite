@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.ybdn.ciaocloud.di.AppContainer
+import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.FavoriteKeys
 import dev.ybdn.ciaocloud.domain.model.GalleryFilter
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
@@ -64,6 +65,15 @@ class ViewerViewModel(
     val actions = GalleryActions(appContainer, viewModelScope)
 
     val ssdAvailable: StateFlow<Boolean> = appContainer.observeSsdAvailabilityUseCase()
+
+    val transferRunning: StateFlow<Boolean> = appContainer.getEditCapabilitiesUseCase.transferRunning
+
+    /** Actions d'édition de [item] ; à recalculer quand le SSD ou un transfert change d'état. */
+    fun editCapabilities(item: GalleryItem): EditCapabilities = appContainer.getEditCapabilitiesUseCase(
+        item,
+        isExternal = !canEdit(item),
+        isLocked = source is ViewerSource.External && source.secure,
+    )
 
     /** Un média hors MediaStore (pièce jointe…) ne peut être ni supprimé ni mis en favori. */
     fun canEdit(item: GalleryItem): Boolean = item.ssd != null || (item.phone?.mediaStoreId ?: -1) >= 0

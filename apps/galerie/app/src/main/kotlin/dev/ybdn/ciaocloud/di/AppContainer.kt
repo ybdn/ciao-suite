@@ -55,6 +55,17 @@ import dev.ybdn.ciaocloud.domain.usecase.ToggleFavoriteUseCase
 import dev.ybdn.ciaocloud.presentation.system.IntentSenderLauncher
 import dev.ybdn.ciaocloud.presentation.system.SystemMediaDeletionRequester
 import dev.ybdn.ciaocloud.presentation.system.SystemMediaTrash
+import dev.ybdn.ciaocloud.data.edit.ExifInterfaceMetadataWriter
+import dev.ybdn.ciaocloud.data.edit.FileEditJournal
+import dev.ybdn.ciaocloud.data.edit.FileEditWorkspace
+import dev.ybdn.ciaocloud.data.edit.MediaStorePhoneMediaWriter
+import dev.ybdn.ciaocloud.data.saf.SafSsdMediaWriter
+import dev.ybdn.ciaocloud.domain.usecase.GetEditCapabilitiesUseCase
+import dev.ybdn.ciaocloud.domain.usecase.RecoverInterruptedEditsUseCase
+import dev.ybdn.ciaocloud.domain.usecase.SafeFileEditor
+import dev.ybdn.ciaocloud.domain.usecase.SavePhotoEditUseCase
+import dev.ybdn.ciaocloud.presentation.system.SystemMediaWriteAccess
+import dev.ybdn.ciaocloud.service.ServiceTransferActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -150,7 +161,37 @@ class AppContainer(private val context: Context) {
         applicationScope,
     )
 
-    val refreshSsdIndexUseCase = RefreshSsdIndexUseCase(ssdMediaBrowser, ssdMediaIndex, applicationScope)
+    // Édition des photos (v3).
+
+    private val editWorkspace = FileEditWorkspace(context)
+
+    private val editJournal = FileEditJournal(context)
+
+    private val safeFileEditor = SafeFileEditor(
+        phoneWriter = MediaStorePhoneMediaWriter(context),
+        ssdWriter = SafSsdMediaWriter(context) { settingsDataStore.destinationRootUri.first() },
+        writeAccess = SystemMediaWriteAccess(context, intentSenderLauncher),
+        journal = editJournal,
+        transferStateRepository = transferStateRepository,
+        ssdMediaIndex = ssdMediaIndex,
+        ssdThumbnailCache = ssdThumbnailCache,
+        transactionRunner = transactionRunner,
+    )
+
+    val recoverInterruptedEditsUseCase = RecoverInterruptedEditsUseCase(editJournal, safeFileEditor)
+
+    val getEditCapabilitiesUseCase = GetEditCapabilitiesUseCase(ssdMediaBrowser, ServiceTransferActivity(applicationScope))
+
+    val savePhotoEditUseCase = SavePhotoEditUseCase(
+        editWorkspace,
+        ExifInterfaceMetadataWriter(),
+        ssdMediaBrowser,
+        safeFileEditor,
+    )
+
+    val refreshSsdIndexUseCase = RefreshSsdIndexUseCase(ssdMediaBrowser, ssdMediaIndex, applicationScope) {
+        recoverInterruptedEditsUseCase()
+    }
 
     val getOriginalUriUseCase = GetOriginalUriUseCase(ssdMediaBrowser)
 
@@ -200,6 +241,14 @@ class AppContainer(private val context: Context) {
                 MemoryCache.Builder().maxSizePercent(context, MEMORY_CACHE_PERCENT).build()
             }
             .build()
+    }
+
+    /** Reprise des enregistrements interrompus par l'arrêt de l'app (spec v3 A4). */
+    fun recoverInterruptedEdits() {
+        applicationScope.launch {
+            editWorkspace.deleteStaleFiles()
+            recoverInterruptedEditsUseCase()
+        }
     }
 
     /** Les copies partagées lors de la session précédente ne servent plus. */

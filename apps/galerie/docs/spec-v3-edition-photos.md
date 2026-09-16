@@ -391,7 +391,9 @@ Chaque lot est livrable et testable seul, sur `develop`.
 ## Points ouverts
 
 - `ExifInterface.saveAttributes` conserve-t-il la carte de gain Ultra HDR (segment MPF, image secondaire) et la vidéo d'une photo animée ? À vérifier au lot 1 (`hasGainMap()` après écriture, lecture de la vidéo intégrée) ; sinon, écrire les segments EXIF sans réécrire le reste du fichier.
+  - *Constat 2026-09-17 (émulateur, Android 15) :* sur un JPEG suivi de données après la fin d'image (comme la vidéo d'une photo animée), la rotation sans perte ne réécrit que le bloc EXIF : les octets à partir du marqueur SOS, données finales comprises, sont identiques ; GPS et autres balises conservés. **À vérifier sur le Pixel** : photo Ultra HDR (`hasGainMap()` après rotation ; le bloc EXIF grandit de quelques octets, les décalages MPF étant relatifs à l'en-tête MPF ils devraient rester valides) et photo animée (vidéo lisible dans Google Photos après rotation).
 - MediaStore recalcule-t-il `DATE_TAKEN` et l'orientation après écriture via `ContentResolver` ? À vérifier au lot 1 ; sinon, mettre à jour les colonnes explicitement.
+  - *Constat 2026-09-17 (émulateur) :* oui. Après remplacement via `ContentResolver` (`"wt"`), MediaStore rescanne le fichier : `orientation` et `date_modified` sont mis à jour, `datetaken` reste celui de l'EXIF. Une copie insérée avec `IS_PENDING` reçoit la même `datetaken` que l'original. Aucune mise à jour explicite des colonnes n'est nécessaire.
 - Prise en charge de `moveDocument` par le fournisseur de stockage du SSD USB (repli copie + suppression prévu).
 - Durée réelle d'export d'une photo de 50 Mpx et mémoire crête (≈ 200 Mo par copie ARGB) : à mesurer au lot 3.
 - Affichage de l'UTF-8 dans les balises EXIF texte par les autres apps (Google Photos, Windows, macOS) : à contrôler au lot 5.

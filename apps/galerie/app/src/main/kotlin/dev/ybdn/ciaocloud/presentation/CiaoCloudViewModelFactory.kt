@@ -1,7 +1,10 @@
 package dev.ybdn.ciaocloud.presentation
 
 import android.app.Application
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.Composable
@@ -29,4 +32,27 @@ inline fun <reified T : ViewModel> ciaoCloudViewModel(
         create(container, app)
     }
     return viewModel(factory = factory)
+}
+
+/** Factory d'un ViewModel qui conserve son état dans un `SavedStateHandle` (survie à la mort du processus). */
+class CiaoCloudSavedStateViewModelFactory(
+    private val application: Application,
+    private val appContainer: AppContainer,
+    private val create: (AppContainer, Application, SavedStateHandle) -> ViewModel,
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
+        create(appContainer, application, extras.createSavedStateHandle()) as T
+}
+
+@Composable
+inline fun <reified T : ViewModel> ciaoCloudSavedStateViewModel(
+    key: String,
+    crossinline create: (AppContainer, Application, SavedStateHandle) -> T,
+): T {
+    val context = LocalContext.current.applicationContext as CiaoCloudApplication
+    val factory = CiaoCloudSavedStateViewModelFactory(context, context.appContainer) { container, app, handle ->
+        create(container, app, handle)
+    }
+    return viewModel(key = key, factory = factory)
 }

@@ -104,29 +104,12 @@ class SafSsdMediaBrowser(
         }
     }
 
-    /**
-     * `ExternalStorageProvider` (SSD USB, stockage interne) identifie un document par
-     * "volume:chemin" : l'URI se construit sans requête. Autres providers : descente dossier par dossier.
-     */
     private suspend fun resolveDocumentUri(relativePath: String): Uri? {
         val rootUri = rootUriProvider() ?: return null
-        val treeDocumentId = runCatching { DocumentsContract.getTreeDocumentId(rootUri) }.getOrNull() ?: return null
-        if (rootUri.authority == EXTERNAL_STORAGE_AUTHORITY) {
-            val separator = if (treeDocumentId.endsWith(":")) "" else "/"
-            return DocumentsContract.buildDocumentUriUsingTree(rootUri, treeDocumentId + separator + relativePath)
-        }
-        var current = SafDocuments.rootDocumentUri(rootUri)
-        for (segment in relativePath.split('/')) {
-            current = SafDocuments.listChildren(resolver, current)
-                .firstOrNull { it.name.equals(segment, ignoreCase = true) }
-                ?.uri
-                ?: return null
-        }
-        return current
+        return SafDocuments.resolve(resolver, rootUri, relativePath)
     }
 
     private companion object {
-        const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
         val DCIM = Regex("dcim", RegexOption.IGNORE_CASE)
         val YEAR = Regex("""\d{4}""")
         val TWO_DIGITS = Regex("""\d{2}""")

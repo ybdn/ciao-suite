@@ -69,4 +69,27 @@ object SafDocuments {
 
     fun deleteDocument(resolver: ContentResolver, documentUri: Uri): Boolean =
         runCatching { DocumentsContract.deleteDocument(resolver, documentUri) }.getOrDefault(false)
+
+    /**
+     * URI de document de [relativePath] sous la racine [treeUri]. `ExternalStorageProvider` (SSD USB,
+     * stockage interne) identifie un document par « volume:chemin » : l'URI se construit sans requête
+     * (le document peut ne pas exister). Autres providers : descente dossier par dossier (null si absent).
+     */
+    fun resolve(resolver: ContentResolver, treeUri: Uri, relativePath: String): Uri? {
+        val treeDocumentId = runCatching { DocumentsContract.getTreeDocumentId(treeUri) }.getOrNull() ?: return null
+        if (treeUri.authority == EXTERNAL_STORAGE_AUTHORITY) {
+            val separator = if (treeDocumentId.endsWith(":")) "" else "/"
+            return DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocumentId + separator + relativePath)
+        }
+        var current = rootDocumentUri(treeUri)
+        for (segment in relativePath.split('/')) {
+            current = listChildren(resolver, current)
+                .firstOrNull { it.name.equals(segment, ignoreCase = true) }
+                ?.uri
+                ?: return null
+        }
+        return current
+    }
+
+    private const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
 }
