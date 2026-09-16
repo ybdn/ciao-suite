@@ -5,7 +5,15 @@ import androidx.room.Room
 import coil3.ImageLoader
 import coil3.memory.MemoryCache
 import dev.ybdn.ciaocloud.data.datastore.SettingsDataStore
+import dev.ybdn.ciaocloud.data.saf.SafSsdMediaBrowser
+import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
+import dev.ybdn.ciaocloud.domain.usecase.GetOriginalUriUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ManageThumbnailCacheUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ObserveSsdAvailabilityUseCase
+import dev.ybdn.ciaocloud.domain.usecase.RefreshSsdIndexUseCase
 import dev.ybdn.ciaocloud.presentation.image.PhoneThumbnailFetcher
+import dev.ybdn.ciaocloud.presentation.image.SsdThumbnailDiskCache
+import dev.ybdn.ciaocloud.presentation.image.SsdThumbnailFetcher
 import dev.ybdn.ciaocloud.data.local.CiaoCloudDatabase
 import dev.ybdn.ciaocloud.data.local.MIGRATION_1_2
 import dev.ybdn.ciaocloud.data.mediastore.MediaStoreGallerySource
@@ -72,6 +80,16 @@ class AppContainer(private val context: Context) {
 
     private val phoneGallerySource: PhoneGallerySource = MediaStoreGallerySource(context)
 
+    private val ssdMediaBrowser: SsdMediaBrowser = SafSsdMediaBrowser(
+        context,
+        rootUriProvider = { settingsDataStore.destinationRootUri.first() },
+        scope = applicationScope,
+    )
+
+    private val ssdThumbnailCache = SsdThumbnailDiskCache(context, applicationScope) {
+        settingsDataStore.thumbnailCacheMaxBytes.first()
+    }
+
     val mediaDeletionRequester = SystemMediaDeletionRequester(context)
 
     val scanSession = ScanSession()
@@ -86,6 +104,10 @@ class AppContainer(private val context: Context) {
         destinationWriter,
         transferStateRepository,
         verifyTransferUseCase,
+        ssdMediaIndex,
+        favoritesRepository,
+        ssdThumbnailCache,
+        transactionRunner,
     )
 
     val deleteVerifiedMediaUseCase = DeleteVerifiedMediaUseCase(
@@ -103,11 +125,21 @@ class AppContainer(private val context: Context) {
         applicationScope,
     )
 
+    val refreshSsdIndexUseCase = RefreshSsdIndexUseCase(ssdMediaBrowser, ssdMediaIndex, applicationScope)
+
+    val getOriginalUriUseCase = GetOriginalUriUseCase(ssdMediaBrowser)
+
+    val observeSsdAvailabilityUseCase = ObserveSsdAvailabilityUseCase(ssdMediaBrowser)
+
+    val manageThumbnailCacheUseCase = ManageThumbnailCacheUseCase(ssdThumbnailCache)
+
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(context)
             .components {
                 add(PhoneThumbnailFetcher.Key())
                 add(PhoneThumbnailFetcher.Factory(context.contentResolver))
+                add(SsdThumbnailFetcher.Key())
+                add(SsdThumbnailFetcher.Factory(context, ssdThumbnailCache, ssdMediaBrowser))
             }
             .memoryCache {
                 MemoryCache.Builder().maxSizePercent(context, MEMORY_CACHE_PERCENT).build()

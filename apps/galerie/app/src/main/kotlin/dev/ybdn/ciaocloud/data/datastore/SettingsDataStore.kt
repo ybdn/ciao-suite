@@ -3,6 +3,7 @@ package dev.ybdn.ciaocloud.data.datastore
 import android.content.Context
 import android.net.Uri
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dev.ybdn.ciaocloud.domain.model.ThemeMode
@@ -34,8 +35,20 @@ class SettingsDataStore(private val context: Context) {
         context.dataStore.edit { prefs -> prefs[THEME_MODE_KEY] = mode.name }
     }
 
-    private companion object {
-        val DESTINATION_ROOT_URI_KEY = stringPreferencesKey("destination_root_uri")
-        val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
+    /** Taille maximale du cache de vignettes SSD, en octets (500 Mo par défaut). */
+    val thumbnailCacheMaxBytes: Flow<Long> = context.dataStore.data.map { prefs ->
+        prefs[THUMBNAIL_CACHE_MAX_BYTES_KEY] ?: DEFAULT_THUMBNAIL_CACHE_MAX_BYTES
+    }
+
+    suspend fun setThumbnailCacheMaxBytes(bytes: Long) {
+        context.dataStore.edit { prefs -> prefs[THUMBNAIL_CACHE_MAX_BYTES_KEY] = bytes }
+    }
+
+    companion object {
+        const val DEFAULT_THUMBNAIL_CACHE_MAX_BYTES = 500L * 1024 * 1024
+
+        private val DESTINATION_ROOT_URI_KEY = stringPreferencesKey("destination_root_uri")
+        private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
+        private val THUMBNAIL_CACHE_MAX_BYTES_KEY = longPreferencesKey("thumbnail_cache_max_bytes")
     }
 }

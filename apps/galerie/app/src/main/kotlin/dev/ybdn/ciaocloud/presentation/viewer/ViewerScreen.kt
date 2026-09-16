@@ -64,6 +64,7 @@ fun ViewerScreen(
 ) {
     val viewModel = ciaoCloudViewModel { container, app -> ViewerViewModel(container, app, initialKey, filter) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val ssdAvailable by viewModel.ssdAvailable.collectAsStateWithLifecycle()
     var chromeVisible by rememberSaveable { mutableStateOf(true) }
 
     ImmersiveSystemBars(visible = chromeVisible)
@@ -88,14 +89,17 @@ fun ViewerScreen(
         ) { page ->
             val item = items.getOrNull(page) ?: return@HorizontalPager
             val isCurrentPage = pagerState.settledPage == page
+            val originalUri = rememberOriginalUri(item, ssdAvailable, viewModel::originalUri)
             when (item.mediaType) {
                 MediaType.PHOTO -> ZoomablePhotoPage(
                     item = item,
+                    originalUri = originalUri,
                     isCurrentPage = isCurrentPage,
                     onToggleChrome = { chromeVisible = !chromeVisible },
                 )
                 MediaType.VIDEO -> VideoPage(
                     item = item,
+                    originalUri = originalUri,
                     isCurrentPage = isCurrentPage,
                     chromeVisible = chromeVisible,
                     onToggleChrome = { chromeVisible = !chromeVisible },

@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import dev.ybdn.ciaocloud.domain.usecase.SsdIndexState
 import java.time.LocalDate
 
 /** Case de la grille : en-tête de jour (pleine largeur) ou média. */
@@ -59,5 +61,16 @@ class GalleryViewModel(
         this.filter.value = filter
     }
 
+    val ssdAvailable: StateFlow<Boolean> = appContainer.observeSsdAvailabilityUseCase()
+
+    val ssdIndexState: StateFlow<SsdIndexState> = appContainer.refreshSsdIndexUseCase.state
+
     fun refresh() = appContainer.observeTimelineUseCase.refresh()
+
+    fun onResume() {
+        viewModelScope.launch { appContainer.observeSsdAvailabilityUseCase.refresh() }
+    }
+
+    /** « Actualiser le SSD » : réindexation complète, déclenchée manuellement. */
+    fun refreshSsdIndex() = appContainer.refreshSsdIndexUseCase.start()
 }

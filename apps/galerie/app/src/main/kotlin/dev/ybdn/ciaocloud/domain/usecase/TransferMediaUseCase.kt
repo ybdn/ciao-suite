@@ -1,16 +1,25 @@
 package dev.ybdn.ciaocloud.domain.usecase
 
+import dev.ybdn.ciaocloud.domain.model.FavoriteKeys
 import dev.ybdn.ciaocloud.domain.model.MediaFile
+import dev.ybdn.ciaocloud.domain.model.SsdMedia
 import dev.ybdn.ciaocloud.domain.model.TransferAbortReason
 import dev.ybdn.ciaocloud.domain.model.TransferProgress
 import dev.ybdn.ciaocloud.domain.model.TransferRecord
 import dev.ybdn.ciaocloud.domain.model.TransferStatus
 import dev.ybdn.ciaocloud.domain.repository.DestinationWriteResult
 import dev.ybdn.ciaocloud.domain.repository.DestinationWriter
+import dev.ybdn.ciaocloud.domain.repository.FavoritesRepository
+import dev.ybdn.ciaocloud.domain.repository.SsdMediaIndex
+import dev.ybdn.ciaocloud.domain.repository.SsdThumbnailCache
+import dev.ybdn.ciaocloud.domain.repository.TransactionRunner
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
 import dev.ybdn.ciaocloud.domain.util.DestinationDecision
 import dev.ybdn.ciaocloud.domain.util.DestinationPathResolver
 import dev.ybdn.ciaocloud.domain.util.DuplicateResolver
+import dev.ybdn.ciaocloud.domain.util.MediaFileType
+import dev.ybdn.ciaocloud.domain.util.MediaFileTypes
+import dev.ybdn.ciaocloud.domain.util.TimelineBuilder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -29,6 +38,10 @@ class TransferMediaUseCase(
     private val destinationWriter: DestinationWriter,
     private val transferStateRepository: TransferStateRepository,
     private val verifyTransferUseCase: VerifyTransferUseCase,
+    private val ssdMediaIndex: SsdMediaIndex,
+    private val favoritesRepository: FavoritesRepository,
+    private val ssdThumbnailCache: SsdThumbnailCache,
+    private val transactionRunner: TransactionRunner,
 ) {
     operator fun invoke(files: List<MediaFile>): Flow<TransferProgress> = channelFlow {
         var bytesTransferredSoFar = 0L
@@ -67,16 +80,7 @@ class TransferMediaUseCase(
             when (outcome) {
                 is CopyOutcome.Success -> {
                     val writeResult = outcome.writeResult
-                    transferStateRepository.upsert(
-                        TransferRecord(
-                            mediaStoreId = file.mediaStoreId,
-                            mediaType = file.mediaType,
-                            status = TransferStatus.VERIFIED,
-                            destinationPath = writeResult.writtenRelativePath,
-                            checksum = writeResult.checksum,
-                            sizeBytes = writeResult.bytesWritten,
-                        ),
-                    )
+                    recordVerified(file, writeResult.writtenRelativePath, writeResult.checksum, writeResult.bytesWritten)
                     bytesTransferredSoFar += writeResult.bytesWritten
                     succeeded++
                     send(
@@ -91,16 +95,7 @@ class TransferMediaUseCase(
                 }
 
                 is CopyOutcome.AlreadyPresent -> {
-                    transferStateRepository.upsert(
-                        TransferRecord(
-                            mediaStoreId = file.mediaStoreId,
-                            mediaType = file.mediaType,
-                            status = TransferStatus.VERIFIED,
-                            destinationPath = outcome.destinationPath,
-                            checksum = outcome.checksum,
-                            sizeBytes = file.sizeBytes,
-                        ),
-                    )
+                    recordVerified(file, outcome.destinationPath, outcome.checksum, file.sizeBytes)
                     alreadyPresent++
                     send(TransferProgress.FileAlreadyPresent(file, outcome.destinationPath, fileIndex, files.size))
                 }
@@ -127,6 +122,44 @@ class TransferMediaUseCase(
         }
 
         send(TransferProgress.BatchCompleted(succeeded, failed, bytesTransferredSoFar, alreadyPresent))
+    }
+
+    /**
+     * Marque le média vérifié, l'ajoute à l'index du SSD et déplace son éventuel favori vers la copie
+     * SSD, en une transaction : le favori survit ainsi à la suppression de l'original.
+     */
+    private suspend fun recordVerified(file: MediaFile, destinationPath: String, checksum: String, sizeBytes: Long) {
+        val name = destinationPath.substringAfterLast('/')
+        val type = MediaFileTypes.fromFileName(name) ?: MediaFileType(file.mediaType, file.mimeType)
+        transactionRunner.inTransaction {
+            transferStateRepository.upsert(
+                TransferRecord(
+                    mediaStoreId = file.mediaStoreId,
+                    mediaType = file.mediaType,
+                    status = TransferStatus.VERIFIED,
+                    destinationPath = destinationPath,
+                    checksum = checksum,
+                    sizeBytes = sizeBytes,
+                ),
+            )
+            TimelineBuilder.parseDayFromPath(destinationPath)?.let { day ->
+                ssdMediaIndex.upsert(
+                    SsdMedia(
+                        relativePath = destinationPath,
+                        displayName = name,
+                        mediaType = type.mediaType,
+                        mimeType = type.mimeType,
+                        sizeBytes = sizeBytes,
+                        captureDate = day,
+                        capturedAtEpochMillis = file.effectiveDateEpochMillis,
+                        lastModifiedEpochMillis = System.currentTimeMillis(),
+                    ),
+                )
+            }
+            favoritesRepository.renameKey(FavoriteKeys.phone(file.mediaStoreId), FavoriteKeys.ssd(destinationPath))
+        }
+        // Vignette disponible SSD débranché, même après suppression de l'original du téléphone.
+        ssdThumbnailCache.seedFromPhone(file.uri, destinationPath)
     }
 
     private suspend fun precheckAbortReason(files: List<MediaFile>): TransferAbortReason? {

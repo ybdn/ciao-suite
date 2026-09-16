@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.GalleryFilter
+import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
 import dev.ybdn.ciaocloud.presentation.components.NeoButton
 import dev.ybdn.ciaocloud.presentation.components.NeoChipRow
@@ -49,10 +50,13 @@ fun GalleryScreen(
 ) {
     val viewModel = ciaoCloudViewModel { container, app -> GalleryViewModel(container, app) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val ssdAvailable by viewModel.ssdAvailable.collectAsStateWithLifecycle()
+    val ssdIndexState by viewModel.ssdIndexState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var mediaAccess by rememberSaveable { mutableStateOf(context.mediaAccess()) }
 
     LifecycleResumeEffect(Unit) {
+        viewModel.onResume()
         // Permission accordée ou retirée depuis les paramètres système pendant que l'app était en pause.
         val access = context.mediaAccess()
         if (access != mediaAccess) {
@@ -105,16 +109,28 @@ fun GalleryScreen(
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             when {
                 uiState.isLoading -> CircularProgressIndicator()
-                uiState.entries.isEmpty() -> Text(
-                    text = stringResource(
-                        if (uiState.totalCount == 0) R.string.gallery_empty else R.string.gallery_empty_filter,
-                    ),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = NeoTheme.palette.content,
+                uiState.entries.isEmpty() -> Column(
                     modifier = Modifier.padding(24.dp),
-                )
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = stringResource(
+                            if (uiState.totalCount == 0) R.string.gallery_empty else R.string.gallery_empty_filter,
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = NeoTheme.palette.content,
+                    )
+                    if (uiState.totalCount == 0) {
+                        SsdIndexControls(
+                            state = ssdIndexState,
+                            onRefresh = viewModel::refreshSsdIndex,
+                        )
+                    }
+                }
                 else -> GalleryGrid(
                     entries = uiState.entries,
+                    ssdAvailable = ssdAvailable,
                     onOpenItem = { key -> onOpenItem(key, uiState.filter) },
                 )
             }
@@ -125,6 +141,7 @@ fun GalleryScreen(
 @Composable
 private fun GalleryGrid(
     entries: List<GalleryEntry>,
+    ssdAvailable: Boolean,
     onOpenItem: (String) -> Unit,
 ) {
     val gridState = rememberLazyGridState()
@@ -164,6 +181,7 @@ private fun GalleryGrid(
                     is GalleryEntry.DayHeader -> DayHeader(entry)
                     is GalleryEntry.Media -> GalleryTile(
                         item = entry.item,
+                        dimmed = !ssdAvailable && entry.item.location == GalleryLocation.SSD,
                         onClick = { onOpenItem(entry.item.key) },
                     )
                 }

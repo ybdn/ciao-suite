@@ -18,6 +18,13 @@
     <string name="gallery_permission_grant">Autoriser l\'accès</string>
 
     <string name="viewer_back">Retour</string>
+    <string name="viewer_plug_ssd">Branchez le SSD pour afficher l\'original.</string>
+
+    <string name="ssd_index_refresh">Actualiser le SSD</string>
+    <string name="ssd_index_running">Indexation du SSD… %1$d dossiers, %2$d médias</string>
+    <string name="ssd_index_done">SSD indexé : %1$d médias.</string>
+    <string name="ssd_index_unavailable">SSD inaccessible : branchez-le, ou choisissez à nouveau son dossier.</string>
+    <string name="ssd_index_failed">Échec de l\'indexation : %1$s</string>
 
     <string name="home_title">CiaoCloud</string>
     <string name="home_marquee">Déleste • Range par date • Vérifie • Libère l\'espace • </string>
@@ -75,13 +82,19 @@
     <string name="delete_partial">%1$d fichiers supprimés sur %2$d : suppression interrompue.</string>
     <string name="delete_error">Échec de la suppression : %1$s</string>
 
-    <string name="settings_title">Paramètres</string>
+    <string name="settings_title">Réglages</string>
     <string name="settings_destination_label">Dossier SSD actuel</string>
     <string name="settings_change_destination">Changer de dossier</string>
     <string name="settings_appearance_label">Apparence</string>
     <string name="settings_theme_system">Système</string>
     <string name="settings_theme_light">Clair</string>
     <string name="settings_theme_dark">Sombre</string>
+    <string name="settings_gallery_label">Galerie</string>
+    <string name="settings_ssd_index_hint">Réindexe les dossiers DCIM/aaaa/MM/jj du SSD pour afficher les médias copiés en dehors de l\'app ou retirer ceux supprimés.</string>
+    <string name="settings_thumbnail_cache_label">Cache des vignettes SSD</string>
+    <string name="settings_thumbnail_cache_usage">%1$s utilisés sur %2$s</string>
+    <string name="settings_thumbnail_cache_hint">Nouvelle taille appliquée au prochain démarrage de l\'app.</string>
+    <string name="settings_thumbnail_cache_clear">Vider le cache</string>
 
     <string name="notification_channel_transfer">Transfert CiaoCloud</string>
     <string name="notification_transfer_title">Transfert vers le SSD</string>

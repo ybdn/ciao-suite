@@ -22,7 +22,7 @@ data class ViewerUiState(
 )
 
 class ViewerViewModel(
-    appContainer: AppContainer,
+    private val appContainer: AppContainer,
     application: Application,
     private val initialKey: String,
     filter: GalleryFilter,
@@ -39,4 +39,9 @@ class ViewerViewModel(
         }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ViewerUiState())
+
+    val ssdAvailable: StateFlow<Boolean> = appContainer.observeSsdAvailabilityUseCase()
+
+    /** URI de l'original, null si seul le SSD le détient et qu'il est débranché. */
+    suspend fun originalUri(item: GalleryItem): String? = appContainer.getOriginalUriUseCase(item)
 }

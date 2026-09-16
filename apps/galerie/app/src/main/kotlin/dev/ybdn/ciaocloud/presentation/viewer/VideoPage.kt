@@ -24,6 +24,7 @@ import dev.ybdn.ciaocloud.presentation.gallery.GalleryImages
 @Composable
 fun VideoPage(
     item: GalleryItem,
+    @Suppress("UNUSED_PARAMETER") originalUri: OriginalUri,
     @Suppress("UNUSED_PARAMETER") isCurrentPage: Boolean,
     @Suppress("UNUSED_PARAMETER") chromeVisible: Boolean,
     onToggleChrome: () -> Unit,

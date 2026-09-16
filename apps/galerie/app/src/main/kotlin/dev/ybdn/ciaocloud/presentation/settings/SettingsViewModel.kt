@@ -7,7 +7,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.ybdn.ciaocloud.di.AppContainer
 import dev.ybdn.ciaocloud.domain.model.ThemeMode
+import dev.ybdn.ciaocloud.data.datastore.SettingsDataStore
+import dev.ybdn.ciaocloud.domain.usecase.SsdIndexState
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -28,6 +32,38 @@ class SettingsViewModel(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = ThemeMode.SYSTEM,
     )
+
+    val thumbnailCacheMaxBytes: StateFlow<Long> = appContainer.settingsDataStore.thumbnailCacheMaxBytes.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = SettingsDataStore.DEFAULT_THUMBNAIL_CACHE_MAX_BYTES,
+    )
+
+    private val _thumbnailCacheUsedBytes = MutableStateFlow<Long?>(null)
+    val thumbnailCacheUsedBytes: StateFlow<Long?> = _thumbnailCacheUsedBytes.asStateFlow()
+
+    val ssdIndexState: StateFlow<SsdIndexState> = appContainer.refreshSsdIndexUseCase.state
+
+    init {
+        refreshThumbnailCacheUsage()
+    }
+
+    fun refreshSsdIndex() = appContainer.refreshSsdIndexUseCase.start()
+
+    fun onThumbnailCacheMaxBytesSelected(bytes: Long) {
+        viewModelScope.launch { appContainer.settingsDataStore.setThumbnailCacheMaxBytes(bytes) }
+    }
+
+    fun clearThumbnailCache() {
+        viewModelScope.launch {
+            appContainer.manageThumbnailCacheUseCase.clear()
+            refreshThumbnailCacheUsage()
+        }
+    }
+
+    private fun refreshThumbnailCacheUsage() {
+        viewModelScope.launch { _thumbnailCacheUsedBytes.value = appContainer.manageThumbnailCacheUseCase.sizeBytes() }
+    }
 
     fun onThemeModeSelected(mode: ThemeMode) {
         viewModelScope.launch { appContainer.settingsDataStore.setThemeMode(mode) }

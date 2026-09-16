@@ -18,12 +18,17 @@ import dev.ybdn.ciaocloud.presentation.components.NeoScreen
 import dev.ybdn.ciaocloud.presentation.components.NeoSegmentedChoice
 import dev.ybdn.ciaocloud.presentation.components.NeoTag
 import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciaocloud.presentation.gallery.SsdIndexControls
+import dev.ybdn.ciaocloud.presentation.util.formatBytes
 
 @Composable
 fun SettingsScreen() {
     val viewModel = ciaoCloudViewModel { container, app -> SettingsViewModel(container, app) }
     val destinationUri by viewModel.destinationUri.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
+    val ssdIndexState by viewModel.ssdIndexState.collectAsState()
+    val cacheMaxBytes by viewModel.thumbnailCacheMaxBytes.collectAsState()
+    val cacheUsedBytes by viewModel.thumbnailCacheUsedBytes.collectAsState()
 
     val selectFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -62,5 +67,41 @@ fun SettingsScreen() {
                 onSelect = { viewModel.onThemeModeSelected(modes[it]) },
             )
         }
+
+        NeoCard {
+            NeoTag(stringResource(R.string.settings_gallery_label), tone = NeoTone.Teal)
+            Text(stringResource(R.string.settings_ssd_index_hint), style = MaterialTheme.typography.bodyMedium)
+            SsdIndexControls(state = ssdIndexState, onRefresh = viewModel::refreshSsdIndex)
+        }
+
+        NeoCard {
+            NeoTag(stringResource(R.string.settings_thumbnail_cache_label), tone = NeoTone.Lime)
+            cacheUsedBytes?.let { used ->
+                Text(
+                    stringResource(R.string.settings_thumbnail_cache_usage, formatBytes(used), formatBytes(cacheMaxBytes)),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            val sizes = THUMBNAIL_CACHE_SIZES
+            NeoSegmentedChoice(
+                options = sizes.map(::formatCacheSize),
+                selectedIndex = sizes.indexOf(cacheMaxBytes),
+                onSelect = { viewModel.onThumbnailCacheMaxBytesSelected(sizes[it]) },
+            )
+            Text(stringResource(R.string.settings_thumbnail_cache_hint), style = MaterialTheme.typography.bodySmall)
+            NeoButton(
+                text = stringResource(R.string.settings_thumbnail_cache_clear),
+                onClick = viewModel::clearThumbnailCache,
+                tone = NeoTone.Surface,
+            )
+        }
     }
 }
+
+private const val MB = 1024L * 1024
+
+private val THUMBNAIL_CACHE_SIZES = listOf(250 * MB, 500 * MB, 1024 * MB, 2048 * MB)
+
+/** « 250 Mo », « 1 Go » : libellés courts pour le choix segmenté. */
+private fun formatCacheSize(bytes: Long): String =
+    if (bytes >= 1024 * MB) "${bytes / (1024 * MB)} Go" else "${bytes / MB} Mo"
