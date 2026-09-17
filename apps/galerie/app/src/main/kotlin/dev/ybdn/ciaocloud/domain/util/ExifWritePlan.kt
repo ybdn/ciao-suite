@@ -20,6 +20,9 @@ object ExifTags {
     const val GPS_ALTITUDE = "GPSAltitude"
     const val GPS_ALTITUDE_REF = "GPSAltitudeRef"
 
+    /** Balises de texte libre, encodées en UTF-8 par l'app. */
+    val TEXT = setOf(IMAGE_DESCRIPTION, ARTIST, COPYRIGHT, "Make", "Model", "LensMake", "LensModel", "Software")
+
     /** Toutes les balises GPS connues d'`ExifInterface`. */
     val GPS = listOf(
         "GPSVersionID", GPS_LATITUDE_REF, GPS_LATITUDE, GPS_LONGITUDE_REF, GPS_LONGITUDE, GPS_ALTITUDE_REF,

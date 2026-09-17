@@ -11,6 +11,7 @@ import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
 import dev.ybdn.ciaocloud.domain.model.SaveMode
 import dev.ybdn.ciaocloud.domain.repository.EditJournal
 import dev.ybdn.ciaocloud.domain.repository.EditWorkspace
+import dev.ybdn.ciaocloud.domain.repository.PhotoEditRenderer
 import dev.ybdn.ciaocloud.domain.repository.MediaWriteAccess
 import dev.ybdn.ciaocloud.domain.repository.MetadataWriter
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
@@ -18,12 +19,15 @@ import dev.ybdn.ciaocloud.domain.repository.TransferActivity
 import dev.ybdn.ciaocloud.domain.util.EditCapabilitiesPolicy
 import dev.ybdn.ciaocloud.domain.util.EditContext
 import dev.ybdn.ciaocloud.domain.util.ExifWritePlan
+import dev.ybdn.ciaocloud.domain.util.EditedPhotoMetadata
 import dev.ybdn.ciaocloud.domain.util.FileNameCollisionResolver
+import dev.ybdn.ciaocloud.domain.util.MediaFileTypes
 import dev.ybdn.ciaocloud.domain.util.OrientationCodec
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import java.time.LocalDateTime
 
 /** Actions d'édition disponibles pour un élément, selon son format, son emplacement et l'état de l'app. */
 class GetEditCapabilitiesUseCase(
@@ -51,13 +55,16 @@ class GetEditCapabilitiesUseCase(
 /**
  * Enregistre une photo retouchée, en copie ou en remplacement de l'original. Une recette limitée aux
  * rotations et au miroir d'un JPEG n'est pas réencodée : seule la balise `Orientation` change, ce
- * qui préserve qualité, Ultra HDR et photo animée.
+ * qui préserve qualité, Ultra HDR et photo animée. Sinon, la photo est rendue puis réencodée dans le
+ * format de l'original (JPEG pour un HEIC/AVIF), avec les métadonnées de la liste blanche B6.
  */
 class SavePhotoEditUseCase(
     private val editWorkspace: EditWorkspace,
     private val metadataWriter: MetadataWriter,
     private val originalWorkFiles: OriginalWorkFiles,
+    private val photoEditRenderer: PhotoEditRenderer,
     private val safeFileEditor: SafeFileEditor,
+    private val clock: () -> LocalDateTime = LocalDateTime::now,
 ) {
     suspend operator fun invoke(
         item: GalleryItem,
@@ -68,20 +75,45 @@ class SavePhotoEditUseCase(
         if (recipe.isIdentity) return SaveEditOutcome.NothingToSave
         val availability = if (mode == SaveMode.COPY) capabilities.editCopy else capabilities.replace
         if (availability is EditAvailability.Unavailable) return SaveEditOutcome.Unavailable(availability.reason)
-        val lossless = capabilities.losslessRotation
-        if (!recipe.isOrientationOnly || lossless is EditAvailability.Unavailable) {
-            val reason = (lossless as? EditAvailability.Unavailable)?.reason ?: EditUnavailableReason.UNSUPPORTED_FORMAT
-            return SaveEditOutcome.Unavailable(reason)
+        return if (recipe.isOrientationOnly && capabilities.losslessRotation.isAvailable) {
+            saveLossless(item, recipe, mode)
+        } else {
+            saveRendered(item, recipe, mode)
         }
+    }
 
-        return originalWorkFiles.withCopy(item) { workPath ->
+    private suspend fun saveLossless(item: GalleryItem, recipe: EditRecipe, mode: SaveMode): SaveEditOutcome =
+        originalWorkFiles.withCopy(item) { workPath ->
             val orientation = OrientationCodec.compose(metadataWriter.readOrientation(workPath), recipe.transform)
             metadataWriter.apply(workPath, ExifWritePlan.orientation(orientation))
-            val fingerprint = editWorkspace.fingerprint(workPath) ?: return@withCopy SaveEditOutcome.Failed(WORK_FILE_MISSING)
-            when (mode) {
-                SaveMode.COPY -> safeFileEditor.createCopy(item, workPath, fingerprint, targetExtension = null, item.mimeType)
-                SaveMode.REPLACE -> safeFileEditor.replace(item, workPath, fingerprint)
-            }
+            write(item, workPath, mode, targetExtension = null, mimeType = item.mimeType)
+        }
+
+    private suspend fun saveRendered(item: GalleryItem, recipe: EditRecipe, mode: SaveMode): SaveEditOutcome {
+        val format = EditCapabilitiesPolicy.outputFormat(item.mimeType)
+            ?: return SaveEditOutcome.Unavailable(EditUnavailableReason.UNSUPPORTED_FORMAT)
+        val originalExtension = FileNameCollisionResolver.splitBaseAndExtension(item.displayName).second
+        val keepsExtension = MediaFileTypes.fromFileName(item.displayName)?.mimeType == format.mimeType
+        val extension = if (keepsExtension) originalExtension else format.extension
+        return originalWorkFiles.withNewFile(item, extension) { sourceUri, workPath ->
+            val rendered = photoEditRenderer.render(sourceUri, recipe, format, workPath)
+            metadataWriter.copyTags(sourceUri, workPath, EditedPhotoMetadata.COPIED_TAGS)
+            metadataWriter.apply(workPath, EditedPhotoMetadata.overrides(rendered.widthPx, rendered.heightPx, clock()))
+            write(item, workPath, mode, targetExtension = extension.takeUnless { keepsExtension }, mimeType = format.mimeType)
+        }
+    }
+
+    private suspend fun write(
+        item: GalleryItem,
+        workPath: String,
+        mode: SaveMode,
+        targetExtension: String?,
+        mimeType: String,
+    ): SaveEditOutcome {
+        val fingerprint = editWorkspace.fingerprint(workPath) ?: return SaveEditOutcome.Failed(WORK_FILE_MISSING)
+        return when (mode) {
+            SaveMode.COPY -> safeFileEditor.createCopy(item, workPath, fingerprint, targetExtension, mimeType)
+            SaveMode.REPLACE -> safeFileEditor.replace(item, workPath, fingerprint)
         }
     }
 
@@ -98,15 +130,27 @@ class OriginalWorkFiles(
     private val editWorkspace: EditWorkspace,
     private val ssdMediaBrowser: SsdMediaBrowser,
 ) {
+    /** Fichier de travail contenant une copie exacte de l'original. */
     suspend fun withCopy(item: GalleryItem, block: suspend (workPath: String) -> SaveEditOutcome): SaveEditOutcome {
+        val extension = FileNameCollisionResolver.splitBaseAndExtension(item.displayName).second.ifEmpty { "jpg" }
+        return withNewFile(item, extension) { sourceUri, workPath ->
+            editWorkspace.copyOriginal(sourceUri, workPath)
+            block(workPath)
+        }
+    }
+
+    /** Nouveau fichier de travail vide, et URI de l'original à lire. */
+    suspend fun withNewFile(
+        item: GalleryItem,
+        extension: String,
+        block: suspend (sourceUri: String, workPath: String) -> SaveEditOutcome,
+    ): SaveEditOutcome {
         val sourceUri = item.phone?.uri
             ?: item.ssd?.let { ssdMediaBrowser.documentUri(it.relativePath) }
             ?: return SaveEditOutcome.SsdUnavailable
-        val extension = FileNameCollisionResolver.splitBaseAndExtension(item.displayName).second.ifEmpty { "jpg" }
-        val workPath = editWorkspace.newWorkFile(extension)
+        val workPath = editWorkspace.newWorkFile(extension.ifEmpty { "jpg" })
         return try {
-            editWorkspace.copyOriginal(sourceUri, workPath)
-            block(workPath)
+            block(sourceUri, workPath)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

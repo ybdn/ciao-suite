@@ -338,13 +338,13 @@ fun NeoStat(
 
 /** Message mis en avant : jaune pour un avertissement, corail pour une erreur. */
 @Composable
-fun NeoNotice(text: String, tone: NeoTone = NeoTone.Yellow) {
+fun NeoNotice(text: String, tone: NeoTone = NeoTone.Yellow, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.Medium,
         color = tone.contentColor,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .neoSurface(tone.containerColor, NeoTheme.palette.outline, ControlRadius)
             .padding(horizontal = 16.dp, vertical = 12.dp),

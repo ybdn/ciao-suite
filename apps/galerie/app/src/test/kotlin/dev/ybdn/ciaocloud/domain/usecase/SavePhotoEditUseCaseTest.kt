@@ -24,6 +24,10 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
+import java.time.LocalDateTime
+import dev.ybdn.ciaocloud.domain.model.NormalizedRect
+import dev.ybdn.ciaocloud.domain.repository.EncodedFormat
+import dev.ybdn.ciaocloud.domain.util.EditedPhotoMetadata
 
 class SavePhotoEditUseCaseTest {
 
@@ -48,7 +52,10 @@ class SavePhotoEditUseCaseTest {
         phoneWriter, ssdWriter, access, journal, transfers, index, thumbnails, DirectTransactionRunner,
         newId = { "op${ids++}" }, clock = { 99 },
     )
-    private val useCase = SavePhotoEditUseCase(workspace, workspace, OriginalWorkFiles(workspace, browser), editor)
+    private val renderer = FakePhotoRenderer(sources, workspace.files)
+    private val useCase = SavePhotoEditUseCase(
+        workspace, workspace, OriginalWorkFiles(workspace, browser), renderer, editor, clock = { LocalDateTime.of(2026, 9, 17, 8, 30) },
+    )
 
     private val day = LocalDate.of(2025, 4, 21)
     private val phone = PhoneMedia(1, phoneUri, "IMG_1.jpg", MediaType.PHOTO, "image/jpeg", 4, 0, 0, 100, 100, null, "DCIM/Camera/")
@@ -243,6 +250,55 @@ class SavePhotoEditUseCaseTest {
 
         assertEquals(setOf(ssdPath), ssdWriter.files.keys)
         assertNull(index.get("DCIM/2025/04/21/IMG_1_edit.jpg"))
+    }
+
+    // Rendu réencodé
+
+    private val cropped = EditRecipe(crop = NormalizedRect(0.1, 0.1, 0.9, 0.9))
+
+    @Test
+    fun `a cropped jpeg is rendered with whitelisted metadata instead of a lossless rotation`() = runTest {
+        givenBackedUp()
+
+        val outcome = useCase(item(phone, null), cropped, SaveMode.COPY, capabilities(item(phone, null)))
+
+        assertTrue(outcome is SaveEditOutcome.Copied)
+        assertEquals(listOf(cropped to EncodedFormat.JPEG), renderer.rendered)
+        assertEquals(listOf(phoneUri to EditedPhotoMetadata.COPIED_TAGS), workspace.copiedTags)
+        val overrides = workspace.appliedPlans.single().set
+        assertEquals("1", overrides["Orientation"])
+        assertEquals("640", overrides["PixelXDimension"])
+        assertEquals("C!ao", overrides["Software"])
+        assertEquals("2026:09:17 08:30:00", overrides["DateTime"])
+        assertTrue("IMG_1_edit.jpg" in phoneWriter.names.getValue("DCIM/Camera/"))
+    }
+
+    @Test
+    fun `a heic photo is copied as jpeg and cannot be replaced`() = runTest {
+        val heicUri = "content://media/external/images/media/7"
+        sources[heicUri] = original.copyOf()
+        phoneWriter.files[heicUri] = original.copyOf()
+        val heic = item(phone.copy(mediaStoreId = 7, uri = heicUri, displayName = "IMG_7.HEIC", mimeType = "image/heic"), null)
+        val rotation = EditRecipe(ImageTransform.IDENTITY.rotatedCounterClockwise())
+
+        val copy = useCase(heic, rotation, SaveMode.COPY, capabilities(heic))
+        val replace = useCase(heic, rotation, SaveMode.REPLACE, capabilities(heic))
+
+        assertTrue(copy is SaveEditOutcome.Copied)
+        assertEquals(EncodedFormat.JPEG, renderer.rendered.single().second)
+        assertTrue("IMG_7_edit.jpg" in phoneWriter.names.getValue("DCIM/Camera/"))
+        assertTrue(replace is SaveEditOutcome.Unavailable)
+        assertArrayEquals(original, phoneWriter.files[heicUri])
+    }
+
+    @Test
+    fun `a rendered replacement of a backed up photo keeps both copies identical`() = runTest {
+        givenBackedUp()
+
+        assertEquals(SaveEditOutcome.Replaced, useCase(item(phone, ssd), cropped, SaveMode.REPLACE, capabilities(item(phone, ssd))))
+
+        assertArrayEquals(phoneWriter.files[phoneUri], ssdWriter.files[ssdPath])
+        assertEquals(fingerprintOf(ssdWriter.files.getValue(ssdPath)).checksum, transfers.records.value.getValue(1).checksum)
     }
 
     // Reprise après interruption

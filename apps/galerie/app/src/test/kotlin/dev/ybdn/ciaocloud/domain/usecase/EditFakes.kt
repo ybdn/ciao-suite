@@ -1,6 +1,10 @@
 package dev.ybdn.ciaocloud.domain.usecase
 
+import dev.ybdn.ciaocloud.domain.model.EditRecipe
 import dev.ybdn.ciaocloud.domain.model.FileFingerprint
+import dev.ybdn.ciaocloud.domain.repository.EncodedFormat
+import dev.ybdn.ciaocloud.domain.repository.PhotoEditRenderer
+import dev.ybdn.ciaocloud.domain.repository.RenderedImage
 import dev.ybdn.ciaocloud.domain.repository.EditJournal
 import dev.ybdn.ciaocloud.domain.repository.EditJournalEntry
 import dev.ybdn.ciaocloud.domain.repository.EditWorkspace
@@ -28,6 +32,10 @@ class FakeEditWorkspace(private val sources: Map<String, ByteArray>) : EditWorks
     override suspend fun delete(path: String) {
         files.remove(path)
     }
+    val copiedTags = mutableListOf<Pair<String, List<String>>>()
+    override suspend fun copyTags(sourceUri: String, path: String, tags: List<String>) {
+        copiedTags += sourceUri to tags
+    }
     override suspend fun readOrientation(path: String) = files.getValue(path).last().toInt()
     val appliedPlans = mutableListOf<ExifWritePlan>()
     override suspend fun apply(path: String, plan: ExifWritePlan) {
@@ -40,6 +48,16 @@ class FakeEditWorkspace(private val sources: Map<String, ByteArray>) : EditWorks
             // Autres balises : contenu modifié, orientation (dernier octet) intacte.
             files[path] = byteArrayOf(plan.hashCode().toByte()) + bytes
         }
+    }
+}
+
+/** Rendu factice : octets de la source suivis d'un octet propre à la recette. */
+class FakePhotoRenderer(private val sources: Map<String, ByteArray>, private val files: MutableMap<String, ByteArray>) : PhotoEditRenderer {
+    val rendered = mutableListOf<Pair<EditRecipe, EncodedFormat>>()
+    override suspend fun render(sourceUri: String, recipe: EditRecipe, format: EncodedFormat, outputPath: String): RenderedImage {
+        rendered += recipe to format
+        files[outputPath] = sources.getValue(sourceUri) + byteArrayOf(recipe.hashCode().toByte(), 42)
+        return RenderedImage(640, 480)
     }
 }
 

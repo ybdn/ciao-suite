@@ -6,6 +6,8 @@ import androidx.exifinterface.media.ExifInterface
 import dev.ybdn.ciaocloud.domain.model.FileFingerprint
 import dev.ybdn.ciaocloud.domain.repository.EditWorkspace
 import dev.ybdn.ciaocloud.domain.repository.MetadataWriter
+import dev.ybdn.ciaocloud.domain.util.ExifTags
+import dev.ybdn.ciaocloud.domain.util.ExifText
 import dev.ybdn.ciaocloud.domain.util.ExifWritePlan
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -76,7 +78,9 @@ class FileEditWorkspace(
  * d'abord écrit sous forme d'un gabarit de même longueur en octets, puis remplacé en place par son
  * encodage UTF-8, à l'emplacement exact de la valeur relu par `getAttributeRange`.
  */
-class ExifInterfaceMetadataWriter : MetadataWriter {
+class ExifInterfaceMetadataWriter(
+    private val context: Context,
+) : MetadataWriter {
 
     override suspend fun readOrientation(path: String): Int = withContext(Dispatchers.IO) {
         ExifInterface(path).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
@@ -93,6 +97,15 @@ class ExifInterfaceMetadataWriter : MetadataWriter {
         plan.remove.forEach { tag -> exif.setAttribute(tag, null) }
         exif.saveAttributes()
         if (utf8Values.isNotEmpty()) writeUtf8Values(path, utf8Values)
+    }
+
+    override suspend fun copyTags(sourceUri: String, path: String, tags: List<String>) = withContext(Dispatchers.IO) {
+        val source = context.openOriginal(Uri.parse(sourceUri)).use { ExifInterface(it) }
+        val values = tags.mapNotNull { tag ->
+            val value = if (tag in ExifTags.TEXT) ExifText.decode(source.getAttributeBytes(tag)) else source.getAttribute(tag)
+            value?.let { tag to it }
+        }.toMap()
+        apply(path, ExifWritePlan(set = values))
     }
 
     private fun writeUtf8Values(path: String, values: Map<String, ByteArray>) {

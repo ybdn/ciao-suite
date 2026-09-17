@@ -54,6 +54,8 @@ data class MediaDetails(
     val frameRate: Double? = null,
     val bitrateBitsPerSecond: Long? = null,
     val hdrFormat: HdrFormat? = null,
+    /** Photo animée (vidéo intégrée au JPEG, XMP `MotionPhoto`/`MicroVideo`). */
+    val isMotionPhoto: Boolean = false,
 )
 
 enum class ExposureProgram { MANUAL, NORMAL, APERTURE_PRIORITY, SHUTTER_PRIORITY, CREATIVE, ACTION, PORTRAIT, LANDSCAPE }

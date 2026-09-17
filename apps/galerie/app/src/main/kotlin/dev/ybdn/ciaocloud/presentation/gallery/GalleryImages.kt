@@ -30,6 +30,18 @@ object GalleryImages {
             .build()
     }
 
+    /** Image de travail de l'éditeur : grand côté limité à 2560 px, orientation EXIF appliquée. */
+    fun editorRequest(context: Context, item: GalleryItem, originalUri: String): ImageRequest =
+        ImageRequest.Builder(context)
+            .data(originalUri)
+            .size(EDITOR_MAX_SIDE_PX, EDITOR_MAX_SIDE_PX)
+            .scale(coil3.size.Scale.FIT)
+            .memoryCacheKey("editor:$originalUri:${modificationStamp(item)}")
+            .placeholderMemoryCacheKey(thumbnailCacheKey(item))
+            .build()
+
+    const val EDITOR_MAX_SIDE_PX = 2560
+
     /** Original en pleine résolution depuis [originalUri] (téléphone ou SSD). */
     fun originalRequest(context: Context, item: GalleryItem, originalUri: String): ImageRequest =
         ImageRequest.Builder(context)

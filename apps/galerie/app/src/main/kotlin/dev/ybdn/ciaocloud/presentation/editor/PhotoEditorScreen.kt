@@ -40,7 +40,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
 import dev.ybdn.ciaocloud.R
+import dev.ybdn.ciaocloud.domain.model.CropAspect
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
+import dev.ybdn.ciaocloud.presentation.components.NeoChipRow
+import dev.ybdn.ciaocloud.presentation.components.NeoNotice
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
 import dev.ybdn.ciaocloud.presentation.ciaoCloudSavedStateViewModel
@@ -140,10 +143,35 @@ fun PhotoEditorScreen(
             },
         )
 
+        var interacting by remember { mutableStateOf(false) }
         EditorPreview(
             item = item,
             viewModel = viewModel,
-            modifier = Modifier.weight(1f).padding(16.dp),
+            showGrid = interacting,
+            onInteraction = { interacting = it },
+            modifier = Modifier.weight(1f),
+        )
+
+        val details by viewModel.details.collectAsStateWithLifecycle()
+        if (details?.isMotionPhoto == true && !recipe.isOrientationOnly) {
+            NeoNotice(
+                stringResource(R.string.editor_motion_photo_still),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
+
+        val aspects = CropAspect.entries
+        NeoChipRow(
+            options = aspects.map { stringResource(it.labelRes()) },
+            selectedIndex = aspects.indexOf(recipe.aspect),
+            onSelect = { viewModel.selectAspect(aspects[it]) },
+        )
+        StraightenDial(
+            degrees = recipe.straightenDegrees,
+            onChange = viewModel::straighten,
+            onDragStart = { interacting = true },
+            onDragEnd = { interacting = false },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
 
         NeoActionBar(
@@ -161,52 +189,60 @@ fun PhotoEditorScreen(
     }
 }
 
-/** Aperçu de l'original, retourné puis pivoté, toujours contenu dans la zone disponible. */
+/** Aperçu de l'image de travail (grand côté ≤ 2560 px) avec le cadre de recadrage. */
 @Composable
-private fun EditorPreview(item: GalleryItem, viewModel: PhotoEditorViewModel, modifier: Modifier = Modifier) {
+private fun EditorPreview(
+    item: GalleryItem,
+    viewModel: PhotoEditorViewModel,
+    showGrid: Boolean,
+    onInteraction: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val recipe by viewModel.recipe.collectAsStateWithLifecycle()
     val originalUri by produceState<String?>(null, item.key) { value = viewModel.originalUri() }
     val uri = originalUri
-    BoxWithConstraints(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (uri == null) {
             CircularProgressIndicator()
-            return@BoxWithConstraints
+            return@Box
         }
-        val painter = rememberAsyncImagePainter(remember(uri) { GalleryImages.originalRequest(context, item, uri) })
+        val painter = rememberAsyncImagePainter(remember(uri) { GalleryImages.editorRequest(context, item, uri) })
         val state by painter.state.collectAsStateWithLifecycle()
         val intrinsic = (state as? AsyncImagePainter.State.Success)?.painter?.intrinsicSize
         if (intrinsic == null || intrinsic.width <= 0f || intrinsic.height <= 0f) {
             CircularProgressIndicator()
             // Le painter doit être dessiné pour lancer le chargement.
             androidx.compose.foundation.Image(painter, contentDescription = null, modifier = Modifier.size(1.dp))
-            return@BoxWithConstraints
+            return@Box
         }
-        val transform = recipe.transform
-        val displayWidth = if (transform.swapsDimensions) intrinsic.height else intrinsic.width
-        val displayHeight = if (transform.swapsDimensions) intrinsic.width else intrinsic.height
-        val density = LocalDensity.current
-        val availableWidth = with(density) { maxWidth.toPx() }
-        val availableHeight = with(density) { maxHeight.toPx() }
-        val scale = min(availableWidth / displayWidth, availableHeight / displayHeight)
-        Box(
-            modifier = Modifier.requiredSize(
-                with(density) { (intrinsic.width * scale).toDp() },
-                with(density) { (intrinsic.height * scale).toDp() },
-            ).graphicsLayer {
-                // graphicsLayer applique la mise à l'échelle (miroir) avant la rotation, comme la recette.
-                scaleX = if (transform.flipped) -1f else 1f
-                rotationZ = transform.rotationDegrees.toFloat()
-            },
-        ) {
-            androidx.compose.foundation.Image(
-                painter = painter,
-                contentDescription = item.displayName,
-                contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        LaunchedEffect(intrinsic) { viewModel.onImageLoaded(intrinsic.width, intrinsic.height) }
+        EditorCanvas(
+            painter = painter,
+            imageSize = intrinsic,
+            recipe = recipe,
+            cropMode = true,
+            showGrid = showGrid,
+            modifier = Modifier.fillMaxSize(),
+            onGestureStart = { onInteraction(true) },
+            onGestureEnd = { onInteraction(false) },
+            onResize = viewModel::resizeCrop,
+            onMove = viewModel::moveCrop,
+            onZoom = viewModel::zoomCrop,
+        )
     }
+}
+
+private fun CropAspect.labelRes(): Int = when (this) {
+    CropAspect.FREE -> R.string.editor_aspect_free
+    CropAspect.ORIGINAL -> R.string.editor_aspect_original
+    CropAspect.SQUARE -> R.string.editor_aspect_square
+    CropAspect.FOUR_THREE -> R.string.editor_aspect_4_3
+    CropAspect.THREE_FOUR -> R.string.editor_aspect_3_4
+    CropAspect.SIXTEEN_NINE -> R.string.editor_aspect_16_9
+    CropAspect.NINE_SIXTEEN -> R.string.editor_aspect_9_16
+    CropAspect.THREE_TWO -> R.string.editor_aspect_3_2
+    CropAspect.TWO_THREE -> R.string.editor_aspect_2_3
 }
 
 fun EditUnavailableReason.messageRes(): Int = when (this) {

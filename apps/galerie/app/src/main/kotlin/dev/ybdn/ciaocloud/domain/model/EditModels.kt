@@ -39,14 +39,69 @@ data class ImageTransform(
     }
 }
 
-/** Recette de retouche d'une photo, appliquée à l'image telle qu'affichée (orientation EXIF déjà appliquée). */
+/** Rectangle normalisé (0..1) dans le repère d'une image. */
+data class NormalizedRect(
+    val left: Double,
+    val top: Double,
+    val right: Double,
+    val bottom: Double,
+) {
+    val width: Double get() = right - left
+    val height: Double get() = bottom - top
+    val centerX: Double get() = (left + right) / 2
+    val centerY: Double get() = (top + bottom) / 2
+    val isValid: Boolean get() = right > left && bottom > top
+
+    val isFull: Boolean
+        get() = left <= TOLERANCE && top <= TOLERANCE && right >= 1 - TOLERANCE && bottom >= 1 - TOLERANCE
+
+    fun translated(dx: Double, dy: Double) = NormalizedRect(left + dx, top + dy, right + dx, bottom + dy)
+
+    fun scaledAboutCenter(scale: Double) = centered(centerX, centerY, width * scale, height * scale)
+
+    companion object {
+        val FULL = NormalizedRect(0.0, 0.0, 1.0, 1.0)
+        private const val TOLERANCE = 1e-6
+
+        fun centered(centerX: Double, centerY: Double, width: Double, height: Double) =
+            NormalizedRect(centerX - width / 2, centerY - height / 2, centerX + width / 2, centerY + height / 2)
+    }
+}
+
+/** Proportions du cadre (spec v3 B2). */
+enum class CropAspect(val widthRatio: Int?, val heightRatio: Int?) {
+    FREE(null, null),
+    ORIGINAL(null, null),
+    SQUARE(1, 1),
+    FOUR_THREE(4, 3),
+    THREE_FOUR(3, 4),
+    SIXTEEN_NINE(16, 9),
+    NINE_SIXTEEN(9, 16),
+    THREE_TWO(3, 2),
+    TWO_THREE(2, 3),
+    ;
+
+    /** Proportion après un quart de tour (4:3 → 3:4). */
+    val rotated: CropAspect
+        get() = entries.firstOrNull { it.widthRatio != null && it.widthRatio == heightRatio && it.heightRatio == widthRatio } ?: this
+}
+
+/**
+ * Recette de retouche d'une photo, exprimée sur l'image telle qu'affichée (orientation EXIF appliquée).
+ * Ordre d'application : orientation → redressement → recadrage (spec v3 B3).
+ */
 data class EditRecipe(
     val transform: ImageTransform = ImageTransform.IDENTITY,
+    /** Redressement fin, de −45 à +45 degrés (sens horaire), pas de 0,1. */
+    val straightenDegrees: Double = 0.0,
+    /** Cadre normalisé dans l'image orientée et redressée. */
+    val crop: NormalizedRect = NormalizedRect.FULL,
+    val aspect: CropAspect = CropAspect.FREE,
 ) {
-    val isIdentity: Boolean get() = transform.isIdentity
+    val isIdentity: Boolean get() = transform.isIdentity && isOrientationOnly
 
     /** Seulement rotations et miroir : enregistrable sans réencodage pour un JPEG. */
-    val isOrientationOnly: Boolean get() = true
+    val isOrientationOnly: Boolean get() = straightenDegrees == 0.0 && crop.isFull
 }
 
 enum class SaveMode { COPY, REPLACE }

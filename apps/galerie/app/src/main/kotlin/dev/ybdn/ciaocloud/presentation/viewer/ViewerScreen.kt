@@ -308,10 +308,8 @@ fun ViewerScreen(
 @Composable
 private fun EditAction(capabilities: EditCapabilities, onEdit: () -> Unit) {
     val context = LocalContext.current
-    // Lot 1 : seules les rotations sans perte sont enregistrables.
-    val lossless = capabilities.losslessRotation
-    if (lossless is EditAvailability.Unavailable && lossless.reason.hidesAction) return
     val entry = listOf(capabilities.editCopy, capabilities.replace)
+    if (entry.all { it is EditAvailability.Unavailable && it.reason.hidesAction }) return
     val blockedReason = entry.filterIsInstance<EditAvailability.Unavailable>().takeIf { it.size == entry.size }?.first()?.reason
     IconButton(
         onClick = {

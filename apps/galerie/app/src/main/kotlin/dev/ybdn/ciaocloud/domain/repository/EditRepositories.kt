@@ -1,5 +1,6 @@
 package dev.ybdn.ciaocloud.domain.repository
 
+import dev.ybdn.ciaocloud.domain.model.EditRecipe
 import dev.ybdn.ciaocloud.domain.model.FileFingerprint
 import dev.ybdn.ciaocloud.domain.model.TransferRecord
 import dev.ybdn.ciaocloud.domain.util.ExifWritePlan
@@ -33,6 +34,26 @@ interface MetadataWriter {
     suspend fun readOrientation(path: String): Int
 
     suspend fun apply(path: String, plan: ExifWritePlan)
+
+    /** Recopie dans [path] les balises [tags] présentes dans l'original [sourceUri] (textes en UTF-8). */
+    suspend fun copyTags(sourceUri: String, path: String, tags: List<String>)
+}
+
+/** Format d'encodage d'une photo retouchée. */
+enum class EncodedFormat(val extension: String, val mimeType: String) {
+    JPEG("jpg", "image/jpeg"),
+    PNG("png", "image/png"),
+    WEBP("webp", "image/webp"),
+}
+
+data class RenderedImage(val widthPx: Int, val heightPx: Int)
+
+/**
+ * Rendu pleine résolution d'une recette (géométrie, puis réglages) et encodage vers un fichier de
+ * travail sans aucune métadonnée. La carte de gain Ultra HDR suit la même géométrie.
+ */
+interface PhotoEditRenderer {
+    suspend fun render(sourceUri: String, recipe: EditRecipe, format: EncodedFormat, outputPath: String): RenderedImage
 }
 
 /** Droit d'écriture sur des originaux du téléphone (`MediaStore.createWriteRequest`, confirmation système). */

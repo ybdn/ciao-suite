@@ -5,6 +5,7 @@ import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.model.MediaType
+import dev.ybdn.ciaocloud.domain.repository.EncodedFormat
 
 /** Situation d'un élément au moment de l'édition. */
 data class EditContext(
@@ -42,6 +43,14 @@ object EditCapabilitiesPolicy {
         "image/heic", "image/heif", "image/avif" -> EditableFormat.HEIF
         "image/x-adobe-dng", "image/dng" -> EditableFormat.DNG
         else -> EditableFormat.UNSUPPORTED
+    }
+
+    /** Format de la photo retouchée : celui de l'original, JPEG pour un HEIC/AVIF ; null si non éditable. */
+    fun outputFormat(mimeType: String): EncodedFormat? = when (formatOf(mimeType)) {
+        EditableFormat.JPEG, EditableFormat.HEIF -> EncodedFormat.JPEG
+        EditableFormat.PNG -> EncodedFormat.PNG
+        EditableFormat.WEBP -> EncodedFormat.WEBP
+        EditableFormat.DNG, EditableFormat.UNSUPPORTED -> null
     }
 
     fun capabilities(context: EditContext): EditCapabilities {

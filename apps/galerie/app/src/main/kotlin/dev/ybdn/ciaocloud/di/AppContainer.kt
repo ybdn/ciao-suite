@@ -55,6 +55,7 @@ import dev.ybdn.ciaocloud.domain.usecase.ToggleFavoriteUseCase
 import dev.ybdn.ciaocloud.presentation.system.IntentSenderLauncher
 import dev.ybdn.ciaocloud.presentation.system.SystemMediaDeletionRequester
 import dev.ybdn.ciaocloud.presentation.system.SystemMediaTrash
+import dev.ybdn.ciaocloud.data.edit.AgslPhotoEditRenderer
 import dev.ybdn.ciaocloud.data.edit.ExifInterfaceMetadataWriter
 import dev.ybdn.ciaocloud.data.edit.FileEditJournal
 import dev.ybdn.ciaocloud.data.edit.FileEditWorkspace
@@ -185,11 +186,17 @@ class AppContainer(private val context: Context) {
 
     val getEditCapabilitiesUseCase = GetEditCapabilitiesUseCase(ssdMediaBrowser, ServiceTransferActivity(applicationScope))
 
-    private val metadataWriter = ExifInterfaceMetadataWriter()
+    private val metadataWriter = ExifInterfaceMetadataWriter(context)
 
     private val originalWorkFiles = OriginalWorkFiles(editWorkspace, ssdMediaBrowser)
 
-    val savePhotoEditUseCase = SavePhotoEditUseCase(editWorkspace, metadataWriter, originalWorkFiles, safeFileEditor)
+    val savePhotoEditUseCase = SavePhotoEditUseCase(
+        editWorkspace,
+        metadataWriter,
+        originalWorkFiles,
+        AgslPhotoEditRenderer(context),
+        safeFileEditor,
+    )
 
     val editMetadataUseCase = EditMetadataUseCase(
         editWorkspace,

@@ -100,6 +100,8 @@ class MediaDetailsReaderImpl(
             altitudeMeters = exif.getAttribute(ExifInterface.TAG_GPS_ALTITUDE)?.let {
                 exif.getAltitude(Double.NaN).takeIf { it.isFinite() }
             },
+            isMotionPhoto = exif.getAttributeBytes(ExifInterface.TAG_XMP)?.toString(Charsets.UTF_8)
+                ?.let { xmp -> MOTION_PHOTO_MARKERS.any { it in xmp } } ?: false,
             directionDegrees = exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let {
                 exif.getAttributeDouble(ExifInterface.TAG_GPS_IMG_DIRECTION, Double.NaN).takeIf { it in 0.0..360.0 }
             },
@@ -160,6 +162,8 @@ class MediaDetailsReaderImpl(
     }
 
     private companion object {
+        val MOTION_PHOTO_MARKERS = listOf("MotionPhoto", "MicroVideo")
+
         val EXIF_DATE_FORMATTER: DateTimeFormatter =
             DateTimeFormatter.ofPattern("uuuu:MM:dd HH:mm:ss", Locale.US).withResolverStyle(ResolverStyle.STRICT)
     }
