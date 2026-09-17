@@ -81,6 +81,41 @@ L'app s'ouvre sur l'onglet **Photos** : chronologie unifiée des médias du tél
   système (30 jours, écran **Corbeille**) ; suppression du SSD = définitive, double confirmation,
   et le média redevient « non transféré ».
 
+## Édition des photos
+
+Dans la visionneuse, le **crayon** ouvre l'éditeur (JPEG, PNG, WebP ; HEIC et AVIF en copie JPEG) :
+
+- **Recadrer** : cadre à poignées, proportions (Libre, Original, 1:1, 4:3…), redressement ±45°,
+  rotation et miroir. Une rotation ou un miroir seuls d'un JPEG sont enregistrés **sans perte**
+  (balise `Orientation`), Ultra HDR et photo animée intacts.
+- **Lumière**, **Couleur**, **Effets** : curseurs de −100 à +100 (double-appui = 0) ;
+  **Filtres** avec intensité. Appui long sur l'aperçu : original. Annuler / Rétablir (50 étapes).
+- **Enregistrer** : une copie `<nom>_edit` (par défaut, non sauvegardée) ou **Remplacer l'original**
+  (confirmation, irréversible). Pour un média présent sur le téléphone et le SSD, les deux fichiers
+  sont remplacés : SSD branché obligatoire. Une photo retouchée perd la vidéo d'une photo animée.
+
+Dans le panneau **Infos**, **Modifier les infos** : date, heure et décalage UTC, position (saisie
+décimale ou DMS, copier/coller entre photos), description, auteur, copyright, et
+**Supprimer les données sensibles** (GPS, appareil, numéros de série, logiciel). Les pixels ne sont
+jamais réencodés. Une photo du SSD dont le jour change est déplacée dans le bon dossier
+`DCIM/aaaa/MM/jj`. En sélection multiple, l'icône **Modifier les infos** applique la même
+modification à toutes les photos (décalage de date, fuseau, position, textes, nettoyage), après
+un récapitulatif.
+
+Chaque écriture passe par un fichier de travail vérifié et un journal de reprise : si l'app est
+interrompue pendant un enregistrement, l'opération est terminée ou annulée au lancement suivant.
+Un original du téléphone ne reste supprimable que si sa copie SSD est identique et vérifiée.
+Édition indisponible pendant un transfert vers le SSD.
+
+## Confidentialité : partager sans métadonnées
+
+**Réglages › Confidentialité › Partager sans métadonnées** (désactivé par défaut). Activé, chaque
+partage envoie des copies sans date, lieu, appareil, textes ni XMP : photos réencodées (orientation
+appliquée, JPEG qualité 95, HEIC/AVIF convertis en JPEG), vidéos remultiplexées sans réencodage
+(ni position ni date). Les originaux ne sont pas modifiés ; le nom du fichier est conservé. Un
+média qui ne peut pas être nettoyé (GIF, piste vidéo refusée…) n'est jamais partagé tel quel :
+l'app propose de partager les autres ou d'annuler.
+
 ### Définir C!ao comme visionneuse par défaut
 
 C!ao répond à l'ouverture d'images/vidéos (`VIEW`) et au retour de l'appareil photo
@@ -132,6 +167,13 @@ Les tests unitaires ciblent la logique métier pure, sans dépendance Android :
 - `Iso6709Test` : coordonnées GPS des vidéos.
 - `TransferMediaUseCaseTest`, `DeleteGalleryItemsUseCaseTest` (avec faux repositories) :
   indexation, migration de la clé favori, cohérence de l'état de transfert après suppression.
+- v3 (édition et partage) : `OrientationCodecTest` (8 orientations × rotations × miroir),
+  `CropGeometryTest`, `FilterPresetsTest`, `EditHistoryTest`, `EditCapabilitiesPolicyTest`,
+  `EditedFileNamerTest`, `GpsCoordinateParserTest`, `ExifWritePlanTest`, `CaptureDatesTest`,
+  `MetadataStripPlanTest`, `Mp4TimestampsTest`, et avec faux repositories
+  `SavePhotoEditUseCaseTest` (remplacement téléphone + SSD, reprise de journal),
+  `EditMetadataUseCaseTest` (déplacement sur le SSD, doublon, modifications groupées),
+  `PrepareShareUseCaseTest`.
 
 Pas de sur-investissement en tests UI/instrumentation pour ce projet personnel.
 
@@ -147,4 +189,5 @@ Clean Architecture allégée, séparation par package (pas de multi-module Gradl
 Base Room versionnée avec migrations explicites (schémas exportés dans `app/schemas/`).
 
 Voir [`CLAUDE.md`](CLAUDE.md), [`prompt-initial.md`](prompt-initial.md) et
-[`docs/spec-v2-fiabilisation-visionneuse.md`](docs/spec-v2-fiabilisation-visionneuse.md) pour le détail complet.
+[`docs/spec-v2-fiabilisation-visionneuse.md`](docs/spec-v2-fiabilisation-visionneuse.md) et
+[`docs/spec-v3-edition-photos.md`](docs/spec-v3-edition-photos.md) pour le détail complet.

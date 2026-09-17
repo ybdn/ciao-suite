@@ -31,7 +31,7 @@ export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
 export PATH="$JAVA_HOME/bin:$PATH"
 export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
 ./gradlew :app:assembleDebug        # build debug — vérifié OK
-./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (46 tests, 0 échec)
+./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (174 tests, 0 échec)
 ```
 
 Pas de ktlint/detekt intégré pour l'instant (jugé non prioritaire, cf. README).
@@ -84,6 +84,10 @@ Pas de DI framework lourd sauf s'il simplifie réellement l'injection dans ViewM
 - Tests unitaires ciblés sur la logique pure (chemins, collisions, doublons, fuseau, chronologie) et les use cases via faux repositories — pas de sur-investissement en tests UI/instrumentation.
 - Base Room : migrations explicites uniquement (`data/local/Migrations.kt`), jamais de migration destructive ; schémas exportés dans `app/schemas/` (à commiter).
 - La galerie v2 (lots 1 à 7 de la spec v2) est implémentée. La visionneuse suit la DA néo-brutaliste de l'app (barres `NeoTopBar`/`NeoActionBar`, fond de page du thème), pas un fond noir.
+- La v3 (lots 1 à 7 de la spec v3 : édition des photos, métadonnées, partage sans métadonnées) est implémentée. Points à vérifier sur le Pixel listés dans la section « Points ouverts » de la spec (Ultra HDR, photo animée, vidéos HDR/Dolby Vision au partage, durée d'export 50 Mpx, `moveDocument` sur le SSD USB).
+- Toute écriture d'un média existant passe par `SafeFileEditor` (domaine) : fichier de travail vérifié, journal de reprise (`filesDir/edit-journal/`), enregistrements de transfert retirés puis restaurés ou mis à jour d'après l'état relu des fichiers (invariant A1). Ne jamais écrire un original du téléphone ou du SSD en dehors de ce chemin.
+- `ExifInterface` écrit les textes en US-ASCII : les textes accentués passent par `ExifInterfaceMetadataWriter` (gabarit puis remplacement en place par l'UTF-8) et se lisent avec `ExifText.decode`.
+- Réglages et filtres : un seul shader AGSL (`res/raw/photo_adjustments.agsl`) pour l'aperçu (`RenderEffect`) et l'export par tuiles (`HardwareRenderer`) ; toute modification doit garder les deux rendus identiques.
 
 ## Tests sur appareil
 
