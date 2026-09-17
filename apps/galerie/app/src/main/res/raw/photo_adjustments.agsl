@@ -1,0 +1,103 @@
+// Réglages C!ao (spec v3 B3/B4), identiques à l'aperçu et à l'export.
+// Ordre : filtre (noir et blanc) → lumière → couleur → netteté → vignettage.
+// Réglages normalisés de -1 à 1 (netteté de 0 à 1). Distances en pixels de la surface de rendu.
+
+uniform shader image;
+
+uniform float mono;
+uniform float3 monoWeights;
+
+uniform float brightness;
+uniform float contrast;
+uniform float highlights;
+uniform float shadows;
+uniform float whites;
+uniform float blacks;
+
+uniform float saturation;
+uniform float vibrance;
+uniform float temperature;
+uniform float tint;
+
+uniform float sharpness;
+uniform float radius;
+
+uniform float vignette;
+uniform float2 frameOrigin;
+uniform float2 frameSize;
+
+float luma(float3 c) {
+    return dot(c, float3(0.2126, 0.7152, 0.0722));
+}
+
+half4 main(float2 p) {
+    float4 source = image.eval(p);
+    float alpha = source.a;
+    if (alpha <= 0.0) {
+        return half4(source);
+    }
+    float3 c = source.rgb / alpha;
+
+    // Détail pour la netteté (masque flou), mesuré sur l'image avant réglages.
+    float3 detail = float3(0.0);
+    if (sharpness > 0.0) {
+        float3 blur = image.eval(p + float2(radius, 0.0)).rgb
+            + image.eval(p - float2(radius, 0.0)).rgb
+            + image.eval(p + float2(0.0, radius)).rgb
+            + image.eval(p - float2(0.0, radius)).rgb;
+        detail = c - blur * 0.25 / alpha;
+    }
+
+    // Filtre : mélange de canaux vers le noir et blanc.
+    if (mono > 0.0) {
+        c = mix(c, float3(dot(c, monoWeights)), mono);
+    }
+
+    // Lumière : points noir et blanc.
+    float blackPoint = -blacks * 0.12;
+    float whitePoint = 1.0 - whites * 0.15;
+    c = clamp((c - blackPoint) / max(whitePoint - blackPoint, 0.05), 0.0, 1.0);
+
+    // Luminosité : courbe gamma des tons moyens, sans écrêter les extrêmes.
+    c = pow(c, float3(exp(-brightness * 0.8)));
+
+    // Contraste : courbe en S autour du gris moyen.
+    if (contrast >= 0.0) {
+        c = mix(c, c * c * (3.0 - 2.0 * c), contrast);
+    } else {
+        c = mix(c, float3(0.5), -contrast * 0.5);
+    }
+
+    // Hautes lumières et ombres, pondérées par la luminance.
+    float l = luma(c);
+    float highlightWeight = smoothstep(0.45, 1.0, l);
+    float shadowWeight = 1.0 - smoothstep(0.0, 0.55, l);
+    c += c * (highlights * 0.35 * highlightWeight);
+    c += (1.0 - c) * (shadows * 0.35 * shadowWeight);
+    c = clamp(c, 0.0, 1.0);
+
+    // Couleur : température (bleu ↔ orange) et teinte (vert ↔ magenta).
+    c = clamp(c + float3(temperature * 0.08, -tint * 0.06, -temperature * 0.08), 0.0, 1.0);
+
+    // Saturation uniforme, puis vibrance renforcée sur les couleurs peu saturées, tons chair préservés.
+    float chroma = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
+    float skin = smoothstep(0.0, 0.1, c.r - c.g) * smoothstep(0.0, 0.1, c.g - c.b) * (1.0 - smoothstep(0.35, 0.6, chroma));
+    c = mix(float3(luma(c)), c, 1.0 + saturation);
+    float vibranceAmount = vibrance * (1.0 - chroma) * (1.0 - 0.7 * skin);
+    c = clamp(mix(float3(luma(c)), c, 1.0 + vibranceAmount), 0.0, 1.0);
+
+    // Netteté.
+    c = clamp(c + detail * (sharpness * 2.0), 0.0, 1.0);
+
+    // Vignettage, relatif au cadre recadré.
+    if (vignette != 0.0) {
+        float2 uv = (p - frameOrigin) / frameSize - 0.5;
+        float v = smoothstep(0.35, 1.0, length(uv) * 1.4142);
+        if (vignette > 0.0) {
+            c *= 1.0 - vignette * 0.75 * v;
+        } else {
+            c = mix(c, float3(1.0), -vignette * 0.6 * v);
+        }
+    }
+    return half4(half3(c * alpha), half(alpha));
+}

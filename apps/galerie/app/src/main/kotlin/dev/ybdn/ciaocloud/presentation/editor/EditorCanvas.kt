@@ -1,6 +1,10 @@
 package dev.ybdn.ciaocloud.presentation.editor
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateZoom
@@ -28,10 +32,12 @@ import kotlin.math.abs
 import kotlin.math.min
 
 /**
- * Aperçu de la recette dessiné sur un `Canvas` : image de travail orientée, redressée, puis soit
- * affichée en entier avec le cadre de recadrage manipulable ([cropMode]), soit recadrée.
+ * Aperçu de la recette : image de travail orientée, redressée, puis soit affichée en entier avec le
+ * cadre de recadrage manipulable ([cropMode]), soit recadrée. Les réglages sont appliqués à l'image
+ * seule par le shader AGSL ([shaderEffect]) ; le cadre est dessiné sur une couche distincte.
  *
  * @param imageSize taille intrinsèque de l'image de travail (orientation EXIF appliquée).
+ * @param shaderEffect effet de rendu des réglages pour un cadre donné (pixels de la vue), null si neutre.
  */
 @Composable
 fun EditorCanvas(
@@ -41,6 +47,7 @@ fun EditorCanvas(
     cropMode: Boolean,
     showGrid: Boolean,
     modifier: Modifier = Modifier,
+    shaderEffect: ((frame: Rect) -> android.graphics.RenderEffect)? = null,
     onGestureStart: () -> Unit = {},
     onGestureEnd: () -> Unit = {},
     onResize: (CropHandle, dx: Double, dy: Double) -> Unit = { _, _, _ -> },
@@ -52,47 +59,63 @@ fun EditorCanvas(
     val touchSlop = with(density) { HANDLE_TOUCH_RADIUS.toPx() }
     val currentRecipe = rememberUpdatedState(recipe)
 
-    val gestures = if (!cropMode) {
-        Modifier
-    } else {
-        Modifier.pointerInput(imageSize, padding) {
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false)
-                val layout = EditorLayout(Size(size.width.toFloat(), size.height.toFloat()), imageSize, currentRecipe.value, cropMode = true, padding)
-                val handle = layout.handleAt(down.position, touchSlop)
-                val inside = layout.cropRect.contains(down.position)
-                if (handle == null && !inside) return@awaitEachGesture
-                onGestureStart()
-                while (true) {
-                    val event = awaitPointerEvent()
-                    val pressed = event.changes.filter { it.pressed }
-                    if (pressed.isEmpty()) break
-                    if (pressed.size >= 2) {
-                        val zoom = event.calculateZoom()
-                        if (zoom != 1f) onZoom(zoom.toDouble())
-                    } else {
-                        val delta = pressed.first().positionChange()
-                        if (delta != Offset.Zero) {
-                            val dx = delta.x / layout.orientedScaledWidth
-                            val dy = delta.y / layout.orientedScaledHeight
-                            if (handle != null) onResize(handle, dx.toDouble(), dy.toDouble()) else onMove(dx.toDouble(), dy.toDouble())
-                        }
-                    }
-                    event.changes.forEach { it.consume() }
+    BoxWithConstraints(modifier = modifier) {
+        val viewSize = Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat())
+        val layout = EditorLayout(viewSize, imageSize, recipe, cropMode, padding)
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    renderEffect = shaderEffect?.invoke(layout.cropRect)?.asComposeRenderEffect()
+                },
+        ) {
+            if (cropMode) {
+                drawImage(painter, layout)
+            } else {
+                clipRect(layout.cropRect.left, layout.cropRect.top, layout.cropRect.right, layout.cropRect.bottom) {
+                    drawImage(painter, layout)
                 }
-                onGestureEnd()
             }
         }
-    }
-
-    Canvas(modifier = modifier.then(gestures)) {
-        val layout = EditorLayout(size, imageSize, recipe, cropMode, padding)
         if (cropMode) {
-            drawImage(painter, layout)
-            drawCropFrame(layout, showGrid)
-        } else {
-            clipRect(layout.cropRect.left, layout.cropRect.top, layout.cropRect.right, layout.cropRect.bottom) {
-                drawImage(painter, layout)
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(imageSize, padding) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            val start = EditorLayout(
+                                Size(size.width.toFloat(), size.height.toFloat()),
+                                imageSize,
+                                currentRecipe.value,
+                                cropMode = true,
+                                padding,
+                            )
+                            val handle = start.handleAt(down.position, touchSlop)
+                            if (handle == null && !start.cropRect.contains(down.position)) return@awaitEachGesture
+                            onGestureStart()
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val pressed = event.changes.filter { it.pressed }
+                                if (pressed.isEmpty()) break
+                                if (pressed.size >= 2) {
+                                    val zoom = event.calculateZoom()
+                                    if (zoom != 1f) onZoom(zoom.toDouble())
+                                } else {
+                                    val delta = pressed.first().positionChange()
+                                    if (delta != Offset.Zero) {
+                                        val dx = (delta.x / start.orientedScaledWidth).toDouble()
+                                        val dy = (delta.y / start.orientedScaledHeight).toDouble()
+                                        if (handle != null) onResize(handle, dx, dy) else onMove(dx, dy)
+                                    }
+                                }
+                                event.changes.forEach { it.consume() }
+                            }
+                            onGestureEnd()
+                        }
+                    },
+            ) {
+                drawCropFrame(layout, showGrid)
             }
         }
     }

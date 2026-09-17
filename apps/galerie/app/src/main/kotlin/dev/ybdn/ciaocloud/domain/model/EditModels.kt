@@ -87,8 +87,64 @@ enum class CropAspect(val widthRatio: Int?, val heightRatio: Int?) {
 }
 
 /**
+ * Réglages de la photo (spec v3 B3), de −100 à +100 (0 = neutre), sauf la netteté (0 à 100).
+ */
+data class Adjustments(
+    val brightness: Int = 0,
+    val contrast: Int = 0,
+    val highlights: Int = 0,
+    val shadows: Int = 0,
+    val whites: Int = 0,
+    val blacks: Int = 0,
+    val saturation: Int = 0,
+    val vibrance: Int = 0,
+    val temperature: Int = 0,
+    val tint: Int = 0,
+    val sharpness: Int = 0,
+    val vignette: Int = 0,
+) {
+    init {
+        require(values().all { it in -MAX..MAX } && sharpness >= 0) { "Réglage hors bornes" }
+    }
+
+    val isNeutral: Boolean get() = this == NEUTRAL
+
+    fun values(): IntArray = intArrayOf(
+        brightness, contrast, highlights, shadows, whites, blacks,
+        saturation, vibrance, temperature, tint, sharpness, vignette,
+    )
+
+    fun with(adjustment: Adjustment, value: Int): Adjustments {
+        val bounded = value.coerceIn(adjustment.min, MAX)
+        return fromValues(values().also { it[adjustment.ordinal] = bounded })
+    }
+
+    operator fun get(adjustment: Adjustment): Int = values()[adjustment.ordinal]
+
+    companion object {
+        const val MAX = 100
+        val NEUTRAL = Adjustments()
+
+        fun fromValues(values: IntArray): Adjustments {
+            require(values.size == Adjustment.entries.size)
+            return Adjustments(
+                values[0], values[1], values[2], values[3], values[4], values[5],
+                values[6], values[7], values[8], values[9], values[10], values[11],
+            )
+        }
+    }
+}
+
+/** Réglage individuel, dans l'ordre de [Adjustments.values]. */
+enum class Adjustment(val min: Int) {
+    BRIGHTNESS(-100), CONTRAST(-100), HIGHLIGHTS(-100), SHADOWS(-100), WHITES(-100), BLACKS(-100),
+    SATURATION(-100), VIBRANCE(-100), TEMPERATURE(-100), TINT(-100),
+    SHARPNESS(0), VIGNETTE(-100),
+}
+
+/**
  * Recette de retouche d'une photo, exprimée sur l'image telle qu'affichée (orientation EXIF appliquée).
- * Ordre d'application : orientation → redressement → recadrage (spec v3 B3).
+ * Ordre d'application : orientation → redressement → recadrage → réglages (spec v3 B3).
  */
 data class EditRecipe(
     val transform: ImageTransform = ImageTransform.IDENTITY,
@@ -97,11 +153,14 @@ data class EditRecipe(
     /** Cadre normalisé dans l'image orientée et redressée. */
     val crop: NormalizedRect = NormalizedRect.FULL,
     val aspect: CropAspect = CropAspect.FREE,
+    val adjustments: Adjustments = Adjustments.NEUTRAL,
 ) {
     val isIdentity: Boolean get() = transform.isIdentity && isOrientationOnly
 
     /** Seulement rotations et miroir : enregistrable sans réencodage pour un JPEG. */
-    val isOrientationOnly: Boolean get() = straightenDegrees == 0.0 && crop.isFull
+    val isOrientationOnly: Boolean get() = straightenDegrees == 0.0 && crop.isFull && adjustments.isNeutral
+
+    val hasPixelAdjustments: Boolean get() = !adjustments.isNeutral
 }
 
 enum class SaveMode { COPY, REPLACE }
