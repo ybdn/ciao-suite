@@ -4,7 +4,9 @@ import dev.ybdn.ciaocloud.domain.model.EditAvailability
 import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.EditRecipe
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
+import dev.ybdn.ciaocloud.domain.model.CaptureTimestamp
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
+import dev.ybdn.ciaocloud.domain.model.MetadataEditPreview
 import dev.ybdn.ciaocloud.domain.model.MetadataChanges
 import dev.ybdn.ciaocloud.domain.model.MetadataEditSummary
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
@@ -16,6 +18,7 @@ import dev.ybdn.ciaocloud.domain.repository.MediaWriteAccess
 import dev.ybdn.ciaocloud.domain.repository.MetadataWriter
 import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
 import dev.ybdn.ciaocloud.domain.repository.TransferActivity
+import dev.ybdn.ciaocloud.domain.util.CaptureDates
 import dev.ybdn.ciaocloud.domain.util.EditCapabilitiesPolicy
 import dev.ybdn.ciaocloud.domain.util.EditContext
 import dev.ybdn.ciaocloud.domain.util.ExifWritePlan
@@ -28,6 +31,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 /** Actions d'édition disponibles pour un élément, selon son format, son emplacement et l'état de l'app. */
 class GetEditCapabilitiesUseCase(
@@ -164,22 +168,40 @@ class OriginalWorkFiles(
 /**
  * Modifie en place les métadonnées d'une ou plusieurs photos (pixels jamais réencodés). Les originaux
  * du téléphone sont autorisés en une seule confirmation système (par lots de 500) avant toute
- * écriture ; un échec sur une photo n'arrête pas les suivantes.
+ * écriture ; un échec sur une photo n'arrête pas les suivantes. Une photo du SSD dont la date change
+ * de jour est rangée dans son nouveau dossier (spec v3 C7).
  */
 class EditMetadataUseCase(
     private val editWorkspace: EditWorkspace,
     private val metadataWriter: MetadataWriter,
     private val originalWorkFiles: OriginalWorkFiles,
     private val getEditCapabilities: GetEditCapabilitiesUseCase,
+    private val getMediaDetails: GetMediaDetailsUseCase,
     private val writeAccess: MediaWriteAccess,
     private val safeFileEditor: SafeFileEditor,
+    private val zoneId: () -> ZoneId = ZoneId::systemDefault,
 ) {
+    /** Récapitulatif avant application : éléments modifiés, ignorés, et déplacés sur le SSD. */
+    suspend fun preview(items: List<GalleryItem>, changes: MetadataChanges): MetadataEditPreview {
+        val editable = items.filter { getEditCapabilities(it).metadata.isAvailable }
+        val toMove = if (!changes.changesCaptureDate) {
+            0
+        } else {
+            editable.count { item ->
+                val ssd = item.ssd ?: return@count false
+                val details = getMediaDetails(item)
+                val current = CaptureTimestamp(details?.captureLocalDateTime, details?.captureUtcOffsetMinutes)
+                CaptureDates.relocation(ssd.relativePath, CaptureDates.resulting(current, changes), zoneId()) != null
+            }
+        }
+        return MetadataEditPreview(editable = editable.size, skipped = items.size - editable.size, toMove = toMove)
+    }
+
     suspend operator fun invoke(
         items: List<GalleryItem>,
         changes: MetadataChanges,
         onProgress: (current: Int, total: Int) -> Unit = { _, _ -> },
     ): MetadataEditSummary {
-        val plan = ExifWritePlan.from(changes)
         val reasons = items.associateWith { (getEditCapabilities(it).metadata as? EditAvailability.Unavailable)?.reason }
         val editable = items.filter { reasons[it] == null }
         if (editable.isEmpty()) {
@@ -188,25 +210,49 @@ class EditMetadataUseCase(
                 ssdUnavailable = reasons.values.any { it == EditUnavailableReason.SSD_REQUIRED },
             )
         }
-        if (plan.isEmpty) return MetadataEditSummary(skipped = items.size - editable.size)
+        if (changes.isEmpty) return MetadataEditSummary(skipped = items.size - editable.size)
 
         for (batch in editable.mapNotNull { it.phone?.uri }.chunked(MAX_URIS_PER_REQUEST)) {
             if (!writeAccess.request(batch)) return MetadataEditSummary(cancelled = true)
         }
 
         var modified = 0
+        var moved = 0
         val failed = ArrayList<String>()
         editable.forEachIndexed { index, item ->
             onProgress(index + 1, editable.size)
+            var capture = CaptureTimestamp()
             val outcome = originalWorkFiles.withCopy(item) { workPath ->
-                metadataWriter.apply(workPath, plan)
+                val current = if (changes.changesCaptureDate) {
+                    CaptureDates.readFrom(metadataWriter.readTags(workPath, CaptureDates.TAGS))
+                } else {
+                    CaptureTimestamp()
+                }
+                capture = CaptureDates.resulting(current, changes)
+                metadataWriter.apply(workPath, ExifWritePlan.from(changes, current))
                 val fingerprint = editWorkspace.fingerprint(workPath)
                     ?: return@withCopy SaveEditOutcome.Failed("Fichier de travail introuvable")
                 safeFileEditor.replace(item, workPath, fingerprint, accessGranted = true)
             }
-            if (outcome == SaveEditOutcome.Replaced) modified++ else failed += item.displayName
+            if (outcome != SaveEditOutcome.Replaced) {
+                failed += item.displayName
+                return@forEachIndexed
+            }
+            modified++
+            val ssd = item.ssd
+            if (ssd != null && changes.changesCaptureDate) {
+                val capturedAt = CaptureDates.epochMillis(capture, zoneId())
+                val newDirectory = CaptureDates.relocation(ssd.relativePath, capture, zoneId())
+                if (newDirectory == null) {
+                    safeFileEditor.updateCapturedAt(ssd.relativePath, capturedAt)
+                } else if (safeFileEditor.relocate(ssd, newDirectory, capturedAt) is SaveEditOutcome.Copied) {
+                    moved++
+                } else {
+                    failed += item.displayName
+                }
+            }
         }
-        return MetadataEditSummary(modified = modified, skipped = items.size - editable.size, failedNames = failed)
+        return MetadataEditSummary(modified = modified, moved = moved, skipped = items.size - editable.size, failedNames = failed)
     }
 
     private companion object {

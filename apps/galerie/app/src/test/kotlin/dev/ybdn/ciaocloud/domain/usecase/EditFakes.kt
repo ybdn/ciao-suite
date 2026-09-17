@@ -2,6 +2,7 @@ package dev.ybdn.ciaocloud.domain.usecase
 
 import dev.ybdn.ciaocloud.domain.model.EditRecipe
 import dev.ybdn.ciaocloud.domain.model.FileFingerprint
+import dev.ybdn.ciaocloud.domain.repository.DestinationEntry
 import dev.ybdn.ciaocloud.domain.repository.EncodedFormat
 import dev.ybdn.ciaocloud.domain.repository.PhotoEditRenderer
 import dev.ybdn.ciaocloud.domain.repository.RenderedImage
@@ -22,12 +23,17 @@ fun fingerprintOf(bytes: ByteArray): FileFingerprint =
 /** Fichiers de travail en mémoire ; « l'orientation » est le dernier octet du fichier. */
 class FakeEditWorkspace(private val sources: Map<String, ByteArray>) : EditWorkspace, MetadataWriter {
     val files = HashMap<String, ByteArray>()
+    /** Balises EXIF simulées par fichier source, recopiées dans les fichiers de travail. */
+    val sourceTags = HashMap<String, Map<String, String>>()
+    private val tags = HashMap<String, MutableMap<String, String>>()
     private var counter = 0
 
     override suspend fun newWorkFile(extension: String) = "work/${counter++}.$extension"
     override suspend fun copyOriginal(sourceUri: String, path: String) {
         files[path] = sources[sourceUri]?.copyOf() ?: throw IOException("source absente")
+        tags[path] = sourceTags[sourceUri].orEmpty().toMutableMap()
     }
+    override suspend fun readTags(path: String, tags: List<String>) = this.tags[path].orEmpty().filterKeys { it in tags }
     override suspend fun fingerprint(path: String) = files[path]?.let(::fingerprintOf)
     override suspend fun delete(path: String) {
         files.remove(path)
@@ -40,6 +46,10 @@ class FakeEditWorkspace(private val sources: Map<String, ByteArray>) : EditWorks
     val appliedPlans = mutableListOf<ExifWritePlan>()
     override suspend fun apply(path: String, plan: ExifWritePlan) {
         appliedPlans += plan
+        tags.getOrPut(path) { HashMap() }.apply {
+            putAll(plan.set)
+            plan.remove.forEach { remove(it) }
+        }
         val bytes = files.getValue(path)
         val orientation = plan.set["Orientation"]
         if (orientation != null) {
@@ -143,6 +153,25 @@ class FakeSsdWriter(private val work: Map<String, ByteArray>) : SsdMediaWriter {
     override suspend fun delete(relativePath: String): Boolean {
         files.remove(relativePath)
         return true
+    }
+    /** Dossiers existants (casse d'origine). */
+    val directories = HashSet<String>()
+    var failMove = false
+    override suspend fun resolveDirectory(relativeDir: String, create: Boolean): String? {
+        val existing = (directories + files.keys.map { it.substringBeforeLast('/') })
+            .firstOrNull { it.equals(relativeDir, ignoreCase = true) }
+        return existing ?: relativeDir.takeIf { create }?.also { directories += it }
+    }
+    override suspend fun listEntries(relativeDir: String): List<DestinationEntry>? =
+        files.filterKeys { it.substringBeforeLast('/') == relativeDir }
+            .map { (path, bytes) -> DestinationEntry(path.substringAfterLast('/'), bytes.size.toLong(), false) }
+    override suspend fun sameContent(firstPath: String, secondPath: String) =
+        files[firstPath]?.contentEquals(files[secondPath]) == true
+    override suspend fun move(fromPath: String, toDir: String, newName: String) {
+        if (failMove) throw IOException("déplacement refusé")
+        val target = "$toDir/$newName"
+        check(target !in files) { "écrasement interdit : $target" }
+        files[target] = files.remove(fromPath) ?: throw IOException("absent : $fromPath")
     }
 }
 

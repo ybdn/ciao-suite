@@ -28,7 +28,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.ybdn.ciaocloud.R
+import dev.ybdn.ciaocloud.domain.model.CaptureTimestamp
 import dev.ybdn.ciaocloud.domain.model.FieldChange
+import dev.ybdn.ciaocloud.domain.util.CaptureDates
+import dev.ybdn.ciaocloud.presentation.theme.Brick
+import androidx.compose.ui.text.font.FontFamily
+import java.time.ZoneId
 import dev.ybdn.ciaocloud.domain.model.GeoPoint
 import dev.ybdn.ciaocloud.domain.model.MediaDetails
 import dev.ybdn.ciaocloud.domain.model.MetadataChanges
@@ -60,6 +65,14 @@ fun MetadataEditorSheet(
     val initialCopyright = details?.copyright.orEmpty()
     val initialLocation = formatLocation(details?.latitude, details?.longitude)
     val initialAltitude = details?.altitudeMeters?.let { formatAltitude(it) }.orEmpty()
+
+    val initialDate = CaptureDateInput.formatDate(details?.captureLocalDateTime)
+    val initialTime = CaptureDateInput.formatTime(details?.captureLocalDateTime)
+    val initialOffset = details?.captureUtcOffsetMinutes
+    var date by rememberSaveable { mutableStateOf(initialDate) }
+    var time by rememberSaveable { mutableStateOf(initialTime) }
+    var offset by rememberSaveable { mutableStateOf(initialOffset) }
+    var dateError by rememberSaveable { mutableStateOf(false) }
 
     var description by rememberSaveable { mutableStateOf(initialDescription) }
     var artist by rememberSaveable { mutableStateOf(initialArtist) }
@@ -108,6 +121,41 @@ fun MetadataEditorSheet(
                 .stableNavigationBarsPadding(),
         ) {
             Text(stringResource(R.string.metadata_title), style = MaterialTheme.typography.titleLarge)
+
+            NeoCard {
+                NeoTag(stringResource(R.string.metadata_date), tone = NeoTone.Yellow)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    NeoTextField(
+                        label = stringResource(R.string.metadata_day),
+                        value = date,
+                        onValueChange = {
+                            date = it
+                            dateError = false
+                        },
+                        placeholder = "2025-04-20",
+                        modifier = Modifier.weight(1f),
+                    )
+                    NeoTextField(
+                        label = stringResource(R.string.metadata_time),
+                        value = time,
+                        onValueChange = {
+                            time = it
+                            dateError = false
+                        },
+                        placeholder = "18:45:00",
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                OffsetPicker(offsetMinutes = offset, onSelect = { offset = it })
+                val parsed = CaptureDateInput.parse(date, time)
+                when {
+                    dateError || (parsed == null && (date.isNotBlank() || time.isNotBlank())) ->
+                        Text(stringResource(R.string.metadata_invalid_date), style = MaterialTheme.typography.bodySmall, color = Brick)
+                    parsed != null -> CaptureDates.targetDirectory(CaptureTimestamp(parsed, offset), ZoneId.systemDefault())?.let {
+                        Text(stringResource(R.string.metadata_folder_preview, it), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                    }
+                }
+            }
 
             NeoCard {
                 NeoTag(stringResource(R.string.metadata_texts), tone = NeoTone.Sky)
@@ -192,15 +240,23 @@ fun MetadataEditorSheet(
                 stringResource(R.string.editor_save),
                 onClick = {
                     val locationChange = locationChange()
-                    if (locationChange == null) {
-                        locationError = true
-                    } else {
-                        onSave(
+                    val dateChanged = date.trim() != initialDate || time.trim() != initialTime
+                    val newDate = if (dateChanged) CaptureDateInput.parse(date, time) else null
+                    when {
+                        locationChange == null -> locationError = true
+                        dateChanged && newDate == null -> dateError = true
+                        else -> onSave(
                             MetadataChanges(
                                 description = textChange(initialDescription, description),
                                 artist = textChange(initialArtist, artist),
                                 copyright = textChange(initialCopyright, copyright),
                                 location = locationChange,
+                                captureDateTime = newDate?.let { FieldChange.Set(it) } ?: FieldChange.Keep,
+                                utcOffsetMinutes = when {
+                                    offset == initialOffset -> FieldChange.Keep
+                                    offset == null -> FieldChange.Remove
+                                    else -> FieldChange.Set(offset!!)
+                                },
                             ),
                         )
                     }

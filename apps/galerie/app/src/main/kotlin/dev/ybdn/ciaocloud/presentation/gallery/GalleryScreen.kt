@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
@@ -68,6 +69,9 @@ fun GalleryScreen(
     val selectedKeys by viewModel.selectedKeys.collectAsStateWithLifecycle()
     val isBusy by viewModel.actions.isBusy.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showMetadataSheet by rememberSaveable { mutableStateOf(false) }
+    val metadataEdit by viewModel.metadataEdit.collectAsStateWithLifecycle()
+    val clipboardLocation by viewModel.clipboardLocation.collectAsStateWithLifecycle()
     val selectionMode = selectedKeys.isNotEmpty()
 
     GalleryEventsEffect(viewModel.actions.events)
@@ -85,6 +89,44 @@ fun GalleryScreen(
         )
     }
     val context = LocalContext.current
+    if (showMetadataSheet) {
+        GroupMetadataSheet(
+            count = selectedKeys.size,
+            clipboardLocation = clipboardLocation,
+            onApply = { changes ->
+                showMetadataSheet = false
+                viewModel.previewMetadataEdit(changes)
+            },
+            onDismiss = { showMetadataSheet = false },
+        )
+    }
+    when (val edit = metadataEdit) {
+        is GroupMetadataState.Confirm -> GroupMetadataConfirmDialog(
+            preview = edit.preview,
+            removesSensitiveData = edit.changes.removeSensitiveData,
+            onConfirm = viewModel::applyMetadataEdit,
+            onDismiss = viewModel::cancelMetadataEdit,
+        )
+        is GroupMetadataState.Running -> GroupMetadataProgressDialog(edit.current, edit.total)
+        null -> Unit
+    }
+    LaunchedEffect(viewModel) {
+        viewModel.metadataResults.collect { summary ->
+            val message = when {
+                summary.cancelled -> null
+                summary.ssdUnavailable -> context.getString(R.string.editor_plug_ssd)
+                else -> buildList {
+                    add(context.resources.getQuantityString(R.plurals.group_metadata_modified, summary.modified, summary.modified))
+                    if (summary.moved > 0) add(context.resources.getQuantityString(R.plurals.group_metadata_moved, summary.moved, summary.moved))
+                    if (summary.skipped > 0) add(context.resources.getQuantityString(R.plurals.group_metadata_skipped, summary.skipped, summary.skipped))
+                    if (summary.failedNames.isNotEmpty()) {
+                        add(context.resources.getQuantityString(R.plurals.group_metadata_failed, summary.failedNames.size, summary.failedNames.size))
+                    }
+                }.joinToString(", ")
+            }
+            message?.let { android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show() }
+        }
+    }
     var mediaAccess by rememberSaveable { mutableStateOf(context.mediaAccess()) }
 
     LifecycleResumeEffect(Unit) {
@@ -119,6 +161,9 @@ fun GalleryScreen(
                     if (isBusy) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                     IconButton(onClick = viewModel::shareSelection, enabled = !isBusy) {
                         Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.gallery_share))
+                    }
+                    IconButton(onClick = { showMetadataSheet = true }, enabled = !isBusy) {
+                        Icon(Icons.Outlined.EditNote, contentDescription = stringResource(R.string.metadata_edit))
                     }
                     IconButton(onClick = viewModel::toggleFavoriteOnSelection) {
                         Icon(Icons.Outlined.FavoriteBorder, contentDescription = stringResource(R.string.gallery_favorite))

@@ -165,6 +165,8 @@ class AppContainer(private val context: Context) {
         applicationScope,
     )
 
+    val getMediaDetailsUseCase = GetMediaDetailsUseCase(MediaDetailsReaderImpl(context), ssdMediaBrowser)
+
     // Édition des photos (v3).
 
     private val editWorkspace = FileEditWorkspace(context)
@@ -179,6 +181,7 @@ class AppContainer(private val context: Context) {
         transferStateRepository = transferStateRepository,
         ssdMediaIndex = ssdMediaIndex,
         ssdThumbnailCache = ssdThumbnailCache,
+        favoritesRepository = favoritesRepository,
         transactionRunner = transactionRunner,
     )
 
@@ -203,6 +206,7 @@ class AppContainer(private val context: Context) {
         metadataWriter,
         originalWorkFiles,
         getEditCapabilitiesUseCase,
+        getMediaDetailsUseCase,
         SystemMediaWriteAccess(context, intentSenderLauncher),
         safeFileEditor,
     )
@@ -216,8 +220,6 @@ class AppContainer(private val context: Context) {
     val getOriginalUriUseCase = GetOriginalUriUseCase(ssdMediaBrowser)
 
     val observeSsdAvailabilityUseCase = ObserveSsdAvailabilityUseCase(ssdMediaBrowser)
-
-    val getMediaDetailsUseCase = GetMediaDetailsUseCase(MediaDetailsReaderImpl(context), ssdMediaBrowser)
 
     val resolveExternalMediaUseCase = ResolveExternalMediaUseCase(ContentExternalMediaResolver(context))
 

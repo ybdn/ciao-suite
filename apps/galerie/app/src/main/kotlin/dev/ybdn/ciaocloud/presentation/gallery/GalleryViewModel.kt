@@ -18,8 +18,21 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import dev.ybdn.ciaocloud.domain.usecase.DeleteTarget
 import kotlinx.coroutines.launch
+import dev.ybdn.ciaocloud.domain.model.GeoPoint
+import dev.ybdn.ciaocloud.domain.model.MetadataChanges
+import dev.ybdn.ciaocloud.domain.model.MetadataEditPreview
+import dev.ybdn.ciaocloud.domain.model.MetadataEditSummary
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import dev.ybdn.ciaocloud.domain.usecase.SsdIndexState
 import java.time.LocalDate
+
+/** Étape d'une modification groupée des infos. */
+sealed interface GroupMetadataState {
+    data class Confirm(val changes: MetadataChanges, val preview: MetadataEditPreview?) : GroupMetadataState
+    data class Running(val current: Int, val total: Int) : GroupMetadataState
+}
 
 /** Case de la grille : en-tête de jour (pleine largeur) ou média. */
 sealed interface GalleryEntry {
@@ -101,6 +114,47 @@ class GalleryViewModel(
     fun toggleFavoriteOnSelection() = actions.toggleFavorite(selectedItems())
 
     fun deleteSelection(target: DeleteTarget) = actions.delete(selectedItems(), target, onDone = ::clearSelection)
+
+    // Modifications groupées des infos (spec v3 C6).
+
+    val clipboardLocation: StateFlow<GeoPoint?> = appContainer.locationClipboard.location
+
+    private val _metadataEdit = MutableStateFlow<GroupMetadataState?>(null)
+    val metadataEdit: StateFlow<GroupMetadataState?> = _metadataEdit.asStateFlow()
+
+    private val _metadataResults = MutableSharedFlow<MetadataEditSummary>(extraBufferCapacity = 1)
+    val metadataResults: SharedFlow<MetadataEditSummary> = _metadataResults.asSharedFlow()
+
+    /** Modification choisie : récapitulatif calculé avant confirmation. */
+    fun previewMetadataEdit(changes: MetadataChanges) {
+        val items = selectedItems()
+        _metadataEdit.value = GroupMetadataState.Confirm(changes, preview = null)
+        viewModelScope.launch {
+            val preview = appContainer.editMetadataUseCase.preview(items, changes)
+            _metadataEdit.update { state -> if (state is GroupMetadataState.Confirm && state.changes == changes) state.copy(preview = preview) else state }
+        }
+    }
+
+    fun cancelMetadataEdit() {
+        if (_metadataEdit.value is GroupMetadataState.Confirm) _metadataEdit.value = null
+    }
+
+    fun applyMetadataEdit() {
+        val confirm = _metadataEdit.value as? GroupMetadataState.Confirm ?: return
+        val items = selectedItems()
+        _metadataEdit.value = GroupMetadataState.Running(0, items.size)
+        viewModelScope.launch {
+            try {
+                val summary = appContainer.editMetadataUseCase(items, confirm.changes) { current, total ->
+                    _metadataEdit.value = GroupMetadataState.Running(current, total)
+                }
+                _metadataResults.emit(summary)
+                if (!summary.cancelled) clearSelection()
+            } finally {
+                _metadataEdit.value = null
+            }
+        }
+    }
 
     /** « Actualiser le SSD » : réindexation complète, déclenchée manuellement. */
     fun refreshSsdIndex() = appContainer.refreshSsdIndexUseCase.start()

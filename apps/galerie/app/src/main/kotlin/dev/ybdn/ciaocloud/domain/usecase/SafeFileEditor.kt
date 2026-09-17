@@ -4,6 +4,12 @@ import dev.ybdn.ciaocloud.domain.model.FavoriteKeys
 import dev.ybdn.ciaocloud.domain.model.FileFingerprint
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
+import dev.ybdn.ciaocloud.domain.model.SsdMedia
+import dev.ybdn.ciaocloud.domain.repository.FavoritesRepository
+import dev.ybdn.ciaocloud.domain.repository.SsdMoveStep
+import dev.ybdn.ciaocloud.domain.util.DestinationDecision
+import dev.ybdn.ciaocloud.domain.util.DuplicateResolver
+import dev.ybdn.ciaocloud.domain.util.TimelineBuilder
 import dev.ybdn.ciaocloud.domain.model.TransferRecord
 import dev.ybdn.ciaocloud.domain.repository.EditJournal
 import dev.ybdn.ciaocloud.domain.repository.EditJournalEntry
@@ -45,6 +51,7 @@ class SafeFileEditor(
     private val transferStateRepository: TransferStateRepository,
     private val ssdMediaIndex: SsdMediaIndex,
     private val ssdThumbnailCache: SsdThumbnailCache,
+    private val favoritesRepository: FavoritesRepository,
     private val transactionRunner: TransactionRunner,
     private val newId: () -> String = { UUID.randomUUID().toString() },
     private val clock: () -> Long = System::currentTimeMillis,
@@ -187,6 +194,53 @@ class SafeFileEditor(
     }
 
     /**
+     * Range un fichier du SSD dans le dossier jour [newDir] après changement de sa date (spec v3 C7) :
+     * dossier existant réutilisé quelle que soit sa casse, doublon identique déjà présent → source
+     * supprimée et références redirigées, sinon premier nom libre. Index, enregistrements de transfert,
+     * favori et vignette suivent le fichier, en une transaction. Un dossier devenu vide est conservé.
+     */
+    suspend fun relocate(ssd: SsdMedia, newDir: String, capturedAtEpochMillis: Long?): SaveEditOutcome {
+        if (!ssdWriter.isAvailable()) return SaveEditOutcome.SsdUnavailable
+        return withContext(NonCancellable) {
+            val targetDir = ssdWriter.resolveDirectory(newDir, create = true)
+                ?: return@withContext SaveEditOutcome.Failed(SSD_DIRECTORY_UNAVAILABLE)
+            val source = ssd.relativePath
+            val size = ssdWriter.fingerprint(source)?.sizeBytes ?: return@withContext SaveEditOutcome.Failed(ORIGINAL_MISSING_SSD)
+            val entries = ssdWriter.listEntries(targetDir) ?: return@withContext SaveEditOutcome.Failed(SSD_DIRECTORY_UNAVAILABLE)
+            val decision = DuplicateResolver.resolve(ssd.displayName, size, entries) { existingName ->
+                if (ssdWriter.sameContent(source, "$targetDir/$existingName")) existingName else null
+            }
+            val step = when (decision) {
+                is DestinationDecision.AlreadyPresent ->
+                    SsdMoveStep(source, "$targetDir/${decision.existingFileName}", duplicate = true, capturedAtEpochMillis)
+                is DestinationDecision.CopyAs ->
+                    SsdMoveStep(source, "$targetDir/${decision.fileName}", duplicate = false, capturedAtEpochMillis)
+            }
+            runJournaled(EditJournalEntry(newId(), move = step)) {
+                val outcome = try {
+                    if (step.duplicate) {
+                        ssdWriter.delete(step.fromPath)
+                    } else {
+                        ssdWriter.move(step.fromPath, targetDir, step.toPath.substringAfterLast('/'))
+                    }
+                    applyRelocation(step)
+                    SaveEditOutcome.Copied(FavoriteKeys.ssd(step.toPath))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    SaveEditOutcome.Failed(e.message ?: UNKNOWN_ERROR)
+                }
+                outcome to true
+            }
+        }
+    }
+
+    /** Date de prise de vue modifiée sans changement de dossier : l'index suit le nouvel instant. */
+    suspend fun updateCapturedAt(relativePath: String, capturedAtEpochMillis: Long?) {
+        ssdMediaIndex.get(relativePath)?.let { ssdMediaIndex.upsert(it.copy(capturedAtEpochMillis = capturedAtEpochMillis)) }
+    }
+
+    /**
      * Reprend une opération interrompue (app tuée pendant l'écriture). @return false si elle doit être
      * retentée plus tard (SSD débranché, restauration impossible) : l'entrée reste alors au journal.
      */
@@ -194,7 +248,8 @@ class SafeFileEditor(
         val isActive = activeIdsMutex.withLock { entry.id in activeIds }
         if (isActive) return@withContext false
         val ssdStep = entry.ssd
-        if (ssdStep != null && !ssdWriter.isAvailable()) return@withContext false
+        if ((ssdStep != null || entry.move != null) && !ssdWriter.isAvailable()) return@withContext false
+        entry.move?.let { recoverMove(it) }
 
         when (ssdStep?.kind) {
             EditStepKind.REPLACE -> recoverSsdReplace(ssdStep)
@@ -223,6 +278,51 @@ class SafeFileEditor(
         settle(entry)
         journal.remove(entry.id)
         true
+    }
+
+    /** Déplacement interrompu : terminé s'il a eu lieu (références mises à jour), sinon abandonné. */
+    private suspend fun recoverMove(step: SsdMoveStep) {
+        ssdWriter.delete(step.toPath + NEW_SUFFIX)
+        val sourceExists = ssdWriter.exists(step.fromPath)
+        val targetExists = ssdWriter.exists(step.toPath)
+        if (!targetExists) return
+        if (sourceExists) {
+            // Cible complète (renommée après vérification) ou doublon identique : la source est en trop.
+            if (!step.duplicate || ssdWriter.sameContent(step.fromPath, step.toPath)) {
+                ssdWriter.delete(step.fromPath)
+            } else {
+                return
+            }
+        }
+        applyRelocation(step)
+    }
+
+    /** Index, enregistrements de transfert, favori et vignettes suivent le fichier déplacé (idempotent). */
+    private suspend fun applyRelocation(step: SsdMoveStep) {
+        val newName = step.toPath.substringAfterLast('/')
+        transactionRunner.inTransaction {
+            val previous = ssdMediaIndex.get(step.fromPath)
+            ssdMediaIndex.remove(step.fromPath)
+            val day = TimelineBuilder.parseDayFromPath(step.toPath)
+            val existing = ssdMediaIndex.get(step.toPath)
+            if (day != null && (previous != null || existing != null)) {
+                val base = existing ?: previous!!
+                ssdMediaIndex.upsert(
+                    base.copy(
+                        relativePath = step.toPath,
+                        displayName = newName,
+                        captureDate = day,
+                        capturedAtEpochMillis = step.capturedAtEpochMillis ?: base.capturedAtEpochMillis,
+                    ),
+                )
+            }
+            transferStateRepository.getByDestinationPath(step.fromPath).forEach {
+                transferStateRepository.upsert(it.copy(destinationPath = step.toPath))
+            }
+            favoritesRepository.renameKey(FavoriteKeys.ssd(step.fromPath), FavoriteKeys.ssd(step.toPath))
+        }
+        ssdThumbnailCache.remove(step.fromPath)
+        ssdThumbnailCache.remove(step.toPath)
     }
 
     /** Exécute [block] (résultat, opération terminée) avec l'entrée au journal ; elle n'en sort que si terminée. */
@@ -333,5 +433,6 @@ class SafeFileEditor(
         private const val UNKNOWN_ERROR = "Erreur inconnue"
         private const val ORIGINAL_MISSING_PHONE = "Original introuvable sur le téléphone"
         private const val ORIGINAL_MISSING_SSD = "Original introuvable sur le SSD"
+        private const val SSD_DIRECTORY_UNAVAILABLE = "Dossier inaccessible sur le SSD"
     }
 }

@@ -49,7 +49,7 @@ class SavePhotoEditUseCaseTest {
     private val browser = FakeSsdMediaBrowser()
     private var ids = 0
     private val editor = SafeFileEditor(
-        phoneWriter, ssdWriter, access, journal, transfers, index, thumbnails, DirectTransactionRunner,
+        phoneWriter, ssdWriter, access, journal, transfers, index, thumbnails, FakeFavoritesRepository(), DirectTransactionRunner,
         newId = { "op${ids++}" }, clock = { 99 },
     )
     private val renderer = FakePhotoRenderer(sources, workspace.files)

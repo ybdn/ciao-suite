@@ -99,6 +99,11 @@ class ExifInterfaceMetadataWriter(
         if (utf8Values.isNotEmpty()) writeUtf8Values(path, utf8Values)
     }
 
+    override suspend fun readTags(path: String, tags: List<String>): Map<String, String> = withContext(Dispatchers.IO) {
+        val exif = ExifInterface(path)
+        tags.mapNotNull { tag -> exif.getAttribute(tag)?.let { tag to it } }.toMap()
+    }
+
     override suspend fun copyTags(sourceUri: String, path: String, tags: List<String>) = withContext(Dispatchers.IO) {
         val source = context.openOriginal(Uri.parse(sourceUri)).use { ExifInterface(it) }
         val values = tags.mapNotNull { tag ->

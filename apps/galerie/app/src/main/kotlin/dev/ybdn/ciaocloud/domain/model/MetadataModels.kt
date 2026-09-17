@@ -1,6 +1,8 @@
 package dev.ybdn.ciaocloud.domain.model
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.time.Duration
+import java.time.LocalDateTime
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -23,6 +25,27 @@ data class GeoPoint(
     }
 }
 
+/** Décalage groupé de la date de prise de vue (correction d'un appareil mal réglé). */
+data class DateShift(
+    val days: Int = 0,
+    val hours: Int = 0,
+    val minutes: Int = 0,
+    /** true : vers le passé. */
+    val backwards: Boolean = false,
+) {
+    val duration: Duration
+        get() = Duration.ofDays(days.toLong()).plusHours(hours.toLong()).plusMinutes(minutes.toLong())
+            .let { if (backwards) it.negated() else it }
+
+    val isZero: Boolean get() = duration.isZero
+}
+
+/** Date de prise de vue telle qu'écrite dans l'EXIF : heure locale et décalage UTC (null si inconnus). */
+data class CaptureTimestamp(
+    val local: LocalDateTime? = null,
+    val offsetMinutes: Int? = null,
+)
+
 /** Modifications demandées sur les métadonnées d'une ou plusieurs photos (spec v3 C). */
 data class MetadataChanges(
     val description: FieldChange<String> = FieldChange.Keep,
@@ -31,10 +54,20 @@ data class MetadataChanges(
     val location: FieldChange<GeoPoint> = FieldChange.Keep,
     /** Nettoyage confidentialité : position, appareil, identifiants, logiciel (C5). */
     val removeSensitiveData: Boolean = false,
+    /** Nouvelle date et heure locales de prise de vue (C2). */
+    val captureDateTime: FieldChange<LocalDateTime> = FieldChange.Keep,
+    /** Décalage UTC en minutes ; `Remove` = « Inconnu ». Seul, il fixe le fuseau sans changer l'heure locale. */
+    val utcOffsetMinutes: FieldChange<Int> = FieldChange.Keep,
+    /** Décalage groupé appliqué à la date de chaque photo (C6). */
+    val dateShift: DateShift? = null,
 ) {
+    /** La date, l'heure ou le décalage changent : la photo peut devoir changer de dossier sur le SSD. */
+    val changesCaptureDate: Boolean
+        get() = captureDateTime != FieldChange.Keep || utcOffsetMinutes != FieldChange.Keep || dateShift?.isZero == false
+
     val isEmpty: Boolean
         get() = description == FieldChange.Keep && artist == FieldChange.Keep && copyright == FieldChange.Keep &&
-            location == FieldChange.Keep && !removeSensitiveData
+            location == FieldChange.Keep && !removeSensitiveData && !changesCaptureDate
 }
 
 /**
@@ -50,9 +83,20 @@ class LocationClipboard {
     }
 }
 
+/** Récapitulatif avant application d'une modification groupée. */
+data class MetadataEditPreview(
+    val editable: Int,
+    /** Éléments non éditables (format, vidéo…) qui seront ignorés. */
+    val skipped: Int,
+    /** Photos du SSD qui changeront de dossier jour. */
+    val toMove: Int,
+)
+
 /** Bilan d'une modification de métadonnées. */
 data class MetadataEditSummary(
     val modified: Int = 0,
+    /** Fichiers déplacés dans un autre dossier jour du SSD. */
+    val moved: Int = 0,
     /** Éléments non éditables (format, vidéo…) ignorés. */
     val skipped: Int = 0,
     val failedNames: List<String> = emptyList(),

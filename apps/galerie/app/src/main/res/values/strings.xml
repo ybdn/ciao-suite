@@ -172,6 +172,26 @@
     <string name="metadata_edit">Modifier les infos</string>
     <string name="metadata_title">Modifier les infos</string>
     <string name="metadata_texts">Textes</string>
+    <string name="metadata_date">Date et fuseau</string>
+    <string name="metadata_day">Date</string>
+    <string name="metadata_time">Heure</string>
+    <string name="metadata_offset">Décalage UTC</string>
+    <string name="metadata_offset_unknown">Inconnu</string>
+    <string name="metadata_invalid_date">Date ou heure invalide (aaaa-MM-jj et HH:mm:ss)</string>
+    <string name="group_metadata_shift">Décaler la date</string>
+    <string name="group_metadata_forward">Avancer</string>
+    <string name="group_metadata_backward">Reculer</string>
+    <string name="group_metadata_days">Jours</string>
+    <string name="group_metadata_hours">Heures</string>
+    <string name="group_metadata_minutes">Minutes</string>
+    <string name="group_metadata_apply">Appliquer</string>
+    <string name="group_metadata_time_zone">Définir le fuseau</string>
+    <string name="group_metadata_time_zone_hint">Fixe le décalage UTC sans changer l\'heure locale affichée.</string>
+    <string name="group_metadata_texts_hint">Seuls les champs remplis sont appliqués, avec la même valeur pour toutes les photos.</string>
+    <string name="group_metadata_confirm_title">Modifier les infos ?</string>
+    <string name="group_metadata_confirm">Modifier</string>
+    <string name="group_metadata_progress">Modification des infos… (%1$d/%2$d)</string>
+    <string name="metadata_folder_preview">Rangée dans %1$s</string>
     <string name="metadata_description">Description</string>
     <string name="metadata_artist">Auteur</string>
     <string name="metadata_copyright">Copyright</string>
@@ -326,5 +346,25 @@
     <plurals name="share_strip_failed_title">
         <item quantity="one">%1$d média n\'a pas pu être nettoyé</item>
         <item quantity="other">%1$d médias n\'ont pas pu être nettoyés</item>
+    </plurals>
+    <plurals name="group_metadata_title">
+        <item quantity="one">Modifier les infos de %1$d photo</item>
+        <item quantity="other">Modifier les infos de %1$d photos</item>
+    </plurals>
+    <plurals name="group_metadata_modified">
+        <item quantity="one">%1$d photo modifiée</item>
+        <item quantity="other">%1$d photos modifiées</item>
+    </plurals>
+    <plurals name="group_metadata_moved">
+        <item quantity="one">%1$d déplacée sur le SSD</item>
+        <item quantity="other">%1$d déplacées sur le SSD</item>
+    </plurals>
+    <plurals name="group_metadata_skipped">
+        <item quantity="one">%1$d ignorée (format non pris en charge)</item>
+        <item quantity="other">%1$d ignorées (format non pris en charge)</item>
+    </plurals>
+    <plurals name="group_metadata_failed">
+        <item quantity="one">%1$d en échec</item>
+        <item quantity="other">%1$d en échec</item>
     </plurals>
 </resources>

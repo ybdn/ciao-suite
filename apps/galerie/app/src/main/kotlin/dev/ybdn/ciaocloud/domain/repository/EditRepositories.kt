@@ -35,6 +35,9 @@ interface MetadataWriter {
 
     suspend fun apply(path: String, plan: ExifWritePlan)
 
+    /** Valeurs des balises [tags] présentes dans [path]. */
+    suspend fun readTags(path: String, tags: List<String>): Map<String, String>
+
     /** Recopie dans [path] les balises [tags] présentes dans l'original [sourceUri] (textes en UTF-8). */
     suspend fun copyTags(sourceUri: String, path: String, tags: List<String>)
 }
@@ -128,6 +131,25 @@ interface SsdMediaWriter {
 
     /** @return true si supprimé ou déjà absent. */
     suspend fun delete(relativePath: String): Boolean
+
+    /**
+     * Chemin réel du dossier [relativeDir] : chaque segment existant est reconnu sans tenir compte de la
+     * casse (v2 A1), les segments manquants sont créés si [create]. null si inaccessible.
+     */
+    suspend fun resolveDirectory(relativeDir: String, create: Boolean): String?
+
+    /** Fichiers et dossiers de [relativeDir] avec leur taille, null si inaccessible. */
+    suspend fun listEntries(relativeDir: String): List<DestinationEntry>?
+
+    /** true si les deux fichiers ont un contenu identique octet pour octet. */
+    suspend fun sameContent(firstPath: String, secondPath: String): Boolean
+
+    /**
+     * Déplace [fromPath] dans [toDir] sous [newName] (nom libre) : `moveDocument` si le fournisseur le
+     * permet, sinon copie `<nom>.ciao-new` vérifiée, renommage puis suppression de la source. En cas
+     * d'échec, la source reste intacte et l'exception est propagée.
+     */
+    suspend fun move(fromPath: String, toDir: String, newName: String)
 }
 
 enum class EditStepKind { COPY, REPLACE }
@@ -153,6 +175,16 @@ data class SsdEditStep(
     val originalChecksum: String? = null,
 )
 
+/** Déplacement d'un fichier du SSD vers un autre dossier jour (spec v3 C7). */
+data class SsdMoveStep(
+    val fromPath: String,
+    val toPath: String,
+    /** Un fichier identique existait déjà à [toPath] : la source est simplement supprimée. */
+    val duplicate: Boolean,
+    /** Nouvel instant de prise de vue, pour l'index. */
+    val capturedAtEpochMillis: Long?,
+)
+
 /**
  * Opération d'écriture en cours, persistée avant toute modification pour être reprise au lancement
  * suivant si l'app est tuée (spec v3 A4, journal de reprise).
@@ -165,6 +197,7 @@ data class EditJournalEntry(
     val previousRecords: List<TransferRecord> = emptyList(),
     /** Média modifié aux deux endroits : son enregistrement est mis à jour si les deux fichiers sont identiques. */
     val editedMediaStoreId: Long? = null,
+    val move: SsdMoveStep? = null,
 )
 
 interface EditJournal {

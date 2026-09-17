@@ -1,5 +1,6 @@
 package dev.ybdn.ciaocloud.domain.util
 
+import dev.ybdn.ciaocloud.domain.model.CaptureTimestamp
 import dev.ybdn.ciaocloud.domain.model.FieldChange
 import dev.ybdn.ciaocloud.domain.model.GeoPoint
 import dev.ybdn.ciaocloud.domain.model.MetadataChanges
@@ -67,9 +68,28 @@ data class ExifWritePlan(
          * Balises correspondant à [changes]. Une valeur écrite l'emporte sur un retrait (ex. nettoyage
          * puis nouvelle position). Un texte vide supprime sa balise.
          */
-        fun from(changes: MetadataChanges): ExifWritePlan {
+        fun from(changes: MetadataChanges, current: CaptureTimestamp = CaptureTimestamp()): ExifWritePlan {
             val set = LinkedHashMap<String, String>()
             val remove = LinkedHashSet<String>()
+
+            // Date et fuseau (C2) : sous-secondes et horodatage GPS (UTC du fix) inchangés.
+            if (changes.captureDateTime != FieldChange.Keep || changes.dateShift?.isZero == false) {
+                CaptureDates.resulting(current, changes).local?.let { local ->
+                    set[CaptureDates.DATE_TIME_ORIGINAL] = CaptureDates.format(local)
+                    set[CaptureDates.DATE_TIME_DIGITIZED] = CaptureDates.format(local)
+                }
+            }
+            when (val offset = changes.utcOffsetMinutes) {
+                FieldChange.Keep -> Unit
+                FieldChange.Remove -> {
+                    remove += CaptureDates.OFFSET_TIME_ORIGINAL
+                    remove += CaptureDates.OFFSET_TIME_DIGITIZED
+                }
+                is FieldChange.Set -> {
+                    set[CaptureDates.OFFSET_TIME_ORIGINAL] = CaptureDates.formatOffset(offset.value)
+                    set[CaptureDates.OFFSET_TIME_DIGITIZED] = CaptureDates.formatOffset(offset.value)
+                }
+            }
 
             fun text(tag: String, change: FieldChange<String>) {
                 when (change) {
