@@ -1,5 +1,7 @@
 package dev.ybdn.ciaocloud.domain.model
 
+import dev.ybdn.ciaocloud.domain.util.FilterPresets
+
 /**
  * Transformation d'orientation (groupe du carré : 4 rotations × miroir). Appliquée à une image, elle
  * la retourne d'abord horizontalement si [flipped], puis la fait pivoter de [rotationDegrees] dans le
@@ -142,6 +144,16 @@ enum class Adjustment(val min: Int) {
     SHARPNESS(0), VIGNETTE(-100),
 }
 
+/** Filtres prédéfinis (spec v3 B4). */
+enum class FilterPreset { ORIGINAL, MONO, MONO_CONTRAST, WARM, COOL, VIVID, SOFT, FADED }
+
+/** Mélange vers le noir et blanc : part du mélange (0 à 1) et poids des canaux. */
+data class MonoMix(val amount: Float, val red: Float, val green: Float, val blue: Float) {
+    companion object {
+        val NONE = MonoMix(0f, 0.2126f, 0.7152f, 0.0722f)
+    }
+}
+
 /**
  * Recette de retouche d'une photo, exprimée sur l'image telle qu'affichée (orientation EXIF appliquée).
  * Ordre d'application : orientation → redressement → recadrage → réglages (spec v3 B3).
@@ -153,14 +165,25 @@ data class EditRecipe(
     /** Cadre normalisé dans l'image orientée et redressée. */
     val crop: NormalizedRect = NormalizedRect.FULL,
     val aspect: CropAspect = CropAspect.FREE,
+    /** Réglages manuels, ajoutés à ceux du filtre. */
     val adjustments: Adjustments = Adjustments.NEUTRAL,
+    val filter: FilterPreset = FilterPreset.ORIGINAL,
+    /** Intensité du filtre, 0 à 100 %. */
+    val filterIntensity: Int = 100,
 ) {
     val isIdentity: Boolean get() = transform.isIdentity && isOrientationOnly
 
     /** Seulement rotations et miroir : enregistrable sans réencodage pour un JPEG. */
-    val isOrientationOnly: Boolean get() = straightenDegrees == 0.0 && crop.isFull && adjustments.isNeutral
+    val isOrientationOnly: Boolean get() = straightenDegrees == 0.0 && crop.isFull && !hasPixelAdjustments
 
-    val hasPixelAdjustments: Boolean get() = !adjustments.isNeutral
+    /** Réglages appliqués au rendu : filtre × intensité + réglages manuels. */
+    val effectiveAdjustments: Adjustments
+        get() = FilterPresets.effectiveAdjustments(adjustments, filter, filterIntensity)
+
+    val effectiveMono: MonoMix
+        get() = FilterPresets.effectiveMono(filter, filterIntensity)
+
+    val hasPixelAdjustments: Boolean get() = !effectiveAdjustments.isNeutral || effectiveMono.amount > 0f
 }
 
 enum class SaveMode { COPY, REPLACE }

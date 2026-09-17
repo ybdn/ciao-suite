@@ -45,11 +45,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
 import dev.ybdn.ciaocloud.R
-import dev.ybdn.ciaocloud.data.edit.MonoMix
 import dev.ybdn.ciaocloud.data.edit.PhotoAdjustmentShader
 import dev.ybdn.ciaocloud.domain.model.Adjustment
 import dev.ybdn.ciaocloud.domain.model.CropAspect
 import dev.ybdn.ciaocloud.domain.model.EditRecipe
+import dev.ybdn.ciaocloud.domain.model.FilterPreset
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.painter.Painter
+import dev.ybdn.ciaocloud.presentation.components.BorderWidth
+import dev.ybdn.ciaocloud.presentation.theme.Lime
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
@@ -63,7 +76,7 @@ import dev.ybdn.ciaocloud.presentation.gallery.GalleryImages
 import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
 
 /** Onglets d'outils de l'éditeur. */
-enum class EditorTab { CROP, LIGHT, COLOR, EFFECTS }
+enum class EditorTab { CROP, LIGHT, COLOR, EFFECTS, FILTERS }
 
 /**
  * Éditeur plein écran : barre du haut (Annuler, historique, Enregistrer), aperçu au centre, outils
@@ -206,6 +219,7 @@ fun PhotoEditorScreen(
                 listOf(Adjustment.SHARPNESS, Adjustment.VIGNETTE),
                 recipe, viewModel, beginGesture, endGesture,
             )
+            EditorTab.FILTERS -> FilterTools(item, recipe, viewModel, beginGesture, endGesture)
         }
 
         val tabs = EditorTab.entries
@@ -313,23 +327,13 @@ private fun EditorPreview(
         }
         LaunchedEffect(intrinsic) { viewModel.onImageLoaded(intrinsic.width, intrinsic.height) }
         val displayed = if (showOriginal) EditRecipe() else recipe
-        val adjustments = displayed.adjustments
         EditorCanvas(
             painter = painter,
             imageSize = intrinsic,
             recipe = displayed,
             cropMode = cropMode && !showOriginal,
             showGrid = showGrid,
-            shaderEffect = if (adjustments.isNeutral) {
-                null
-            } else {
-                { frame ->
-                    RenderEffect.createRuntimeShaderEffect(
-                        shader.create(adjustments, MonoMix.NONE, frame.left, frame.top, frame.width, frame.height),
-                        "image",
-                    )
-                }
-            },
+            shaderEffect = shaderEffect(shader, displayed),
             modifier = Modifier
                 .fillMaxSize()
                 .then(
@@ -356,11 +360,119 @@ private fun EditorPreview(
     }
 }
 
+/** Effet des réglages et du filtre de [recipe] pour un cadre donné, null si rien n'est à appliquer. */
+private fun shaderEffect(shader: PhotoAdjustmentShader, recipe: EditRecipe): ((androidx.compose.ui.geometry.Rect) -> RenderEffect)? {
+    if (!recipe.hasPixelAdjustments) return null
+    val adjustments = recipe.effectiveAdjustments
+    val mono = recipe.effectiveMono
+    return { frame ->
+        RenderEffect.createRuntimeShaderEffect(
+            shader.create(adjustments, mono, frame.left, frame.top, frame.width, frame.height),
+            "image",
+        )
+    }
+}
+
+/** Bandeau de vignettes de filtres (image de travail recadrée) et intensité. */
+@Composable
+private fun FilterTools(
+    item: GalleryItem,
+    recipe: EditRecipe,
+    viewModel: PhotoEditorViewModel,
+    onGestureStart: () -> Unit,
+    onGestureEnd: () -> Unit,
+) {
+    val context = LocalContext.current
+    val shader = remember { PhotoAdjustmentShader(context.applicationContext) }
+    val originalUri by produceState<String?>(null, item.key) { value = viewModel.originalUri() }
+    val uri = originalUri ?: return
+    val painter = rememberAsyncImagePainter(remember(uri) { GalleryImages.editorRequest(context, item, uri) })
+    val painterState by painter.state.collectAsStateWithLifecycle()
+    val intrinsic = (painterState as? AsyncImagePainter.State.Success)?.painter?.intrinsicSize ?: return
+    Column(modifier = Modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+        ) {
+            FilterPreset.entries.forEach { preset ->
+                FilterThumbnail(
+                    label = stringResource(preset.labelRes()),
+                    selected = recipe.filter == preset,
+                    painter = painter,
+                    imageSize = intrinsic,
+                    // Aperçu du filtre seul, à pleine intensité, sur le cadrage courant.
+                    recipe = recipe.copy(adjustments = recipe.adjustments, filter = preset, filterIntensity = 100),
+                    shader = shader,
+                    onClick = { viewModel.selectFilter(preset) },
+                )
+            }
+        }
+        if (recipe.filter != FilterPreset.ORIGINAL) {
+            AdjustmentSlider(
+                label = stringResource(R.string.editor_filter_intensity),
+                value = recipe.filterIntensity,
+                min = 0,
+                max = 100,
+                onChange = viewModel::setFilterIntensity,
+                onGestureStart = onGestureStart,
+                onGestureEnd = onGestureEnd,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterThumbnail(
+    label: String,
+    selected: Boolean,
+    painter: Painter,
+    imageSize: Size,
+    recipe: EditRecipe,
+    shader: PhotoAdjustmentShader,
+    onClick: () -> Unit,
+) {
+    val palette = NeoTheme.palette
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(76.dp).clickable(onClick = onClick),
+    ) {
+        EditorCanvas(
+            painter = painter,
+            imageSize = imageSize,
+            recipe = recipe,
+            cropMode = false,
+            showGrid = false,
+            shaderEffect = shaderEffect(shader, recipe),
+            modifier = Modifier
+                .size(72.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .border(if (selected) BorderWidth else 1.dp, if (selected) Lime else palette.outline, RoundedCornerShape(6.dp)),
+        )
+        Text(label, style = MaterialTheme.typography.labelSmall, color = palette.content, maxLines = 1)
+    }
+}
+
+private fun FilterPreset.labelRes(): Int = when (this) {
+    FilterPreset.ORIGINAL -> R.string.editor_filter_original
+    FilterPreset.MONO -> R.string.editor_filter_mono
+    FilterPreset.MONO_CONTRAST -> R.string.editor_filter_mono_contrast
+    FilterPreset.WARM -> R.string.editor_filter_warm
+    FilterPreset.COOL -> R.string.editor_filter_cool
+    FilterPreset.VIVID -> R.string.editor_filter_vivid
+    FilterPreset.SOFT -> R.string.editor_filter_soft
+    FilterPreset.FADED -> R.string.editor_filter_faded
+}
+
 private fun EditorTab.labelRes(): Int = when (this) {
     EditorTab.CROP -> R.string.editor_tab_crop
     EditorTab.LIGHT -> R.string.editor_tab_light
     EditorTab.COLOR -> R.string.editor_tab_color
     EditorTab.EFFECTS -> R.string.editor_tab_effects
+    EditorTab.FILTERS -> R.string.editor_tab_filters
 }
 
 private fun Adjustment.labelRes(): Int = when (this) {

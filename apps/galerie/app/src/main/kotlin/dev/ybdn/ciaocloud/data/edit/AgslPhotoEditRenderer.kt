@@ -192,8 +192,8 @@ class AgslPhotoEditRenderer(
                 setLocalMatrix(Matrix().apply { setTranslate(-left.toFloat(), -top.toFloat()) })
             }
             val runtimeShader = shader.create(
-                recipe.adjustments,
-                MonoMix.NONE,
+                recipe.effectiveAdjustments,
+                recipe.effectiveMono,
                 frameLeft = -left.toFloat(),
                 frameTop = -top.toFloat(),
                 frameWidth = input.width.toFloat(),

@@ -128,6 +128,16 @@
     <string name="editor_tab_light">Lumière</string>
     <string name="editor_tab_color">Couleur</string>
     <string name="editor_tab_effects">Effets</string>
+    <string name="editor_tab_filters">Filtres</string>
+    <string name="editor_filter_intensity">Intensité (%)</string>
+    <string name="editor_filter_original">Original</string>
+    <string name="editor_filter_mono">N&amp;B</string>
+    <string name="editor_filter_mono_contrast">N&amp;B contrasté</string>
+    <string name="editor_filter_warm">Chaud</string>
+    <string name="editor_filter_cool">Froid</string>
+    <string name="editor_filter_vivid">Vif</string>
+    <string name="editor_filter_soft">Doux</string>
+    <string name="editor_filter_faded">Fané</string>
     <string name="editor_brightness">Luminosité</string>
     <string name="editor_contrast">Contraste</string>
     <string name="editor_highlights">Hautes lumières</string>

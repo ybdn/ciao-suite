@@ -10,6 +10,7 @@ import dev.ybdn.ciaocloud.domain.model.Adjustments
 import dev.ybdn.ciaocloud.domain.model.CropAspect
 import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.EditRecipe
+import dev.ybdn.ciaocloud.domain.model.FilterPreset
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.ImageTransform
 import dev.ybdn.ciaocloud.domain.model.MediaDetails
@@ -122,6 +123,13 @@ class PhotoEditorViewModel(
         publish(history.current)
     }
 
+    fun selectFilter(filter: FilterPreset) = commit(history.current.copy(filter = filter))
+
+    fun setFilterIntensity(intensity: Int) {
+        history.update(history.current.copy(filterIntensity = intensity.coerceIn(0, 100)))
+        publish(history.current)
+    }
+
     fun save(mode: SaveMode) {
         if (_isSaving.value) return
         _isSaving.value = true
@@ -170,6 +178,8 @@ private object RecipeState {
     private const val CROP = "recipe_crop"
     private const val ASPECT = "recipe_aspect"
     private const val ADJUSTMENTS = "recipe_adjustments"
+    private const val FILTER = "recipe_filter"
+    private const val FILTER_INTENSITY = "recipe_filter_intensity"
 
     fun save(handle: SavedStateHandle, recipe: EditRecipe) {
         handle[FLIPPED] = recipe.transform.flipped
@@ -178,6 +188,8 @@ private object RecipeState {
         handle[CROP] = recipe.crop.let { doubleArrayOf(it.left, it.top, it.right, it.bottom) }
         handle[ASPECT] = recipe.aspect.name
         handle[ADJUSTMENTS] = recipe.adjustments.values()
+        handle[FILTER] = recipe.filter.name
+        handle[FILTER_INTENSITY] = recipe.filterIntensity
     }
 
     fun restore(handle: SavedStateHandle): EditRecipe {
@@ -189,6 +201,8 @@ private object RecipeState {
             crop = crop?.let { NormalizedRect(it[0], it[1], it[2], it[3]) } ?: NormalizedRect.FULL,
             aspect = handle.get<String>(ASPECT)?.let { name -> CropAspect.entries.firstOrNull { it.name == name } } ?: CropAspect.FREE,
             adjustments = adjustments?.let { runCatching { Adjustments.fromValues(it) }.getOrNull() } ?: Adjustments.NEUTRAL,
+            filter = handle.get<String>(FILTER)?.let { name -> FilterPreset.entries.firstOrNull { it.name == name } } ?: FilterPreset.ORIGINAL,
+            filterIntensity = handle[FILTER_INTENSITY] ?: 100,
         )
     }
 }

@@ -4,15 +4,9 @@ import android.content.Context
 import android.graphics.RuntimeShader
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.Adjustments
+import dev.ybdn.ciaocloud.domain.model.MonoMix
 import kotlin.math.hypot
 import kotlin.math.max
-
-/** Canaux du filtre noir et blanc : poids du mélange (1 = noir et blanc complet). */
-data class MonoMix(val amount: Float, val red: Float, val green: Float, val blue: Float) {
-    companion object {
-        val NONE = MonoMix(0f, 0.2126f, 0.7152f, 0.0722f)
-    }
-}
 
 /**
  * Shader AGSL unique des réglages, partagé par l'aperçu (`RenderEffect`) et l'export par tuiles : le
