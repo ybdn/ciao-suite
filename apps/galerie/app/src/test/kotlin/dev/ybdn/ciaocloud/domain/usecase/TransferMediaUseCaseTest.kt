@@ -4,6 +4,8 @@ import dev.ybdn.ciaocloud.domain.model.MediaFile
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciaocloud.domain.model.TransferProgress
 import dev.ybdn.ciaocloud.domain.model.TransferStatus
+import dev.ybdn.ciaocloud.domain.model.TriageDecision
+import dev.ybdn.ciaocloud.domain.model.TriageState
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -18,12 +20,14 @@ class TransferMediaUseCaseTest {
     private val transfers = FakeTransferStateRepository()
     private val index = FakeSsdMediaIndex()
     private val favorites = FakeFavoritesRepository(setOf("phone:1"))
+    private val triage = FakeTriageRepository(listOf(TriageState("phone:1", TriageDecision.KEPT, 0, null)))
     private val useCase = TransferMediaUseCase(
         writer,
         transfers,
         VerifyTransferUseCase(writer),
         index,
         favorites,
+        triage,
         FakeThumbnailCache(),
         DirectTransactionRunner,
     )
@@ -37,7 +41,7 @@ class TransferMediaUseCaseTest {
     }
 
     @Test
-    fun `a verified copy is indexed and its favorite follows the ssd copy`() = runTest {
+    fun `a verified copy is indexed and its favorite and triage decision follow the ssd copy`() = runTest {
         val progress = useCase(listOf(photo(1, "IMG_1.jpg", byteArrayOf(1, 2, 3)))).toList()
 
         val completed = progress.last() as TransferProgress.BatchCompleted
@@ -46,6 +50,8 @@ class TransferMediaUseCaseTest {
         assertEquals("DCIM/2025/04/21/IMG_1.jpg", transfers.records.value[1]!!.destinationPath)
         assertTrue(index.get("DCIM/2025/04/21/IMG_1.jpg") != null)
         assertEquals(setOf("ssd:DCIM/2025/04/21/IMG_1.jpg"), favorites.keys.value)
+        assertEquals(TriageDecision.KEPT, triage.states.value["ssd:DCIM/2025/04/21/IMG_1.jpg"]?.decision)
+        assertEquals(setOf("ssd:DCIM/2025/04/21/IMG_1.jpg"), triage.states.value.keys)
     }
 
     @Test
@@ -61,6 +67,7 @@ class TransferMediaUseCaseTest {
         assertEquals("DCIM/2025/04/21/img_1.JPG", transfers.records.value[1]!!.destinationPath)
         assertEquals(TransferStatus.VERIFIED, transfers.records.value[1]!!.status)
         assertEquals(setOf("ssd:DCIM/2025/04/21/img_1.JPG"), favorites.keys.value)
+        assertEquals(setOf("ssd:DCIM/2025/04/21/img_1.JPG"), triage.states.value.keys)
     }
 
     @Test

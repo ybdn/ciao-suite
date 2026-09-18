@@ -49,7 +49,7 @@ class EditMetadataUseCaseTest {
         override suspend fun read(uri: String, mediaType: MediaType, isMediaStoreUri: Boolean) = details[uri]
     }
     private val editor = SafeFileEditor(
-        phoneWriter, ssdWriter, access, journal, transfers, index, thumbnails, favorites, DirectTransactionRunner,
+        phoneWriter, ssdWriter, access, journal, transfers, index, thumbnails, favorites, FakeTriageRepository(), DirectTransactionRunner,
     )
 
     private fun useCase(ssdAvailable: Boolean = true) = EditMetadataUseCase(

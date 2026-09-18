@@ -229,6 +229,7 @@ fun NeoButton(
     modifier: Modifier = Modifier,
     tone: NeoTone = NeoTone.Coral,
     enabled: Boolean = true,
+    horizontalPadding: Dp = 24.dp,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -257,7 +258,7 @@ fun NeoButton(
                 role = Role.Button,
                 onClick = onClick,
             )
-            .padding(horizontal = 24.dp, vertical = 14.dp),
+            .padding(horizontal = horizontalPadding, vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(

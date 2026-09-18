@@ -75,6 +75,14 @@ class SettingsViewModel(
         viewModelScope.launch { _thumbnailCacheUsedBytes.value = appContainer.manageThumbnailCacheUseCase.sizeBytes() }
     }
 
+    /** Remet dans la pile de tri les médias gardés ou mis de côté (la file de suppression est conservée). */
+    fun resetTriage(onDone: () -> Unit) {
+        viewModelScope.launch {
+            appContainer.resetTriageUseCase()
+            onDone()
+        }
+    }
+
     fun onThemeModeSelected(mode: ThemeMode) {
         viewModelScope.launch { appContainer.settingsDataStore.setThemeMode(mode) }
     }

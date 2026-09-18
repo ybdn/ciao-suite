@@ -11,6 +11,7 @@ import dev.ybdn.ciaocloud.domain.repository.SsdThumbnailCache
 import dev.ybdn.ciaocloud.domain.repository.TransactionRunner
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
 import dev.ybdn.ciaocloud.domain.repository.TrashedMedia
+import dev.ybdn.ciaocloud.domain.repository.TriageRepository
 import dev.ybdn.ciaocloud.domain.repository.TrashedMediaSource
 import kotlinx.coroutines.flow.Flow
 
@@ -18,7 +19,13 @@ import kotlinx.coroutines.flow.Flow
 enum class DeleteTarget { PHONE, SSD, EVERYWHERE }
 
 sealed interface DeleteItemsOutcome {
-    data class Done(val phoneTrashed: Int, val ssdDeleted: Int, val ssdFailed: Int) : DeleteItemsOutcome
+    data class Done(
+        val phoneTrashed: Int,
+        val ssdDeleted: Int,
+        val ssdFailed: Int,
+        /** Clés (`GalleryItem.key`) des éléments supprimés de tous les emplacements visés. */
+        val completedKeys: Set<String> = emptySet(),
+    ) : DeleteItemsOutcome
     /** Confirmation système refusée : rien n'a été supprimé. */
     data object Cancelled : DeleteItemsOutcome
     data object SsdUnavailable : DeleteItemsOutcome
@@ -28,7 +35,8 @@ sealed interface DeleteItemsOutcome {
  * Suppression depuis la galerie. Téléphone : corbeille système (réversible 30 jours), l'état de
  * transfert passe en `DELETED`. SSD : suppression définitive (confirmée dans l'app au préalable),
  * qui invalide l'état de transfert du média encore sur le téléphone : il redevient proposé au
- * transfert et ne peut plus être libéré comme « vérifié ».
+ * transfert et ne peut plus être libéré comme « vérifié ». Favori et décision de tri suivent le
+ * média resté sur le téléphone, ou disparaissent avec lui.
  */
 class DeleteGalleryItemsUseCase(
     private val mediaTrash: MediaTrash,
@@ -37,6 +45,7 @@ class DeleteGalleryItemsUseCase(
     private val ssdThumbnailCache: SsdThumbnailCache,
     private val transferStateRepository: TransferStateRepository,
     private val favoritesRepository: FavoritesRepository,
+    private val triageRepository: TriageRepository,
     private val transactionRunner: TransactionRunner,
 ) {
     suspend operator fun invoke(items: List<GalleryItem>, target: DeleteTarget): DeleteItemsOutcome {
@@ -69,12 +78,14 @@ class DeleteGalleryItemsUseCase(
 
         var ssdDeleted = 0
         var ssdFailed = 0
+        val ssdDeletedKeys = HashSet<String>()
         for (item in ssdToDelete) {
             val ssd = item.ssd!!
             if (!ssdMediaBrowser.delete(ssd.relativePath)) {
                 ssdFailed++
                 continue
             }
+            ssdDeletedKeys += item.key
             val phoneStillPresent = item.phone != null && item.key !in trashedKeys
             transactionRunner.inTransaction {
                 ssdMediaIndex.remove(ssd.relativePath)
@@ -82,15 +93,23 @@ class DeleteGalleryItemsUseCase(
                     .forEach { transferStateRepository.delete(it.mediaStoreId) }
                 val ssdKey = FavoriteKeys.ssd(ssd.relativePath)
                 if (phoneStillPresent) {
-                    favoritesRepository.renameKey(ssdKey, FavoriteKeys.phone(item.phone!!.mediaStoreId))
+                    val phoneKey = FavoriteKeys.phone(item.phone!!.mediaStoreId)
+                    favoritesRepository.renameKey(ssdKey, phoneKey)
+                    triageRepository.renameKey(ssdKey, phoneKey)
                 } else {
                     favoritesRepository.setFavorite(listOf(ssdKey), favorite = false)
+                    triageRepository.delete(listOf(ssdKey))
                 }
             }
             ssdThumbnailCache.remove(ssd.relativePath)
             ssdDeleted++
         }
-        return DeleteItemsOutcome.Done(phoneTrashed, ssdDeleted, ssdFailed)
+        val completedKeys = items.filter { item ->
+            val phoneDone = !deletePhone || item.phone == null || item.key in trashedKeys
+            val ssdDone = !deleteSsd || item.ssd == null || item.key in ssdDeletedKeys
+            phoneDone && ssdDone
+        }.mapTo(HashSet()) { it.key }
+        return DeleteItemsOutcome.Done(phoneTrashed, ssdDeleted, ssdFailed, completedKeys)
     }
 
     private companion object {

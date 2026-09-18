@@ -31,7 +31,7 @@ export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
 export PATH="$JAVA_HOME/bin:$PATH"
 export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
 ./gradlew :app:assembleDebug        # build debug — vérifié OK
-./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (174 tests, 0 échec)
+./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (191 tests, 0 échec)
 ```
 
 Pas de ktlint/detekt intégré pour l'instant (jugé non prioritaire, cf. README).
@@ -40,7 +40,7 @@ Note : `TopAppBar` (Material3) est une API expérimentale — opt-in global via 
 
 ## Projet
 
-C!ao (anciennement CiaoCloud ; package `dev.ybdn.ciaocloud`) est une application Android **strictement personnelle**, sans backend ni compte, qui délestage manuellement photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en les rangeant par date, puis supprime les originaux du téléphone uniquement après vérification de la copie. La spécification complète et faisant autorité est `prompt-initial.md` — s'y référer pour tout détail non résumé ici (gestion des cas limites, format des chemins, workflow CI/CD, etc.). La v2 (fiabilisation du rangement : casse des dossiers, doublons, fuseau des vidéos ; visionneuse unifiée téléphone + SSD) est spécifiée dans `docs/spec-v2-fiabilisation-visionneuse.md`, qui prime sur `prompt-initial.md` en cas de contradiction. La v3 (édition des photos : recadrage, rotation, retouches, filtres, modification des EXIF ; partage sans métadonnées) est spécifiée dans `docs/spec-v3-edition-photos.md`, qui prime sur les deux précédents en cas de contradiction.
+C!ao (anciennement CiaoCloud ; package `dev.ybdn.ciaocloud`) est une application Android **strictement personnelle**, sans backend ni compte, qui délestage manuellement photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en les rangeant par date, puis supprime les originaux du téléphone uniquement après vérification de la copie. La spécification complète et faisant autorité est `prompt-initial.md` — s'y référer pour tout détail non résumé ici (gestion des cas limites, format des chemins, workflow CI/CD, etc.). La v2 (fiabilisation du rangement : casse des dossiers, doublons, fuseau des vidéos ; visionneuse unifiée téléphone + SSD) est spécifiée dans `docs/spec-v2-fiabilisation-visionneuse.md`, qui prime sur `prompt-initial.md` en cas de contradiction. La v3 (édition des photos : recadrage, rotation, retouches, filtres, modification des EXIF ; partage sans métadonnées) est spécifiée dans `docs/spec-v3-edition-photos.md`, qui prime sur les deux précédents en cas de contradiction. La v4 (tri de la pellicule par swipe : garder/supprimer/revoir plus tard) est spécifiée dans `docs/spec-v4-tri-pellicule.md`, qui prime sur les trois précédents en cas de contradiction.
 
 ## Stack technique
 
@@ -85,6 +85,8 @@ Pas de DI framework lourd sauf s'il simplifie réellement l'injection dans ViewM
 - Base Room : migrations explicites uniquement (`data/local/Migrations.kt`), jamais de migration destructive ; schémas exportés dans `app/schemas/` (à commiter).
 - La galerie v2 (lots 1 à 7 de la spec v2) est implémentée. La visionneuse suit la DA néo-brutaliste de l'app (barres `NeoTopBar`/`NeoActionBar`, fond de page du thème), pas un fond noir.
 - La v3 (lots 1 à 7 de la spec v3 : édition des photos, métadonnées, partage sans métadonnées) est implémentée. Points à vérifier sur le Pixel listés dans la section « Points ouverts » de la spec (Ultra HDR, photo animée, vidéos HDR/Dolby Vision au partage, durée d'export 50 Mpx, `moveDocument` sur le SSD USB).
+- La v4 (lots 1 à 7 de la spec v4 : onglet **Trier**, bilan, confirmation des suppressions, réinitialisation) est implémentée. Choix des points ouverts : gauche = supprimer, droite = garder, haut = plus tard ; snooze fixe de 7 jours (`TriageRules`) ; icône `Style` ; pas de badge de file en attente sur l'onglet.
+- Décision de tri (`triage_state`) : même clé que le favori (`GalleryItem.triageKey`). Tout endroit qui renomme ou oublie une clé de favori (transfert, déplacement SSD de `SafeFileEditor`, suppression galerie) doit faire de même sur `TriageRepository`.
 - Toute écriture d'un média existant passe par `SafeFileEditor` (domaine) : fichier de travail vérifié, journal de reprise (`filesDir/edit-journal/`), enregistrements de transfert retirés puis restaurés ou mis à jour d'après l'état relu des fichiers (invariant A1). Ne jamais écrire un original du téléphone ou du SSD en dehors de ce chemin.
 - `ExifInterface` écrit les textes en US-ASCII : les textes accentués passent par `ExifInterfaceMetadataWriter` (gabarit puis remplacement en place par l'UTF-8) et se lisent avec `ExifText.decode`.
 - Réglages et filtres : un seul shader AGSL (`res/raw/photo_adjustments.agsl`) pour l'aperçu (`RenderEffect`) et l'export par tuiles (`HardwareRenderer`) ; toute modification doit garder les deux rendus identiques.

@@ -14,6 +14,7 @@ import dev.ybdn.ciaocloud.domain.repository.SsdMediaIndex
 import dev.ybdn.ciaocloud.domain.repository.SsdThumbnailCache
 import dev.ybdn.ciaocloud.domain.repository.TransactionRunner
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
+import dev.ybdn.ciaocloud.domain.repository.TriageRepository
 import dev.ybdn.ciaocloud.domain.util.DestinationDecision
 import dev.ybdn.ciaocloud.domain.util.DestinationPathResolver
 import dev.ybdn.ciaocloud.domain.util.DuplicateResolver
@@ -40,6 +41,7 @@ class TransferMediaUseCase(
     private val verifyTransferUseCase: VerifyTransferUseCase,
     private val ssdMediaIndex: SsdMediaIndex,
     private val favoritesRepository: FavoritesRepository,
+    private val triageRepository: TriageRepository,
     private val ssdThumbnailCache: SsdThumbnailCache,
     private val transactionRunner: TransactionRunner,
 ) {
@@ -125,8 +127,8 @@ class TransferMediaUseCase(
     }
 
     /**
-     * Marque le média vérifié, l'ajoute à l'index du SSD et déplace son éventuel favori vers la copie
-     * SSD, en une transaction : le favori survit ainsi à la suppression de l'original.
+     * Marque le média vérifié, l'ajoute à l'index du SSD et déplace son éventuel favori et sa décision
+     * de tri vers la copie SSD, en une transaction : ils survivent ainsi à la suppression de l'original.
      */
     private suspend fun recordVerified(file: MediaFile, destinationPath: String, checksum: String, sizeBytes: Long) {
         val name = destinationPath.substringAfterLast('/')
@@ -156,7 +158,10 @@ class TransferMediaUseCase(
                     ),
                 )
             }
-            favoritesRepository.renameKey(FavoriteKeys.phone(file.mediaStoreId), FavoriteKeys.ssd(destinationPath))
+            val phoneKey = FavoriteKeys.phone(file.mediaStoreId)
+            val ssdKey = FavoriteKeys.ssd(destinationPath)
+            favoritesRepository.renameKey(phoneKey, ssdKey)
+            triageRepository.renameKey(phoneKey, ssdKey)
         }
         // Vignette disponible SSD débranché, même après suppression de l'original du téléphone.
         ssdThumbnailCache.seedFromPhone(file.uri, destinationPath)

@@ -67,6 +67,9 @@ data class GalleryItem(
     /** Clé de favori stable : suit le média sur le SSD pour survivre à sa suppression du téléphone. */
     val favoriteKey: String
         get() = ssd?.let { FavoriteKeys.ssd(it.relativePath) } ?: FavoriteKeys.phone(phone!!.mediaStoreId)
+
+    /** Clé de la décision de tri : la même que le favori, elle suit le média du téléphone au SSD. */
+    val triageKey: String get() = favoriteKey
 }
 
 object FavoriteKeys {

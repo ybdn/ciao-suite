@@ -6,6 +6,9 @@ import dev.ybdn.ciaocloud.domain.model.PhoneMedia
 import dev.ybdn.ciaocloud.domain.model.SsdMedia
 import dev.ybdn.ciaocloud.domain.model.TransferRecord
 import dev.ybdn.ciaocloud.domain.model.TransferStatus
+import dev.ybdn.ciaocloud.domain.model.TriageDecision
+import dev.ybdn.ciaocloud.domain.model.TriageState
+import dev.ybdn.ciaocloud.domain.repository.SsdMediaBrowser
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -20,8 +23,9 @@ class DeleteGalleryItemsUseCaseTest {
     private val index = FakeSsdMediaIndex()
     private val transfers = FakeTransferStateRepository()
     private val favorites = FakeFavoritesRepository(setOf("ssd:$path"))
+    private val triage = FakeTriageRepository(listOf(TriageState("ssd:$path", TriageDecision.KEPT, 0, null)))
     private val useCase = DeleteGalleryItemsUseCase(
-        trash, browser, index, FakeThumbnailCache(), transfers, favorites, DirectTransactionRunner,
+        trash, browser, index, FakeThumbnailCache(), transfers, favorites, triage, DirectTransactionRunner,
     )
 
     private val phone = PhoneMedia(1, "content://media/1", "IMG_1.jpg", MediaType.PHOTO, "image/jpeg", 3, 0, 0, 0, 0, null, "DCIM/Camera/")
@@ -39,10 +43,11 @@ class DeleteGalleryItemsUseCaseTest {
 
         val outcome = useCase(listOf(backedUp), DeleteTarget.SSD)
 
-        assertEquals(DeleteItemsOutcome.Done(phoneTrashed = 0, ssdDeleted = 1, ssdFailed = 0), outcome)
+        assertEquals(DeleteItemsOutcome.Done(phoneTrashed = 0, ssdDeleted = 1, ssdFailed = 0, setOf("phone:1")), outcome)
         assertNull(transfers.records.value[1])
         assertNull(index.get(path))
         assertEquals(setOf("phone:1"), favorites.keys.value)
+        assertEquals(setOf("phone:1"), triage.states.value.keys)
         assertEquals(emptyList<String>(), trash.trashed)
     }
 
@@ -72,10 +77,37 @@ class DeleteGalleryItemsUseCaseTest {
     @Test
     fun `nothing is deleted when the ssd is unplugged`() = runTest {
         val unpluggedUseCase = DeleteGalleryItemsUseCase(
-            trash, FakeSsdMediaBrowser(available = false), index, FakeThumbnailCache(), transfers, favorites, DirectTransactionRunner,
+            trash, FakeSsdMediaBrowser(available = false), index, FakeThumbnailCache(), transfers, favorites, triage, DirectTransactionRunner,
         )
 
         assertEquals(DeleteItemsOutcome.SsdUnavailable, unpluggedUseCase(listOf(backedUp), DeleteTarget.EVERYWHERE))
         assertEquals(emptyList<String>(), trash.trashed)
+    }
+
+    @Test
+    fun `deleting everywhere forgets the triage decision and reports the item as completed`() = runTest {
+        setUpBackedUp()
+
+        val outcome = useCase(listOf(backedUp), DeleteTarget.EVERYWHERE)
+
+        assertEquals(DeleteItemsOutcome.Done(phoneTrashed = 1, ssdDeleted = 1, ssdFailed = 0, setOf("phone:1")), outcome)
+        assertEquals(emptySet<String>(), triage.states.value.keys)
+    }
+
+    @Test
+    fun `an item whose ssd copy could not be deleted is not reported as completed`() = runTest {
+        setUpBackedUp()
+        val failingUseCase = DeleteGalleryItemsUseCase(
+            trash,
+            object : SsdMediaBrowser by browser {
+                override suspend fun delete(relativePath: String) = false
+            },
+            index, FakeThumbnailCache(), transfers, favorites, triage, DirectTransactionRunner,
+        )
+
+        val outcome = failingUseCase(listOf(backedUp), DeleteTarget.EVERYWHERE)
+
+        assertEquals(DeleteItemsOutcome.Done(phoneTrashed = 1, ssdDeleted = 0, ssdFailed = 1, emptySet()), outcome)
+        assertEquals(setOf("ssd:$path"), triage.states.value.keys)
     }
 }

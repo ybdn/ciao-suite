@@ -20,6 +20,17 @@ import dev.ybdn.ciaocloud.presentation.image.SsdThumbnailDiskCache
 import dev.ybdn.ciaocloud.presentation.image.SsdThumbnailFetcher
 import dev.ybdn.ciaocloud.data.local.CiaoCloudDatabase
 import dev.ybdn.ciaocloud.data.local.MIGRATION_1_2
+import dev.ybdn.ciaocloud.data.local.MIGRATION_2_3
+import dev.ybdn.ciaocloud.data.repository.TriageRepositoryImpl
+import dev.ybdn.ciaocloud.domain.repository.TriageRepository
+import dev.ybdn.ciaocloud.domain.usecase.DeleteQueuedTriageItemsUseCase
+import dev.ybdn.ciaocloud.domain.usecase.DequeueTriageDeletionUseCase
+import dev.ybdn.ciaocloud.domain.usecase.GetTriageSummaryUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ObserveTriageDeletionQueueUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ObserveTriagePileUseCase
+import dev.ybdn.ciaocloud.domain.usecase.RecordTriageDecisionUseCase
+import dev.ybdn.ciaocloud.domain.usecase.ResetTriageUseCase
+import dev.ybdn.ciaocloud.domain.usecase.UndoLastTriageDecisionUseCase
 import dev.ybdn.ciaocloud.data.mediastore.MediaStoreGallerySource
 import dev.ybdn.ciaocloud.data.mediastore.MediaStoreRepositoryImpl
 import dev.ybdn.ciaocloud.data.repository.RoomFavoritesRepository
@@ -93,7 +104,7 @@ class AppContainer(private val context: Context) {
         CiaoCloudDatabase.DATABASE_NAME,
     )
         // Migrations explicites uniquement : l'état de transfert doit toujours survivre.
-        .addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
         .build()
 
     val mediaRepository: MediaRepository = MediaStoreRepositoryImpl(context)
@@ -104,6 +115,8 @@ class AppContainer(private val context: Context) {
     val ssdMediaIndex: SsdMediaIndex = RoomSsdMediaIndex(database.ssdMediaDao())
 
     val favoritesRepository: FavoritesRepository = RoomFavoritesRepository(database.favoriteDao())
+
+    private val triageRepository: TriageRepository = TriageRepositoryImpl(database.triageStateDao())
 
     private val transactionRunner: TransactionRunner = RoomTransactionRunner(database)
 
@@ -146,6 +159,7 @@ class AppContainer(private val context: Context) {
         verifyTransferUseCase,
         ssdMediaIndex,
         favoritesRepository,
+        triageRepository,
         ssdThumbnailCache,
         transactionRunner,
     )
@@ -182,6 +196,7 @@ class AppContainer(private val context: Context) {
         ssdMediaIndex = ssdMediaIndex,
         ssdThumbnailCache = ssdThumbnailCache,
         favoritesRepository = favoritesRepository,
+        triageRepository = triageRepository,
         transactionRunner = transactionRunner,
     )
 
@@ -232,8 +247,27 @@ class AppContainer(private val context: Context) {
         ssdThumbnailCache,
         transferStateRepository,
         favoritesRepository,
+        triageRepository,
         transactionRunner,
     )
+
+    // Tri de la pellicule (v4).
+
+    val observeTriagePileUseCase = ObserveTriagePileUseCase(observeTimelineUseCase, triageRepository)
+
+    val recordTriageDecisionUseCase = RecordTriageDecisionUseCase(triageRepository)
+
+    val undoLastTriageDecisionUseCase = UndoLastTriageDecisionUseCase(triageRepository)
+
+    val getTriageSummaryUseCase = GetTriageSummaryUseCase(observeTimelineUseCase, triageRepository)
+
+    val resetTriageUseCase = ResetTriageUseCase(triageRepository)
+
+    val observeTriageDeletionQueueUseCase = ObserveTriageDeletionQueueUseCase(observeTriagePileUseCase)
+
+    val dequeueTriageDeletionUseCase = DequeueTriageDeletionUseCase(triageRepository)
+
+    val deleteQueuedTriageItemsUseCase = DeleteQueuedTriageItemsUseCase(deleteGalleryItemsUseCase, triageRepository)
 
     val restoreFromTrashUseCase = RestoreFromTrashUseCase(mediaTrash, transferStateRepository, ssdMediaIndex)
 

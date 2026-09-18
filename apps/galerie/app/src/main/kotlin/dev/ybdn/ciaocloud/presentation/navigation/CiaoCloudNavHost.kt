@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -32,6 +33,8 @@ import dev.ybdn.ciaocloud.presentation.progress.ProgressScreen
 import dev.ybdn.ciaocloud.presentation.settings.SettingsScreen
 import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
 import dev.ybdn.ciaocloud.presentation.trash.TrashScreen
+import dev.ybdn.ciaocloud.presentation.triage.TriageScreen
+import dev.ybdn.ciaocloud.presentation.triageconfirm.TriageConfirmScreen
 import dev.ybdn.ciaocloud.presentation.viewer.ViewerScreen
 import dev.ybdn.ciaocloud.presentation.viewer.ViewerSource
 
@@ -42,6 +45,8 @@ object CiaoCloudDestinations {
     const val DELETE_CONFIRM = "delete_confirm"
     const val SETTINGS = "settings"
     const val TRASH = "trash"
+    const val TRIAGE = "triage"
+    const val TRIAGE_CONFIRM = "triage_confirm"
     const val VIEWER = "viewer/{key}?filter={filter}"
 
     fun viewer(key: String, filter: GalleryFilter): String = "viewer/${Uri.encode(key)}?filter=${filter.name}"
@@ -53,6 +58,7 @@ fun CiaoCloudNavHost(navController: NavHostController = rememberNavController())
     val currentRoute = backStackEntry?.destination?.route
     val tabs = listOf(
         NeoNavItem(CiaoCloudDestinations.GALLERY, stringResource(R.string.tab_photos), Icons.Outlined.PhotoLibrary),
+        NeoNavItem(CiaoCloudDestinations.TRIAGE, stringResource(R.string.tab_triage), Icons.Outlined.Style),
         NeoNavItem(CiaoCloudDestinations.HOME, stringResource(R.string.tab_offload), Icons.Outlined.Upload),
         NeoNavItem(CiaoCloudDestinations.SETTINGS, stringResource(R.string.tab_settings), Icons.Outlined.Settings),
     )
@@ -82,6 +88,15 @@ fun CiaoCloudNavHost(navController: NavHostController = rememberNavController())
                 GalleryScreen(
                     onOpenItem = { key, filter -> navController.navigate(CiaoCloudDestinations.viewer(key, filter)) },
                     onOpenTrash = { navController.navigate(CiaoCloudDestinations.TRASH) },
+                )
+            }
+            composable(CiaoCloudDestinations.TRIAGE) {
+                TriageScreen(onOpenDeletionQueue = { navController.navigate(CiaoCloudDestinations.TRIAGE_CONFIRM) })
+            }
+            composable(CiaoCloudDestinations.TRIAGE_CONFIRM) {
+                TriageConfirmScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenItem = { key -> navController.navigate(CiaoCloudDestinations.viewer(key, GalleryFilter.ALL)) },
                 )
             }
             composable(CiaoCloudDestinations.TRASH) {

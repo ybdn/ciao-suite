@@ -5,8 +5,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [TransferStateEntity::class, SsdMediaEntity::class, FavoriteEntity::class],
-    version = 2,
+    entities = [TransferStateEntity::class, SsdMediaEntity::class, FavoriteEntity::class, TriageStateEntity::class],
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -14,6 +14,7 @@ abstract class CiaoCloudDatabase : RoomDatabase() {
     abstract fun transferStateDao(): TransferStateDao
     abstract fun ssdMediaDao(): SsdMediaDao
     abstract fun favoriteDao(): FavoriteDao
+    abstract fun triageStateDao(): TriageStateDao
 
     companion object {
         const val DATABASE_NAME = "ciaocloud.db"

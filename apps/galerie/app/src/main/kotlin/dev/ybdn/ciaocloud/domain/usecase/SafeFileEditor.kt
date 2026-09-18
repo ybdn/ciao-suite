@@ -23,6 +23,7 @@ import dev.ybdn.ciaocloud.domain.repository.SsdMediaWriter
 import dev.ybdn.ciaocloud.domain.repository.SsdThumbnailCache
 import dev.ybdn.ciaocloud.domain.repository.TransactionRunner
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
+import dev.ybdn.ciaocloud.domain.repository.TriageRepository
 import dev.ybdn.ciaocloud.domain.util.EditedFileNamer
 import dev.ybdn.ciaocloud.domain.util.MediaFileTypes
 import kotlinx.coroutines.CancellationException
@@ -52,6 +53,7 @@ class SafeFileEditor(
     private val ssdMediaIndex: SsdMediaIndex,
     private val ssdThumbnailCache: SsdThumbnailCache,
     private val favoritesRepository: FavoritesRepository,
+    private val triageRepository: TriageRepository,
     private val transactionRunner: TransactionRunner,
     private val newId: () -> String = { UUID.randomUUID().toString() },
     private val clock: () -> Long = System::currentTimeMillis,
@@ -297,7 +299,7 @@ class SafeFileEditor(
         applyRelocation(step)
     }
 
-    /** Index, enregistrements de transfert, favori et vignettes suivent le fichier déplacé (idempotent). */
+    /** Index, enregistrements de transfert, favori, décision de tri et vignettes suivent le fichier déplacé (idempotent). */
     private suspend fun applyRelocation(step: SsdMoveStep) {
         val newName = step.toPath.substringAfterLast('/')
         transactionRunner.inTransaction {
@@ -320,6 +322,7 @@ class SafeFileEditor(
                 transferStateRepository.upsert(it.copy(destinationPath = step.toPath))
             }
             favoritesRepository.renameKey(FavoriteKeys.ssd(step.fromPath), FavoriteKeys.ssd(step.toPath))
+            triageRepository.renameKey(FavoriteKeys.ssd(step.fromPath), FavoriteKeys.ssd(step.toPath))
         }
         ssdThumbnailCache.remove(step.fromPath)
         ssdThumbnailCache.remove(step.toPath)

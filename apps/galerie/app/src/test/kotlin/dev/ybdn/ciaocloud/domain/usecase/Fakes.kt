@@ -14,6 +14,9 @@ import dev.ybdn.ciaocloud.domain.repository.SsdMediaIndex
 import dev.ybdn.ciaocloud.domain.repository.SsdThumbnailCache
 import dev.ybdn.ciaocloud.domain.repository.TransactionRunner
 import dev.ybdn.ciaocloud.domain.repository.TransferStateRepository
+import dev.ybdn.ciaocloud.domain.repository.TriageRepository
+import dev.ybdn.ciaocloud.domain.model.TriageDecision
+import dev.ybdn.ciaocloud.domain.model.TriageState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -65,6 +68,25 @@ class FakeFavoritesRepository(initial: Set<String> = emptySet()) : FavoritesRepo
     }
     override suspend fun renameKey(oldKey: String, newKey: String) {
         if (oldKey in keys.value) keys.value = keys.value - oldKey + newKey
+    }
+}
+
+class FakeTriageRepository(initial: List<TriageState> = emptyList()) : TriageRepository {
+    val states = MutableStateFlow(initial.associateBy { it.key })
+
+    override fun observeAll(): Flow<List<TriageState>> = states.map { it.values.toList() }
+    override suspend fun upsert(state: TriageState) {
+        states.value = states.value + (state.key to state)
+    }
+    override suspend fun delete(keys: Collection<String>) {
+        states.value = states.value - keys.toSet()
+    }
+    override suspend fun deleteByDecisions(decisions: Set<TriageDecision>) {
+        states.value = states.value.filterValues { it.decision !in decisions }
+    }
+    override suspend fun renameKey(oldKey: String, newKey: String) {
+        val state = states.value[oldKey] ?: return
+        states.value = states.value - oldKey + (newKey to state.copy(key = newKey))
     }
 }
 

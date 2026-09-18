@@ -3,6 +3,7 @@
     <string name="app_name">C!ao</string>
 
     <string name="tab_photos">Photos</string>
+    <string name="tab_triage">Trier</string>
     <string name="tab_offload">Exporter</string>
     <string name="tab_settings">Réglages</string>
 
@@ -315,6 +316,75 @@
     <string name="notification_transfer_done_title">Transfert C!ao terminé</string>
     <string name="notification_transfer_error">Transfert interrompu par une erreur</string>
 
+    <!-- Tri de la pellicule (v4) -->
+    <string name="triage_title">Trier</string>
+    <string name="triage_keep">Garder</string>
+    <string name="triage_delete">Supprimer</string>
+    <string name="triage_later">Plus tard</string>
+    <string name="triage_undo">Annuler la dernière décision</string>
+    <string name="triage_summary">Bilan</string>
+    <string name="triage_back">Retour</string>
+    <string name="triage_video">Vidéo</string>
+    <string name="triage_badge_not_backed_up">Non sauvegardé</string>
+    <string name="triage_badge_backed_up">Sauvegardé</string>
+    <string name="triage_badge_ssd">SSD</string>
+    <string name="triage_summary_title">Bilan de la session</string>
+    <string name="triage_done_title">Pile terminée</string>
+    <string name="triage_empty_title">Rien à trier</string>
+    <string name="triage_empty_hint">Les médias mis de côté reviendront dans la pile au bout de 7 jours ; les nouvelles photos y apparaissent automatiquement.</string>
+    <string name="triage_stat_snoozed">à revoir plus tard</string>
+    <string name="triage_stat_queued_size">Taille cumulée des suppressions de la session : %1$s</string>
+    <string name="triage_open_queue">Voir les suppressions en attente</string>
+    <string name="triage_confirm_title">Suppressions en attente</string>
+    <string name="triage_confirm_intro">Rien n\'est supprimé tant que vous ne validez pas. Touchez une vignette pour la revoir, ou la croix pour la retirer de la liste : elle sera de nouveau proposée au tri.</string>
+    <string name="triage_confirm_ssd_warning">Effacés du SSD sans corbeille : cette action est irréversible.</string>
+    <string name="triage_confirm_plug_ssd">Branchez le SSD pour supprimer ces médias.</string>
+    <string name="triage_confirm_empty">Aucune suppression en attente.</string>
+    <string name="triage_confirm_dequeue">Retirer de la liste</string>
+    <string name="settings_triage_label">Tri</string>
+    <string name="settings_triage_hint">Remet dans la pile de tri les médias gardés ou mis de côté. Les suppressions en attente sont conservées.</string>
+    <string name="settings_triage_reset">Réinitialiser le tri</string>
+    <string name="settings_triage_reset_title">Réinitialiser le tri ?</string>
+    <string name="settings_triage_reset_message">Tous les médias gardés ou à revoir plus tard seront de nouveau proposés au tri. Aucun fichier n\'est modifié ; les suppressions en attente restent à valider.</string>
+    <string name="settings_triage_reset_confirm">Réinitialiser</string>
+    <string name="settings_triage_reset_done">Tri réinitialisé</string>
+
+    <plurals name="triage_remaining">
+        <item quantity="one">%1$d à trier</item>
+        <item quantity="other">%1$d à trier</item>
+    </plurals>
+    <plurals name="triage_remaining_in_day">
+        <item quantity="one">%1$d ce jour</item>
+        <item quantity="other">%1$d ce jour</item>
+    </plurals>
+    <plurals name="triage_stat_kept">
+        <item quantity="one">gardé</item>
+        <item quantity="other">gardés</item>
+    </plurals>
+    <plurals name="triage_stat_queued">
+        <item quantity="one">à supprimer</item>
+        <item quantity="other">à supprimer</item>
+    </plurals>
+    <plurals name="triage_queue_pending">
+        <item quantity="one">%1$d média en attente de suppression (%2$s), toutes sessions confondues.</item>
+        <item quantity="other">%1$d médias en attente de suppression (%2$s), toutes sessions confondues.</item>
+    </plurals>
+    <plurals name="triage_confirm_button">
+        <item quantity="one">Supprimer %1$d média (%2$s)</item>
+        <item quantity="other">Supprimer %1$d médias (%2$s)</item>
+    </plurals>
+    <plurals name="triage_confirm_phone_title">
+        <item quantity="one">Téléphone · %1$d média vers la corbeille</item>
+        <item quantity="other">Téléphone · %1$d médias vers la corbeille</item>
+    </plurals>
+    <plurals name="triage_confirm_backed_up_copies">
+        <item quantity="one">%1$d média est sauvegardé : sa copie sur le SSD sera aussi effacée, définitivement.</item>
+        <item quantity="other">%1$d médias sont sauvegardés : leurs copies sur le SSD seront aussi effacées, définitivement.</item>
+    </plurals>
+    <plurals name="triage_confirm_ssd_title">
+        <item quantity="one">SSD uniquement · %1$d fichier effacé définitivement</item>
+        <item quantity="other">SSD uniquement · %1$d fichiers effacés définitivement</item>
+    </plurals>
     <plurals name="gallery_selection_count">
         <item quantity="one">%1$d sélectionné</item>
         <item quantity="other">%1$d sélectionnés</item>

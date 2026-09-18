@@ -7,6 +7,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import dev.ybdn.ciaocloud.R
@@ -31,6 +40,20 @@ fun SettingsScreen() {
     val cacheMaxBytes by viewModel.thumbnailCacheMaxBytes.collectAsState()
     val cacheUsedBytes by viewModel.thumbnailCacheUsedBytes.collectAsState()
     val shareStripMetadata by viewModel.shareStripMetadata.collectAsState()
+    var showTriageResetDialog by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    if (showTriageResetDialog) {
+        TriageResetDialog(
+            onConfirm = {
+                showTriageResetDialog = false
+                viewModel.resetTriage {
+                    Toast.makeText(context, context.getString(R.string.settings_triage_reset_done), Toast.LENGTH_SHORT).show()
+                }
+            },
+            onDismiss = { showTriageResetDialog = false },
+        )
+    }
 
     val selectFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -91,6 +114,16 @@ fun SettingsScreen() {
         }
 
         NeoCard {
+            NeoTag(stringResource(R.string.settings_triage_label), tone = NeoTone.Yellow)
+            Text(stringResource(R.string.settings_triage_hint), style = MaterialTheme.typography.bodyMedium)
+            NeoButton(
+                text = stringResource(R.string.settings_triage_reset),
+                onClick = { showTriageResetDialog = true },
+                tone = NeoTone.Surface,
+            )
+        }
+
+        NeoCard {
             NeoTag(stringResource(R.string.settings_thumbnail_cache_label), tone = NeoTone.Lime)
             cacheUsedBytes?.let { used ->
                 Text(
@@ -110,6 +143,19 @@ fun SettingsScreen() {
                 onClick = viewModel::clearThumbnailCache,
                 tone = NeoTone.Surface,
             )
+        }
+    }
+}
+
+/** Action large (tout l'historique de tri), confirmée avant exécution. */
+@Composable
+private fun TriageResetDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        NeoCard(modifier = Modifier.padding(8.dp)) {
+            Text(stringResource(R.string.settings_triage_reset_title), style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.settings_triage_reset_message), style = MaterialTheme.typography.bodyMedium)
+            NeoButton(stringResource(R.string.settings_triage_reset_confirm), onClick = onConfirm, tone = NeoTone.Coral)
+            NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = onDismiss, tone = NeoTone.Surface)
         }
     }
 }

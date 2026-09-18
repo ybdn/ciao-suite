@@ -174,8 +174,23 @@ Les tests unitaires ciblent la logique métier pure, sans dépendance Android :
   `SavePhotoEditUseCaseTest` (remplacement téléphone + SSD, reprise de journal),
   `EditMetadataUseCaseTest` (déplacement sur le SSD, doublon, modifications groupées),
   `PrepareShareUseCaseTest`.
+- v4 (tri) : `TriageRulesTest` (pile, snooze, bilan, catégorisation des suppressions) et
+  `TriageUseCasesTest` (décision, annulation, réinitialisation, suppression de la file).
 
 Pas de sur-investissement en tests UI/instrumentation pour ce projet personnel.
+
+## Tri de la pellicule
+
+L'onglet **Trier** propose les médias un par un (téléphone et SSD, groupés par jour, du plus
+récent au plus ancien) : swipe à droite = garder, à gauche = supprimer, vers le haut = revoir plus
+tard (7 jours). Trois boutons équivalents sont affichés sous la carte ; l'icône d'annulation revient
+sur la dernière décision. Les vidéos se lisent dans la carte, sur appui.
+
+- Rien n'est supprimé par un swipe : les médias rejetés rejoignent une file d'attente, validée en
+  bloc depuis le **Bilan** › *Voir les suppressions en attente* (téléphone vers la corbeille
+  système, 30 jours ; SSD seul = suppression définitive, confirmée à part).
+- La pile reprend toujours là où elle en était ; **Réglages › Tri › Réinitialiser le tri** y remet
+  les médias gardés ou mis de côté (la file de suppression est conservée).
 
 ## Architecture
 
@@ -190,4 +205,5 @@ Base Room versionnée avec migrations explicites (schémas exportés dans `app/s
 
 Voir [`CLAUDE.md`](CLAUDE.md), [`prompt-initial.md`](prompt-initial.md) et
 [`docs/spec-v2-fiabilisation-visionneuse.md`](docs/spec-v2-fiabilisation-visionneuse.md) et
-[`docs/spec-v3-edition-photos.md`](docs/spec-v3-edition-photos.md) pour le détail complet.
+[`docs/spec-v3-edition-photos.md`](docs/spec-v3-edition-photos.md) et
+[`docs/spec-v4-tri-pellicule.md`](docs/spec-v4-tri-pellicule.md) pour le détail complet.

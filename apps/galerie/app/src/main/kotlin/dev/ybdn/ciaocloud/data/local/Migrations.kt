@@ -63,3 +63,20 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         }
     }
 }
+
+/** v2 → v3 : décisions de l'écran de tri (spec v4). Table neuve, aucune donnée existante touchée. */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `triage_state` (
+                `key` TEXT NOT NULL,
+                `decision` TEXT NOT NULL,
+                `decidedAtEpochMillis` INTEGER NOT NULL,
+                `snoozeUntilEpochMillis` INTEGER,
+                PRIMARY KEY(`key`)
+            )
+            """.trimIndent(),
+        )
+    }
+}

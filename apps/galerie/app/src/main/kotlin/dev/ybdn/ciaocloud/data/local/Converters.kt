@@ -3,6 +3,7 @@ package dev.ybdn.ciaocloud.data.local
 import androidx.room.TypeConverter
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciaocloud.domain.model.TransferStatus
+import dev.ybdn.ciaocloud.domain.model.TriageDecision
 
 class Converters {
     @TypeConverter
@@ -16,4 +17,10 @@ class Converters {
 
     @TypeConverter
     fun toTransferStatus(value: String): TransferStatus = TransferStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromTriageDecision(value: TriageDecision): String = value.name
+
+    @TypeConverter
+    fun toTriageDecision(value: String): TriageDecision = TriageDecision.valueOf(value)
 }
