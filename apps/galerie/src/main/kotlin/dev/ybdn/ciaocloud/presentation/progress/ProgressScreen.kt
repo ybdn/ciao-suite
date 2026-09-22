@@ -23,7 +23,7 @@ import dev.ybdn.ciao.designsystem.components.NeoScreen
 import dev.ybdn.ciao.designsystem.components.NeoStat
 import dev.ybdn.ciao.designsystem.components.NeoTag
 import dev.ybdn.ciao.designsystem.components.NeoTone
-import dev.ybdn.ciao.designsystem.theme.Teal
+import dev.ybdn.ciao.designsystem.theme.Lavender
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 
 @Composable
@@ -47,7 +47,7 @@ fun ProgressScreen(
                 Text(stringResource(R.string.progress_files_caption), style = MaterialTheme.typography.bodyLarge)
             }
             NeoProgressBar(progress = progressFraction)
-            NeoTag(stringResource(R.string.progress_bytes_done, formatBytes(uiState.bytesTransferred)), tone = NeoTone.Lime)
+            NeoTag(stringResource(R.string.progress_bytes_done, formatBytes(uiState.bytesTransferred)), tone = NeoTone.Green)
         }
 
         if (uiState.isRunning) {
@@ -58,7 +58,7 @@ fun ProgressScreen(
                     if (uiState.currentFileSizeBytes > 0) {
                         NeoProgressBar(
                             progress = uiState.currentFileBytesCopied.toFloat() / uiState.currentFileSizeBytes,
-                            color = Teal,
+                            color = Lavender,
                             height = 18.dp,
                         )
                         Text(
@@ -78,7 +78,7 @@ fun ProgressScreen(
         if (uiState.lastError != null) {
             NeoNotice(
                 stringResource(R.string.progress_error, uiState.lastErrorFileName.orEmpty(), uiState.lastError.orEmpty()),
-                tone = NeoTone.Coral,
+                tone = NeoTone.Pink,
             )
         }
 
@@ -87,7 +87,7 @@ fun ProgressScreen(
                 NeoStat(
                     value = uiState.succeeded.toString(),
                     caption = stringResource(R.string.progress_stat_succeeded),
-                    tone = NeoTone.Lime,
+                    tone = NeoTone.Green,
                     modifier = Modifier.weight(1f),
                 )
                 NeoStat(
@@ -99,7 +99,7 @@ fun ProgressScreen(
                 NeoStat(
                     value = uiState.failed.toString(),
                     caption = stringResource(R.string.progress_stat_failed),
-                    tone = if (uiState.failed > 0) NeoTone.Brick else NeoTone.Surface,
+                    tone = if (uiState.failed > 0) NeoTone.Pink else NeoTone.Surface,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -113,9 +113,9 @@ fun ProgressScreen(
                 )
                 null -> uiState.fatalError?.let { stringResource(R.string.transfer_fatal_error, it) }
             }
-            abortMessage?.let { NeoNotice(it, tone = NeoTone.Coral) }
+            abortMessage?.let { NeoNotice(it, tone = NeoTone.Pink) }
 
-            NeoButton(text = stringResource(R.string.delete_confirm_title), onClick = onNavigateToDeleteConfirm)
+            NeoButton(text = stringResource(R.string.delete_confirm_title), onClick = onNavigateToDeleteConfirm, tone = NeoTone.Pink)
             NeoButton(
                 text = stringResource(R.string.progress_back_home),
                 onClick = onBackToHome,

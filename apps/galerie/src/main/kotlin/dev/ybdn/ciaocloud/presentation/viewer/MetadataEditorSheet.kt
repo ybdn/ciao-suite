@@ -31,7 +31,7 @@ import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.CaptureTimestamp
 import dev.ybdn.ciaocloud.domain.model.FieldChange
 import dev.ybdn.ciaocloud.domain.util.CaptureDates
-import dev.ybdn.ciao.designsystem.theme.Brick
+import dev.ybdn.ciao.designsystem.theme.Pink
 import androidx.compose.ui.text.font.FontFamily
 import java.time.ZoneId
 import dev.ybdn.ciaocloud.domain.model.GeoPoint
@@ -150,7 +150,7 @@ fun MetadataEditorSheet(
                 val parsed = CaptureDateInput.parse(date, time)
                 when {
                     dateError || (parsed == null && (date.isNotBlank() || time.isNotBlank())) ->
-                        Text(stringResource(R.string.metadata_invalid_date), style = MaterialTheme.typography.bodySmall, color = Brick)
+                        Text(stringResource(R.string.metadata_invalid_date), style = MaterialTheme.typography.bodySmall, color = Pink)
                     parsed != null -> CaptureDates.targetDirectory(CaptureTimestamp(parsed, offset), ZoneId.systemDefault())?.let {
                         Text(stringResource(R.string.metadata_folder_preview, it), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
                     }
@@ -170,7 +170,7 @@ fun MetadataEditorSheet(
             }
 
             NeoCard {
-                NeoTag(stringResource(R.string.info_location), tone = NeoTone.Teal)
+                NeoTag(stringResource(R.string.info_location), tone = NeoTone.Lavender)
                 NeoTextField(
                     label = stringResource(R.string.metadata_coordinates),
                     value = location,
@@ -261,11 +261,12 @@ fun MetadataEditorSheet(
                         )
                     }
                 },
+                tone = NeoTone.Pink,
             )
             NeoButton(
                 stringResource(R.string.metadata_remove_sensitive),
                 onClick = { confirmCleanup = true },
-                tone = NeoTone.Brick,
+                tone = NeoTone.Pink,
             )
         }
     }
@@ -277,9 +278,9 @@ private fun SensitiveDataDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         NeoCard(modifier = Modifier.padding(8.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.metadata_remove_sensitive_title), style = MaterialTheme.typography.titleLarge)
-                NeoNotice(stringResource(R.string.metadata_remove_sensitive_list), tone = NeoTone.Coral)
+                NeoNotice(stringResource(R.string.metadata_remove_sensitive_list), tone = NeoTone.Pink)
                 Text(stringResource(R.string.metadata_remove_sensitive_kept), style = MaterialTheme.typography.bodySmall)
-                NeoButton(stringResource(R.string.metadata_remove_sensitive_confirm), onClick = onConfirm, tone = NeoTone.Brick)
+                NeoButton(stringResource(R.string.metadata_remove_sensitive_confirm), onClick = onConfirm, tone = NeoTone.Pink)
                 NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = onDismiss, tone = NeoTone.Surface)
             }
         }

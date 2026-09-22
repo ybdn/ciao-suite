@@ -37,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
+import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.data.edit.PhotoAdjustmentShader
 import dev.ybdn.ciaocloud.domain.model.Adjustment
@@ -55,14 +57,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
 import dev.ybdn.ciao.designsystem.components.BorderWidth
-import dev.ybdn.ciao.designsystem.theme.Lime
+import dev.ybdn.ciao.designsystem.theme.Green
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
@@ -199,6 +200,7 @@ fun PhotoEditorScreen(
             NeoNotice(
                 stringResource(R.string.editor_motion_photo_still),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                tone = NeoTone.Yellow,
             )
         }
 
@@ -449,8 +451,8 @@ private fun FilterThumbnail(
             shaderEffect = shaderEffect(shader, recipe),
             modifier = Modifier
                 .size(72.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .border(if (selected) BorderWidth else 1.dp, if (selected) Lime else palette.outline, RoundedCornerShape(6.dp)),
+                .clip(RectangleShape)
+                .border(if (selected) BorderWidth else 1.dp, if (selected) Green else palette.outline, RectangleShape),
         )
         Text(label, style = MaterialTheme.typography.labelSmall, color = palette.content, maxLines = 1)
     }

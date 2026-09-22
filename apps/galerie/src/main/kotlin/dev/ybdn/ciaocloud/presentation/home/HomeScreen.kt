@@ -85,9 +85,9 @@ fun HomeScreen(
         when {
             uiState.destinationUri == null -> NeoNotice(stringResource(R.string.home_no_destination), tone = NeoTone.Muted)
             status == null -> CircularProgressIndicator()
-            !status.isAvailable -> NeoNotice(stringResource(R.string.home_destination_unavailable), tone = NeoTone.Coral)
+            !status.isAvailable -> NeoNotice(stringResource(R.string.home_destination_unavailable), tone = NeoTone.Pink)
             else -> NeoCard {
-                NeoTag(stringResource(R.string.home_destination_ready, status.name ?: "SSD"), tone = NeoTone.Lime)
+                NeoTag(stringResource(R.string.home_destination_ready, status.name ?: "SSD"), tone = NeoTone.Green)
                 status.availableBytes?.let {
                     Column {
                         Text(formatBytes(it), style = MaterialTheme.typography.displayMedium)
@@ -124,7 +124,7 @@ fun HomeScreen(
             MediaAccess.FULL, null -> null
         }
         if (mediaAccessMessage != null) {
-            NeoNotice(stringResource(mediaAccessMessage))
+            NeoNotice(stringResource(mediaAccessMessage), tone = NeoTone.Yellow)
             NeoButton(
                 text = stringResource(R.string.home_open_app_settings),
                 onClick = context::openAppSettings,
@@ -140,7 +140,7 @@ fun HomeScreen(
         }
 
         uiState.scanError?.let {
-            NeoNotice(stringResource(R.string.home_scan_error, it), tone = NeoTone.Coral)
+            NeoNotice(stringResource(R.string.home_scan_error, it), tone = NeoTone.Pink)
         }
 
         uiState.scannedFiles?.let { files ->
@@ -151,7 +151,7 @@ fun HomeScreen(
                     NeoStat(
                         value = uiState.photoCount.toString(),
                         caption = stringResource(R.string.home_stat_photos),
-                        tone = NeoTone.Teal,
+                        tone = NeoTone.Lavender,
                         modifier = Modifier.weight(1f),
                     )
                     NeoStat(
@@ -164,11 +164,11 @@ fun HomeScreen(
                 NeoStat(
                     value = formatBytes(uiState.totalSizeBytes),
                     caption = stringResource(R.string.home_stat_total_size),
-                    tone = NeoTone.Lime,
+                    tone = NeoTone.Green,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (!uiState.hasEnoughSpace) {
-                    NeoNotice(stringResource(R.string.home_insufficient_space), tone = NeoTone.Coral)
+                    NeoNotice(stringResource(R.string.home_insufficient_space), tone = NeoTone.Pink)
                 }
             }
         }
@@ -187,6 +187,7 @@ fun HomeScreen(
                 }
             },
             enabled = uiState.canTransfer,
+            tone = NeoTone.Pink,
         )
 
         // --- 04 Libérer ---

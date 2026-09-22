@@ -39,25 +39,26 @@ fun DeleteConfirmationScreen(
                 NeoStat(
                     value = formatBytes(uiState.freeableBytes),
                     caption = stringResource(R.string.delete_confirm_stat_freeable),
-                    tone = NeoTone.Lime,
+                    tone = NeoTone.Green,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 NeoStat(
                     value = uiState.verifiedCount.toString(),
                     caption = stringResource(R.string.delete_confirm_stat_verified),
-                    tone = NeoTone.Teal,
+                    tone = NeoTone.Lavender,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(stringResource(R.string.delete_confirm_explanation), style = MaterialTheme.typography.bodyLarge)
             }
         }
 
-        uiState.errorMessage?.let { NeoNotice(it, tone = NeoTone.Coral) }
+        uiState.errorMessage?.let { NeoNotice(it, tone = NeoTone.Pink) }
 
         NeoButton(
             text = stringResource(R.string.delete_confirm_button),
             onClick = viewModel::confirmDeletion,
             enabled = uiState.canDelete,
+            tone = NeoTone.Pink,
         )
 
         if (uiState.isDeleting) CircularProgressIndicator()

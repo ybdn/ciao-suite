@@ -32,14 +32,17 @@ ciao-suite/
 ├── core/<module>/       code partagé entre apps (créé à la demande, voir ci-dessous)
 ├── build-logic/         plugins de convention Gradle (configuration commune des modules)
 ├── gradle/libs.versions.toml   versions de toutes les dépendances, pour toute la suite
-├── docs/                vision, workflow Git, décisions d'architecture (adr/)
+├── docs/                vision, design system, workflow Git, décisions d'architecture (adr/)
 ├── .githooks/           hooks Git (règles de branches et de commits)
 └── .github/workflows/   un workflow réutilisable + un workflow par app
 ```
 
 **Règles de dépendance** : `apps/*` → `core/*`, jamais l'inverse, et jamais une app vers une
-autre. Un module `core/` n'est créé que lorsqu'une **deuxième** app a besoin du code
-(le premier candidat est le design system néo-brutaliste de la Galerie).
+autre. Un module `core/` n'est créé que lorsqu'une **deuxième** app a besoin du code.
+
+| Module partagé | Contenu |
+|---|---|
+| [`core/designsystem`](core/designsystem) | Design system néo-brutaliste de toute la suite : palette, polices, thème clair/sombre, composants `Neo*` ([règles](docs/design-system.md)) |
 
 ### Plugins de convention
 

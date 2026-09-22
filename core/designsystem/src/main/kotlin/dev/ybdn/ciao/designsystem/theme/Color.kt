@@ -3,17 +3,29 @@ package dev.ybdn.ciao.designsystem.theme
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
-// Palette néo-brutaliste inspirée de depobudget.com : fond papier, encre quasi noire,
-// aplats de couleurs saturées, bordures et ombres dures.
+// Palette canonique de neubrutalism.com (https://neubrutalism.com/#anatomy), règles dans
+// docs/design-system.md (ADR 0003) : fond crème, encre noire, aplats d'accents, bordures et
+// ombres dures sans flou.
 
-// Couleurs d'accent : identiques en clair et en sombre, toujours avec du texte Ink.
-val Ink = Color(0xFF111111)
-val Coral = Color(0xFFFF5B45)
-val Lime = Color(0xFFC8E832)
-val Yellow = Color(0xFFF5B83C)
-val Teal = Color(0xFF3CBDB1)
-val Sky = Color(0xFF4A9FD4)
-val Brick = Color(0xFFD95C5C)
+/** Encre : texte sur les accents, bordures et ombres du thème clair. */
+val Ink = Color(0xFF000000)
+
+// Accents : identiques en clair et en sombre, toujours avec du texte Ink. Chacun a un rôle
+// (voir NeoTone) ; un écran en utilise trois au plus.
+val Yellow = Color(0xFFFFD23F)
+
+/** « Coral Pink » de la palette canonique. */
+val Pink = Color(0xFFFF6B6B)
+val Sky = Color(0xFF74B9FF)
+val Green = Color(0xFF88D498)
+val Orange = Color(0xFFFFA552)
+val Lavender = Color(0xFFB8A9FA)
+
+/**
+ * Anneau de focus. Le Sky canonique n'a que 2:1 de contraste sur le fond clair : cette variante
+ * plus sombre atteint le minimum de 3:1 exigé pour les éléments d'interface (WCAG 1.4.11).
+ */
+val FocusRing = Color(0xFF2E7BD6)
 
 /** Couleurs neutres qui s'inversent entre les thèmes clair et sombre. */
 @Immutable
@@ -27,9 +39,9 @@ data class NeoPalette(
 )
 
 val LightPalette = NeoPalette(
-    page = Color(0xFFFAF7F2),
+    page = Color(0xFFFFFDF5),
     surface = Color(0xFFFFFFFF),
-    surfaceMuted = Color(0xFFF6EEDF),
+    surfaceMuted = Color(0xFFEFEBE0),
     content = Ink,
     outline = Ink,
 )

@@ -19,6 +19,12 @@ Commandes (depuis la racine de la suite) :
 `TopAppBar` (Material3) est une API expérimentale : l'opt-in `ExperimentalMaterial3Api` est global,
 posé par le plugin de convention `ciao.android.compose` — pas d'annotation écran par écran.
 
+Interface : thème, palette, polices et composants `Neo*` viennent de `core/designsystem` (règles
+dans `docs/design-system.md`, ADR 0003) ; ne rien redéfinir dans l'app. Les couleurs de la Galerie
+ont été transposées mécaniquement vers la palette canonique (teintes `NeoTone.Pink`, `.Green`…) ;
+leur passage aux rôles (`Primary`, `Danger`…) est suivi dans l'issue #5 : tout nouvel écran utilise
+directement les rôles.
+
 ## Projet
 
 C!ao (anciennement CiaoCloud ; package `dev.ybdn.ciaocloud`) est une application Android **sans backend ni compte, sans cloud ni synchronisation multi-appareil** — chaque utilisateur l'installe pour son propre usage, en local — qui délestage manuellement photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en les rangeant par date, puis supprime les originaux du téléphone uniquement après vérification de la copie. Depuis la v5, l'application est **distribuée publiquement sur le Play Store** (voir `docs/spec-v5-publication-publique.md`) ; le modèle d'usage mono-utilisateur/mono-device reste inchangé, seul le canal de distribution s'élargit. La spécification complète et faisant autorité est `prompt-initial.md` — s'y référer pour tout détail non résumé ici (gestion des cas limites, format des chemins, workflow CI/CD, etc.). La v2 (fiabilisation du rangement : casse des dossiers, doublons, fuseau des vidéos ; visionneuse unifiée téléphone + SSD) est spécifiée dans `docs/spec-v2-fiabilisation-visionneuse.md`, qui prime sur `prompt-initial.md` en cas de contradiction. La v3 (édition des photos : recadrage, rotation, retouches, filtres, modification des EXIF ; partage sans métadonnées) est spécifiée dans `docs/spec-v3-edition-photos.md`, qui prime sur les deux précédents en cas de contradiction. La v4 (tri de la pellicule par swipe : garder/supprimer/revoir plus tard) est spécifiée dans `docs/spec-v4-tri-pellicule.md`, qui prime sur les trois précédents en cas de contradiction. La v5 (publication publique : licence MIT, politique de confidentialité, signature release, fiche Play Store) est spécifiée dans `docs/spec-v5-publication-publique.md`, qui prime sur les quatre précédentes en cas de contradiction — notamment sur la clause de non-publication de `prompt-initial.md`.

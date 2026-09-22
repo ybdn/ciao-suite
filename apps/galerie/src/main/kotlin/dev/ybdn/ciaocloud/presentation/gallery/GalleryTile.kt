@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
@@ -25,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +36,7 @@ import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciao.designsystem.theme.Ink
-import dev.ybdn.ciao.designsystem.theme.Lime
+import dev.ybdn.ciao.designsystem.theme.Green
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -89,7 +89,7 @@ fun GalleryTile(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(6.dp)
-                    .background(if (selected) Lime else BadgeScrim, CircleShape)
+                    .background(if (selected) Green else BadgeScrim, CircleShape)
                     .size(22.dp),
             )
         }
@@ -104,7 +104,7 @@ fun GalleryTile(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(4.dp)
-                    .background(BadgeScrim, RoundedCornerShape(4.dp))
+                    .background(BadgeScrim, RectangleShape)
                     .padding(horizontal = 4.dp, vertical = 1.dp),
             )
         }

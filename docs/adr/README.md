@@ -8,6 +8,7 @@ l'ancien (et l'ancien passe au statut « Remplacé par NNNN »).
 |---|---|---|
 | [0001](0001-monorepo.md) | Monorepo Gradle unique avec plugins de convention | Accepté |
 | [0002](0002-branches-et-versions.md) | Une seule branche permanente, versions par tags d'app | Accepté |
+| [0003](0003-design-system-neubrutalism.md) | Design system néo-brutaliste commun, fondé sur neubrutalism.com | Accepté |
 
 ## Modèle
 

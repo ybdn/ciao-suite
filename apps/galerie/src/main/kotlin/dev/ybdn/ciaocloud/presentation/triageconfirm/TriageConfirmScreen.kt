@@ -142,7 +142,7 @@ fun TriageConfirmScreen(
                             // Toute suppression du SSD, définitive, demande une seconde confirmation explicite.
                             if (plan.ssdDeletionCount > 0) showSsdConfirm = true else viewModel.confirmDeletion()
                         },
-                        tone = NeoTone.Brick,
+                        tone = NeoTone.Pink,
                         enabled = !uiState.isDeleting,
                     )
                 }
@@ -183,12 +183,13 @@ private fun QueueGrid(
                     if (plan.notBackedUpCount > 0) {
                         NeoNotice(
                             pluralStringResource(R.plurals.gallery_delete_not_backed_up, plan.notBackedUpCount, plan.notBackedUpCount),
+                            tone = NeoTone.Yellow,
                         )
                     }
                     if (plan.backedUpCount > 0) {
                         NeoNotice(
                             pluralStringResource(R.plurals.triage_confirm_backed_up_copies, plan.backedUpCount, plan.backedUpCount),
-                            tone = NeoTone.Coral,
+                            tone = NeoTone.Pink,
                         )
                     }
                 }
@@ -202,8 +203,8 @@ private fun QueueGrid(
                     title = pluralStringResource(R.plurals.triage_confirm_ssd_title, plan.ssdOnly.size, plan.ssdOnly.size),
                     hint = null,
                 ) {
-                    NeoNotice(stringResource(R.string.triage_confirm_ssd_warning), tone = NeoTone.Coral)
-                    if (!ssdAvailable) NeoNotice(stringResource(R.string.triage_confirm_plug_ssd))
+                    NeoNotice(stringResource(R.string.triage_confirm_ssd_warning), tone = NeoTone.Pink)
+                    if (!ssdAvailable) NeoNotice(stringResource(R.string.triage_confirm_plug_ssd), tone = NeoTone.Yellow)
                 }
             }
             queueTiles(plan.ssdOnly, ssdAvailable, enabled, onOpenItem, onDequeue)
@@ -266,8 +267,8 @@ private fun SsdDeletionDialog(count: Int, onConfirm: () -> Unit, onDismiss: () -
     Dialog(onDismissRequest = onDismiss) {
         NeoCard(modifier = Modifier.padding(8.dp)) {
             Text(stringResource(R.string.gallery_delete_ssd_confirm_title), style = MaterialTheme.typography.titleLarge)
-            NeoNotice(pluralStringResource(R.plurals.gallery_delete_ssd_confirm, count, count), tone = NeoTone.Coral)
-            NeoButton(stringResource(R.string.gallery_delete_ssd_confirm_button), onClick = onConfirm, tone = NeoTone.Brick)
+            NeoNotice(pluralStringResource(R.plurals.gallery_delete_ssd_confirm, count, count), tone = NeoTone.Pink)
+            NeoButton(stringResource(R.string.gallery_delete_ssd_confirm_button), onClick = onConfirm, tone = NeoTone.Pink)
             NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = onDismiss, tone = NeoTone.Surface)
         }
     }

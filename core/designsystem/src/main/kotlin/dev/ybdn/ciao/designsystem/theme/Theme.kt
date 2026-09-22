@@ -31,14 +31,14 @@ fun CiaoTheme(
             primary = palette.content, onPrimary = palette.page,
             background = palette.page, onBackground = palette.content,
             surface = palette.page, onSurface = palette.content,
-            outline = palette.outline, error = Brick, onError = Ink,
+            outline = palette.outline, error = Pink, onError = Ink,
         )
     } else {
         lightColorScheme(
             primary = palette.content, onPrimary = palette.page,
             background = palette.page, onBackground = palette.content,
             surface = palette.page, onSurface = palette.content,
-            outline = palette.outline, error = Brick, onError = Ink,
+            outline = palette.outline, error = Pink, onError = Ink,
         )
     }
     CompositionLocalProvider(LocalNeoPalette provides palette) {

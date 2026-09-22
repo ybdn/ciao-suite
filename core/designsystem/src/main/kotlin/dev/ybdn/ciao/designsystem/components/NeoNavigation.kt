@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,13 +21,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciao.designsystem.theme.Ink
 import dev.ybdn.ciao.designsystem.theme.LabelMono
-import dev.ybdn.ciao.designsystem.theme.Lime
+import dev.ybdn.ciao.designsystem.theme.Sky
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
 
 data class NeoNavItem(
@@ -37,7 +35,7 @@ data class NeoNavItem(
     val icon: ImageVector,
 )
 
-/** Barre de navigation basse : l'onglet actif est un aplat citron bordé, les autres restent nus. */
+/** Barre de navigation basse : l'onglet actif est un aplat de sélection (Sky) bordé, les autres restent nus. */
 @Composable
 fun NeoBottomBar(
     items: List<NeoNavItem>,
@@ -116,12 +114,11 @@ private fun RowScope.NeoBarItem(
             .alpha(if (enabled) 1f else 0.4f)
             .then(
                 if (highlighted) {
-                    Modifier.neoSurface(Lime, palette.outline, ControlRadius, shadowOffset = 0.dp)
+                    Modifier.neoSurface(Sky, palette.outline, shadowOffset = 0.dp)
                 } else {
                     Modifier
                 },
             )
-            .clip(RoundedCornerShape(ControlRadius))
             .selectable(selected = highlighted, enabled = enabled, role = role, onClick = onClick)
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -148,7 +145,7 @@ fun NeoChipRow(
     ) {
         options.forEachIndexed { index, label ->
             val selected = index == selectedIndex
-            val offset = if (selected) ShadowOffset / 2 else 0.dp
+            val offset = if (selected) PressOffset else 0.dp
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
@@ -158,10 +155,9 @@ fun NeoChipRow(
                     .defaultMinSize(minHeight = 40.dp)
                     .offset(offset, offset)
                     .neoSurface(
-                        color = if (selected) Lime else NeoTheme.palette.surface,
+                        color = if (selected) Sky else NeoTheme.palette.surface,
                         outline = NeoTheme.palette.outline,
-                        cornerRadius = ControlRadius,
-                        shadowOffset = ShadowOffset / 2 - offset,
+                        shadowOffset = if (selected) 0.dp else ShadowSmall,
                     )
                     .selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(index) })
                     .padding(horizontal = 14.dp, vertical = 9.dp),

@@ -200,6 +200,7 @@ fun GalleryScreen(
                     stringResource(
                         if (mediaAccess == MediaAccess.PARTIAL) R.string.gallery_permission_partial else R.string.gallery_permission_needed,
                     ),
+                    tone = NeoTone.Yellow,
                 )
                 NeoButton(
                     text = stringResource(R.string.gallery_permission_grant),

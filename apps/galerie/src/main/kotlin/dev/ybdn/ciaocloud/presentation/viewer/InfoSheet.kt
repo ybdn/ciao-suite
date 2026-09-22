@@ -125,14 +125,14 @@ fun InfoSheet(
             if (details == DetailsState.Loading) CircularProgressIndicator()
 
             loaded?.let { cameraLines(it) }?.let { lines -> InfoCard(R.string.info_camera, NeoTone.Yellow, lines) }
-            loaded?.let { videoLines(it) }?.let { lines -> InfoCard(R.string.info_video, NeoTone.Coral, lines) }
+            loaded?.let { videoLines(it) }?.let { lines -> InfoCard(R.string.info_video, NeoTone.Pink, lines) }
 
             val latitude = loaded?.latitude
             val longitude = loaded?.longitude
             if (latitude != null && longitude != null) {
                 val context = LocalContext.current
                 NeoCard {
-                    NeoTag(stringResource(R.string.info_location), tone = NeoTone.Teal)
+                    NeoTag(stringResource(R.string.info_location), tone = NeoTone.Lavender)
                     InfoLine(String.format(Locale.US, "%.6f, %.6f", latitude, longitude), monospace = true)
                     loaded.altitudeMeters?.let {
                         InfoLine(stringResource(R.string.info_altitude, String.format(Locale.FRENCH, "%.0f", it)))
@@ -166,7 +166,7 @@ fun InfoSheet(
             loaded?.let { imageLines(it) }?.let { lines -> InfoCard(R.string.info_image, NeoTone.Sky, lines) }
 
             NeoCard {
-                NeoTag(stringResource(R.string.info_storage), tone = NeoTone.Lime)
+                NeoTag(stringResource(R.string.info_storage), tone = NeoTone.Green)
                 item.phone?.let { InfoLine(stringResource(R.string.info_on_phone, (it.relativePath.orEmpty()) + it.displayName), monospace = true) }
                 item.ssd?.let { InfoLine(stringResource(R.string.info_on_ssd, it.relativePath), monospace = true) }
                 InfoLine(
