@@ -14,7 +14,4 @@
     <string name="onboarding_test_title">Zone de test</string>
     <string name="onboarding_test_label">Essaie le clavier ici</string>
     <string name="onboarding_test_placeholder">Touche ce champ, puis tape…</string>
-
-    <string name="ime_placeholder">C!ao Clavier — frappe à venir (lot 2)</string>
-    <string name="ime_placeholder_space">espace</string>
 </resources>

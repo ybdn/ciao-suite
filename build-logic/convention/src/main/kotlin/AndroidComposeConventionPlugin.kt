@@ -19,10 +19,12 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
             val android = extensions.getByType(CommonExtension::class.java)
             android.buildFeatures.compose = true
 
-            // TopAppBar & co. sont expérimentaux : opt-in global plutôt qu'écran par écran.
+            // TopAppBar & co., combinedClickable (appui long) sont expérimentaux : opt-in
+            // global plutôt qu'écran par écran.
             extensions.configure<KotlinAndroidProjectExtension> {
                 compilerOptions {
                     freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
+                    freeCompilerArgs.add("-opt-in=androidx.compose.foundation.ExperimentalFoundationApi")
                 }
             }
 
