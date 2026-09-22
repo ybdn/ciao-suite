@@ -89,8 +89,9 @@ Un seul workflow, `.github/workflows/ci.yml` (PR et push vers `main` ou `release
   ont changé ; il appelle `_android-app.yml` (build debug + tests unitaires ; APK en artifact sur push) ;
 - un job **CI OK** qui agrège les résultats : c'est le check exigé pour fusionner.
 
-`pr-title.yml` (**Titre de PR**) vérifie le format du titre des PR. Pas de publication
-automatique sur le Play Store.
+`pr-title.yml` (**Titre de PR**) vérifie le format du titre des PR. Dependabot (`.github/dependabot.yml`)
+propose chaque mois une PR groupée pour les actions et une pour les dépendances Gradle. Pas de
+publication automatique sur le Play Store.
 
 ## Ajouter une app
 
