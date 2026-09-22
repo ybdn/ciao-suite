@@ -584,6 +584,9 @@ fun NeoKey(
                 onClick = onClick,
             ),
         contentAlignment = Alignment.Center,
-        content = content,
-    )
+    ) {
+        // Sans ça, le texte retombe sur le noir par défaut de Compose (LocalContentColor),
+        // invisible sur une touche sombre : cf. NeoCard, qui pose la même règle.
+        CompositionLocalProvider(LocalContentColor provides tone.contentColor) { content() }
+    }
 }

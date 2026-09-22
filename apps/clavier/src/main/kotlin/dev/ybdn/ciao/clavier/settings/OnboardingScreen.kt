@@ -1,5 +1,6 @@
 package dev.ybdn.ciao.clavier.settings
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -26,8 +27,12 @@ import dev.ybdn.ciao.designsystem.components.NeoTag
 import dev.ybdn.ciao.designsystem.components.NeoTextField
 import dev.ybdn.ciao.designsystem.components.NeoTone
 
+/**
+ * Identifiant d'un IME au format court qu'utilisent [InputMethodManager]/`Settings.Secure`
+ * (`package/.RelativeClassName`), pas le nom pleinement qualifié de la classe.
+ */
 private fun imeId(context: Context): String =
-    "${context.packageName}/${ClavierInputMethodService::class.java.name}"
+    ComponentName(context, ClavierInputMethodService::class.java).flattenToShortString()
 
 private fun isEnabled(context: Context): Boolean {
     val manager = context.getSystemService(InputMethodManager::class.java) ?: return false
@@ -85,7 +90,7 @@ fun OnboardingScreen() {
         NeoCard {
             NeoSectionHeader("02", stringResource(R.string.onboarding_step_select_title))
             if (selected) {
-                NeoTag(stringResource(R.string.onboarding_step_enable_done), tone = NeoTone.Success)
+                NeoTag(stringResource(R.string.onboarding_step_select_done), tone = NeoTone.Success)
             } else {
                 NeoNotice(stringResource(R.string.onboarding_step_select_body), tone = NeoTone.Warning)
                 NeoButton(

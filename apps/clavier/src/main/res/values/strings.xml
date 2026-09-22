@@ -11,6 +11,7 @@
     <string name="onboarding_step_select_title">2. Choisir le clavier</string>
     <string name="onboarding_step_select_body">Sélectionne C!ao Clavier comme clavier actif pour l’utiliser.</string>
     <string name="onboarding_step_select_action">Choisir C!ao Clavier</string>
+    <string name="onboarding_step_select_done">C!ao Clavier est sélectionné.</string>
     <string name="onboarding_test_title">Zone de test</string>
     <string name="onboarding_test_label">Essaie le clavier ici</string>
     <string name="onboarding_test_placeholder">Touche ce champ, puis tape…</string>
