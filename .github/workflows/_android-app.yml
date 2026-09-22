@@ -1,5 +1,5 @@
 # Workflow réutilisable : build + tests unitaires d'une app de la suite.
-# Appelé par un workflow par app (galerie.yml, ...) qui filtre sur les chemins concernés.
+# Appelé par ci.yml, un job par app, seulement si l'app ou le code partagé a changé.
 name: App Android (réutilisable)
 
 on:

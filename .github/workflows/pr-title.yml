@@ -8,6 +8,7 @@ on:
 
 jobs:
   check:
+    name: Titre de PR
     runs-on: ubuntu-latest
     steps:
       - name: Vérifier le format du titre

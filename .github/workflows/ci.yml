@@ -1,0 +1,62 @@
+name: CI
+
+# Un seul workflow pour toute la suite : chaque app n'est buildée que si elle (ou le code partagé)
+# a changé. Le job « CI OK » agrège le résultat : c'est lui qui est exigé par la protection de
+# branche, car il s'exécute toujours (un job ignoré compte comme réussi).
+on:
+  pull_request:
+    branches: [main, "release/**"]
+  push:
+    branches: [main, "release/**"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Apps modifiées
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      galerie: ${{ steps.filter.outputs.galerie }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Ajouter une entrée par app (voir « Ajouter une app » dans le README).
+          filters: |
+            commun: &commun
+              - "core/**"
+              - "build-logic/**"
+              - "gradle/**"
+              - "*.gradle.kts"
+              - "gradle.properties"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/_android-app.yml"
+            galerie:
+              - *commun
+              - "apps/galerie/**"
+
+  galerie:
+    name: Galerie
+    needs: changes
+    if: needs.changes.outputs.galerie == 'true'
+    uses: ./.github/workflows/_android-app.yml
+    with:
+      app: galerie
+      upload-apk: ${{ github.event_name == 'push' }}
+
+  ci-ok:
+    name: CI OK
+    if: always()
+    needs: [changes, galerie]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Un job a échoué ou a été annulé
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "Tous les jobs ont réussi ou n'étaient pas concernés."

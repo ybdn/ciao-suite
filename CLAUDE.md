@@ -69,9 +69,12 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
     sans accord explicite.
 - Versions par app : tag `<app>-v<semver>`, `versionCode` +1 à chaque version taguée,
   `apps/<app>/CHANGELOG.md` (section « Non publié » complétée pour tout changement visible).
-- CI : un workflow par app (`.github/workflows/<app>.yml`, filtré par chemins) qui appelle
-  `_android-app.yml` ; `pr-title.yml` vérifie les titres de PR. Ajouter `core/<module>/**` n'exige
-  rien : `core/**` est déjà dans les filtres.
+- CI : `.github/workflows/ci.yml`, un job par app filtré par chemins (`dorny/paths-filter`) qui
+  appelle `_android-app.yml`, et un job agrégateur « CI OK » (check exigé) ; `pr-title.yml`
+  vérifie les titres de PR. Ajouter un module `core/` n'exige rien (`core/**` est dans les filtres
+  communs) ; ajouter une app demande un filtre, un job et une entrée dans les `needs` de `ci-ok`.
+- Dépôt GitHub public : `ybdn/ciao-suite`. Email d'auteur des commits : l'adresse noreply GitHub
+  (`108177058+ybdn@users.noreply.github.com`, réglée dans la config locale du dépôt).
 - Tests unitaires ciblés sur la logique pure et les use cases (faux repositories) ; pas de
   sur-investissement en tests UI/instrumentation.
 - Nouvelle décision structurante (nouveau module `core/`, dépendance réseau, changement de stack,

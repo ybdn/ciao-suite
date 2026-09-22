@@ -83,16 +83,22 @@ Après un clone, activer les hooks qui vérifient ces règles : `git config core
 
 ## CI
 
-`.github/workflows/<app>.yml` ne se déclenche que si l'app, `core/`, `build-logic/` ou la
-configuration Gradle changent (PR et push vers `main` ou `release/<app>-*`). Il appelle
-`_android-app.yml` (build debug + tests unitaires ; APK en artifact sur push). `pr-title.yml`
-vérifie le format du titre des PR. Pas de publication automatique sur le Play Store.
+Un seul workflow, `.github/workflows/ci.yml` (PR et push vers `main` ou `release/**`) :
+
+- un job par app, lancé seulement si l'app, `core/`, `build-logic/` ou la configuration Gradle
+  ont changé ; il appelle `_android-app.yml` (build debug + tests unitaires ; APK en artifact sur push) ;
+- un job **CI OK** qui agrège les résultats : c'est le check exigé pour fusionner.
+
+`pr-title.yml` (**Titre de PR**) vérifie le format du titre des PR. Pas de publication
+automatique sur le Play Store.
 
 ## Ajouter une app
 
 1. Créer `apps/<app>/build.gradle.kts` avec `ciao.android.application` (+ `ciao.android.compose`),
    `namespace`/`applicationId` = `dev.ybdn.ciao.<app>`.
 2. `include(":apps:<app>")` dans `settings.gradle.kts`.
-3. Copier `.github/workflows/galerie.yml` en `<app>.yml` et adapter chemins, branches et nom.
+3. Dans `.github/workflows/ci.yml` : ajouter un filtre `<app>` (sur le modèle de `galerie`), sa
+   sortie dans le job `changes`, un job `<app>` qui appelle `_android-app.yml`, et l'ajouter aux
+   `needs` de `ci-ok`.
 4. Créer `README.md`, `CLAUDE.md`, `PRIVACY.md`, `CHANGELOG.md` et `docs/` dans le dossier de
    l'app, et l'ajouter au tableau ci-dessus.

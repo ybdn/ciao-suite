@@ -157,9 +157,9 @@ elle est installée ; procédure exacte à compléter après test sur l'appareil
 
 ## Workflow Git et CI/CD
 
-Communs à toute la suite : voir le [README de la suite](../../README.md). La CI de cette app est
-`.github/workflows/galerie.yml` (build + tests unitaires sur chaque PR touchant la Galerie ou le
-code partagé ; APK debug en artifact sur `main`).
+Communs à toute la suite : voir le [README de la suite](../../README.md). La CI de cette app est le job
+`galerie` de `.github/workflows/ci.yml` (build + tests unitaires sur chaque PR touchant la Galerie
+ou le code partagé ; APK debug en artifact sur push).
 
 ## Tests
 

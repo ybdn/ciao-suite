@@ -73,7 +73,7 @@ main ──●──●──●──────●──●──●───
 - Une PR par branche, vers `main` (ou vers `release/*` pour un correctif de maintenance).
 - 🔒 **Titre de la PR au format de commit** : c'est lui qui devient le message du commit sur `main`
   (fusion en **squash**). Vérifié par la CI (`pr-title.yml`).
-- 🔒 La CI de l'app concernée doit être verte avant la fusion.
+- 🔒 La CI doit être verte avant la fusion (check **CI OK**, qui couvre les apps touchées).
 - Fusion en **squash** uniquement ; la branche est supprimée automatiquement après fusion.
 
 **Tant que le dépôt n'est pas sur GitHub** (pas de PR possible), fusionner en local par
@@ -183,7 +183,7 @@ les hooks. À justifier dans le message du commit.
 
 - Branche par défaut : `main`.
 - Règles de protection (*Rulesets*) sur `main` et `release/*` :
-  PR obligatoire, checks de CI obligatoires (workflow de l'app + `PR title`), historique linéaire,
+  PR obligatoire, checks obligatoires **CI OK** et **Titre de PR**, historique linéaire,
   pas de force-push, pas de suppression.
 - Protection des tags `*-v*` : ni suppression ni mise à jour.
 - Fusion : **squash uniquement** (désactiver merge commit et rebase merge), message du squash =
