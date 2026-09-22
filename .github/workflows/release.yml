@@ -1,0 +1,78 @@
+# Publie une GitHub Release avec l'APK release d'une app, déclenchée par le tag de version
+# `<app>-v<semver>` (voir docs/workflow-git.md, section 4). Générique : ajouter une app ne
+# demande aucune modification ici, le nom est extrait du tag.
+name: Release APK
+
+on:
+  push:
+    tags:
+      - "*-v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Extraire l'app et la version depuis le tag
+        id: tag
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          app="${tag%%-v*}"
+          version="${tag#"$app"-v}"
+          if [ ! -d "apps/$app" ]; then
+            echo "Aucune app apps/$app pour le tag $tag" >&2
+            exit 1
+          fi
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Configurer le JDK et le cache Gradle
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      # Non signée : pas de keystore.properties en CI (fichier local, jamais versionné).
+      # Cf. « Signature release » dans apps/galerie/CLAUDE.md et le CLAUDE.md racine.
+      - name: Build de l'APK release
+        run: ./gradlew :apps:${{ steps.tag.outputs.app }}:assembleRelease --no-daemon
+
+      - name: Extraire la section du CHANGELOG
+        id: notes
+        run: |
+          app="${{ steps.tag.outputs.app }}"
+          version="${{ steps.tag.outputs.version }}"
+          changelog="apps/$app/CHANGELOG.md"
+          notes_file="$RUNNER_TEMP/release-notes.md"
+          awk -v heading="## $version" '
+            index($0, heading) == 1 { found=1; next }
+            found && index($0, "## ") == 1 { exit }
+            found { print }
+          ' "$changelog" > "$notes_file"
+          if [ ! -s "$notes_file" ]; then
+            echo "APK release de $app $version (non signée)." > "$notes_file"
+          fi
+          echo "notes_file=$notes_file" >> "$GITHUB_OUTPUT"
+
+      - name: Publier la GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          app="${{ steps.tag.outputs.app }}"
+          version="${{ steps.tag.outputs.version }}"
+          apk="$(find "apps/$app/build/outputs/apk/release" -name '*.apk' -print -quit)"
+          app_title="$(tr '[:lower:]' '[:upper:]' <<< "${app:0:1}")${app:1}"
+          prerelease_flag=()
+          case "$version" in
+            0.*) prerelease_flag=(--prerelease) ;;
+          esac
+          gh release create "${{ github.ref_name }}" "$apk" \
+            --title "C!ao $app_title $version" \
+            --notes-file "${{ steps.notes.outputs.notes_file }}" \
+            "${prerelease_flag[@]}"
