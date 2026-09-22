@@ -1,0 +1,23 @@
+#!/bin/sh
+# Règles de branches de la suite C!ao (docs/workflow-git.md, section 1).
+# Activation : git config core.hooksPath .githooks
+
+branch=$(git symbolic-ref --quiet --short HEAD) || exit 0 # HEAD détachée (rebase en cours…)
+
+case "$branch" in
+    main | release/*)
+        echo "✖ Commit direct interdit sur « $branch »."
+        echo "  Travailler sur une branche de travail, puis fusionner par PR :"
+        echo "    git switch -c feat/<app>-<sujet>"
+        echo "  (docs/workflow-git.md, section 1)"
+        exit 1
+        ;;
+esac
+
+if ! printf '%s' "$branch" | grep -Eq '^(feat|fix|refactor|perf|test|docs|style|build|ci|chore|revert)/[a-z0-9][a-z0-9._-]*$'; then
+    echo "✖ Nom de branche hors convention : « $branch »."
+    echo "  Attendu : <type>/<sujet> en minuscules, ex. feat/galerie-albums, fix/clavier-accents"
+    echo "  Types : feat fix refactor perf test docs style build ci chore revert"
+    echo "  Renommer : git branch -m <nouveau-nom>   (docs/workflow-git.md, section 1)"
+    exit 1
+fi
