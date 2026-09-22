@@ -120,6 +120,10 @@ git commit -am "chore(galerie): version 1.2.0"
 git switch main && git pull
 git tag -a galerie-v1.2.0 -m "C!ao Galerie 1.2.0"
 git push origin galerie-v1.2.0
+#    → déclenche .github/workflows/release.yml : build de l'APK release (non signée) et
+#      publication d'une GitHub Release « galerie-v1.2.0 » avec l'APK en pièce jointe et les
+#      notes tirées de la section du CHANGELOG. Générique à toute la suite, rien à adapter
+#      pour une nouvelle app.
 
 # 3. Build de l'AAB depuis le tag, puis envoi sur la Play Console
 git switch --detach galerie-v1.2.0
