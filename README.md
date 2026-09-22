@@ -1,0 +1,89 @@
+# C!ao
+
+Suite d'applications Android pour se passer des services des GAFAM : **pas de compte, pas de
+cloud, pas de pistage, pas de publicité**. Chaque app fonctionne en local sur le téléphone, est
+gratuite et open source ([MIT](LICENSE)). Principes détaillés : [`docs/vision.md`](docs/vision.md).
+
+## Applications
+
+| App | Dossier | Rôle | État |
+|---|---|---|---|
+| C!ao Galerie | [`apps/galerie`](apps/galerie) | Galerie photo/vidéo, délestage vers un SSD, édition, tri | En développement |
+| C!ao Clavier | `apps/clavier` | Clavier | À venir |
+| C!ao Messages | `apps/messages` | SMS (app SMS par défaut) | À venir |
+| C!ao Téléphone | `apps/telephone` | Téléphone (app d'appel par défaut) | À venir |
+
+Les apps seront publiées sur le Play Store une fois toutes développées. Une version iOS viendra
+plus tard.
+
+## Organisation du dépôt
+
+Monorepo Gradle unique (décision : [ADR 0001](docs/adr/0001-monorepo.md)).
+
+```
+ciao-suite/
+├── apps/<app>/          une app = un module Gradle, publiée séparément sur le Play Store
+│   ├── src/ …
+│   ├── docs/            specs de l'app (versionnées : spec-v2…, spec-v3…)
+│   ├── PRIVACY.md       politique de confidentialité de l'app
+│   ├── README.md
+│   └── CLAUDE.md        contexte propre à l'app
+├── core/<module>/       code partagé entre apps (créé à la demande, voir ci-dessous)
+├── build-logic/         plugins de convention Gradle (configuration commune des modules)
+├── gradle/libs.versions.toml   versions de toutes les dépendances, pour toute la suite
+├── docs/                vision, décisions d'architecture (adr/)
+└── .github/workflows/   un workflow réutilisable + un workflow par app
+```
+
+**Règles de dépendance** : `apps/*` → `core/*`, jamais l'inverse, et jamais une app vers une
+autre. Un module `core/` n'est créé que lorsqu'une **deuxième** app a besoin du code
+(le premier candidat est le design system néo-brutaliste de la Galerie).
+
+### Plugins de convention
+
+Chaque module déclare ce qu'il est, la configuration vient de `build-logic/` :
+
+| Plugin | Pour |
+|---|---|
+| `ciao.android.application` | une app : SDK communs (min 33, cible 35), Java 17, release R8, signature |
+| `ciao.android.library` | un module `core/` Android |
+| `ciao.android.compose` | ajoute Compose + Material 3 (après l'un des deux précédents) |
+| `ciao.jvm.library` | un module `core/` en Kotlin pur |
+
+## Commandes
+
+Prérequis : JDK 17 et Android SDK (`local.properties` à la racine avec `sdk.dir=…`).
+
+```bash
+./gradlew :apps:galerie:assembleDebug       # APK debug d'une app
+./gradlew :apps:galerie:testDebugUnitTest   # tests unitaires d'une app
+./gradlew assembleDebug                     # toutes les apps
+./gradlew :apps:galerie:bundleRelease       # AAB signé pour le Play Store
+```
+
+Signature release : fichier `keystore.properties` à la racine (jamais commité), une même clé
+d'importation pour toutes les apps (Play App Signing). Détails dans le
+[README de la Galerie](apps/galerie/README.md#signature-release).
+
+## Workflow Git
+
+- `develop` : branche de travail par défaut.
+- `main` : stable, uniquement via merge/PR depuis `develop`.
+- Commits `type: description`, en précisant l'app quand c'est utile :
+  `feat(galerie): …`, `fix(clavier): …`, `build: …`, `docs: …`.
+- Versions indépendantes par app, taguées `<app>-v<semver>` (ex. `galerie-v1.0.0`).
+
+## CI
+
+`.github/workflows/<app>.yml` ne se déclenche que si l'app, `core/`, `build-logic/` ou la
+configuration Gradle changent. Il appelle `_android-app.yml` (build debug + tests unitaires ;
+APK en artifact sur `main`). Pas de publication automatique sur le Play Store.
+
+## Ajouter une app
+
+1. Créer `apps/<app>/build.gradle.kts` avec `ciao.android.application` (+ `ciao.android.compose`),
+   `namespace`/`applicationId` = `dev.ybdn.ciao.<app>`.
+2. `include(":apps:<app>")` dans `settings.gradle.kts`.
+3. Copier `.github/workflows/galerie.yml` en `<app>.yml` et adapter chemins et nom.
+4. Créer `README.md`, `CLAUDE.md`, `PRIVACY.md` et `docs/` dans le dossier de l'app, et l'ajouter
+   au tableau ci-dessus.

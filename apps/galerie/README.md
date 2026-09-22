@@ -8,7 +8,7 @@ chacun l'installe pour son propre usage, sans synchronisation entre appareils.
 
 La spécification complète et faisant autorité du projet est [`prompt-initial.md`](prompt-initial.md)
 (voir aussi [`docs/spec-v5-publication-publique.md`](docs/spec-v5-publication-publique.md) pour la
-publication publique, qui prime en cas de contradiction). Licence [MIT](LICENSE) —
+publication publique, qui prime en cas de contradiction). Licence [MIT](../../LICENSE) —
 [politique de confidentialité](PRIVACY.md).
 
 ## Prérequis
@@ -21,18 +21,20 @@ publication publique, qui prime en cas de contradiction). Licence [MIT](LICENSE)
 
 ## Builder l'APK
 
-Depuis la racine du projet :
+L'app fait partie du monorepo C!ao (voir le [README de la suite](../../README.md)). Depuis la
+**racine de la suite** :
 
 ```bash
-./gradlew :app:assembleDebug
+./gradlew :apps:galerie:assembleDebug
 ```
 
-L'APK généré se trouve dans `app/build/outputs/apk/debug/app-debug.apk`.
+L'APK généré se trouve dans `apps/galerie/build/outputs/apk/debug/galerie-debug.apk`.
 
 ### Signature release
 
 Le build `release` est minifié (R8) et non signé par défaut. Pour produire un APK/AAB signé,
-créer un fichier `keystore.properties` à la racine du dépôt (gitignored, jamais commité) :
+créer un fichier `keystore.properties` à la racine de la suite (gitignored, jamais commité ; une
+même clé d'importation sert à toutes les apps C!ao) :
 
 ```properties
 storeFile=/chemin/vers/ma-cle.jks
@@ -51,9 +53,9 @@ keytool -genkeypair -v -keystore ma-cle.jks -alias ciao -keyalg RSA -keysize 204
 Puis builder :
 
 ```bash
-./gradlew :app:assembleRelease
+./gradlew :apps:galerie:assembleRelease
 # ou pour le Play Store :
-./gradlew :app:bundleRelease
+./gradlew :apps:galerie:bundleRelease
 ```
 
 Sans `keystore.properties`, `assembleRelease` reste utilisable (build non signé, ex. CI).
@@ -64,7 +66,7 @@ Pour un usage hors Play Store (dev, test) :
 
 1. Récupérer l'APK (build local ci-dessus, ou artifact téléchargé depuis un run GitHub Actions —
    voir [CI/CD](#cicd)).
-2. Transférer l'APK sur le téléphone (câble USB, ou `adb install app-debug.apk`).
+2. Transférer l'APK sur le téléphone (câble USB, ou `adb install galerie-debug.apk`).
 3. Autoriser l'installation d'applications depuis une source inconnue si demandé par le système.
 4. Ouvrir le fichier APK sur le téléphone pour lancer l'installation.
 
@@ -153,35 +155,18 @@ puis choisir C!ao Galerie au prochain choix d'app proposé.
 À vérifier sur le Pixel : l'app Appareil photo Pixel peut ouvrir Google Photos en priorité quand
 elle est installée ; procédure exacte à compléter après test sur l'appareil.
 
-## Workflow Git
+## Workflow Git et CI/CD
 
-- `main` : branche stable/protégée. Jamais de commit direct — uniquement via merge/PR depuis
-  `develop`.
-- `develop` : branche de travail par défaut, tout le développement courant s'y fait.
-- Convention de commits : `type: description` (ex. `feat: scan MediaStore photos et vidéos`).
-
-Flux standard : travailler sur `develop` (ou une branche de fonctionnalité fusionnée dans
-`develop`), ouvrir une pull request `develop` → `main` une fois stable, merger après revue et
-passage de la CI.
-
-## CI/CD
-
-- **`build-main.yml`** : sur push/merge vers `main`, build l'APK (`assembleDebug`) et l'upload
-  comme artifact du run GitHub Actions — récupérable manuellement sans build local. Pas de
-  publication automatique sur le Play Store (`bundleRelease` signé se fait manuellement en local,
-  voir [Signature release](#signature-release)).
-- **`pr-check.yml`** : sur pull request vers `develop`/`main`, build de vérification
-  (`assembleDebug`) + tests unitaires, pour éviter de casser `main`.
-
-Le lint (`ktlint`/`detekt`) n'est pas encore intégré à la CI — à ajouter ultérieurement si jugé
-utile.
+Communs à toute la suite : voir le [README de la suite](../../README.md). La CI de cette app est
+`.github/workflows/galerie.yml` (build + tests unitaires sur chaque PR touchant la Galerie ou le
+code partagé ; APK debug en artifact sur `main`).
 
 ## Tests
 
 Les tests unitaires ciblent la logique métier pure, sans dépendance Android :
 
 ```bash
-./gradlew :app:testDebugUnitTest
+./gradlew :apps:galerie:testDebugUnitTest
 ```
 
 - `DestinationPathResolverTest` : calcul du chemin `année/mois/jour` (padding à 2 chiffres,
@@ -229,7 +214,7 @@ Clean Architecture allégée, séparation par package (pas de multi-module Gradl
 - `presentation/` — Compose + ViewModels.
 - `service/` — `TransferForegroundService`.
 
-Base Room versionnée avec migrations explicites (schémas exportés dans `app/schemas/`).
+Base Room versionnée avec migrations explicites (schémas exportés dans `schemas/`).
 
 Voir [`CLAUDE.md`](CLAUDE.md), [`prompt-initial.md`](prompt-initial.md) et
 [`docs/spec-v2-fiabilisation-visionneuse.md`](docs/spec-v2-fiabilisation-visionneuse.md) et
@@ -240,6 +225,6 @@ complet.
 
 ## Licence et confidentialité
 
-Code source sous licence [MIT](LICENSE). Voir la [politique de confidentialité](PRIVACY.md) pour
+Code source sous licence [MIT](../../LICENSE). Voir la [politique de confidentialité](PRIVACY.md) pour
 le détail des données locales accédées par l'application (aucune donnée n'est jamais collectée
 ni transmise).

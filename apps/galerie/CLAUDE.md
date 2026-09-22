@@ -2,41 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## État du dépôt
+## Place dans la suite
 
-Le scaffolding Android est en place : dépôt Git initialisé (branches `main`/`develop`), structure Gradle/Kotlin/Compose complète en Clean Architecture (`domain/data/presentation/service`), CI GitHub Actions, README et tests unitaires ciblés. Voir `README.md` pour le détail des commandes.
+Cette app fait partie du monorepo **C!ao** : les règles communes (environnement de build, structure,
+conventions Git, CI, plugins de convention `build-logic/`) sont dans le `CLAUDE.md` à la racine de
+la suite — ce fichier ne contient que ce qui est propre à la Galerie. Historique Git importé depuis
+l'ancien dépôt `ybdn/ciao-galery` (les anciens commits référencent des chemins à la racine).
 
-Le dépôt vit sur un volume externe **exFAT** (`/Volumes/PH4NT0M`) : macOS y génère des fichiers `._*` (AppleDouble) à chaque écriture. Ils sont ignorés par `.gitignore` — les supprimer avant tout `git status`/commit si `git status` en affiche (`find . -name '._*' -not -path './.git/*' -delete`).
-
-**Important — répertoires `build/` hors exFAT.** Gradle/AGP ne peuvent pas écrire leurs sorties directement sur ce volume exFAT (`parseDebugLocalResources` échoue avec `'.../._drawable' is not a directory` : l'OS remplace un dossier de ressources par son sidecar AppleDouble en pleine écriture). `build/` (racine) et `app/build/` sont donc des **symlinks** vers `~/AndroidBuilds/CiaoCloud/{root-build,app-build}` sur le disque interne (APFS). Ils sont ignorés par `.gitignore` (entrée `build` sans slash, car un pattern `build/` ne matche pas un symlink). Si ces symlinks disparaissent (ex. `git clean`), les recréer avant de builder :
-
-```bash
-mkdir -p ~/AndroidBuilds/CiaoCloud/app-build ~/AndroidBuilds/CiaoCloud/root-build
-ln -s ~/AndroidBuilds/CiaoCloud/app-build app/build
-ln -s ~/AndroidBuilds/CiaoCloud/root-build build
-```
-
-**Environnement de build vérifié et fonctionnel** (installé le 2026-09-16) :
-
-- JDK 17 via `brew install openjdk@17` (pas de cask/sudo nécessaire). `JAVA_HOME=/opt/homebrew/opt/openjdk@17`, ajouté au `PATH` dans `~/.zshrc`.
-- Android SDK via `brew install --cask android-commandlinetools`, racine `/opt/homebrew/share/android-commandlinetools`. Composants installés : `platform-tools`, `platforms;android-35`, `build-tools;35.0.0` (+ `build-tools;34.0.0` auto-résolu par AGP). Licences acceptées (`sdkmanager --licenses`).
-- Émulateur : AVD `ciaocloud35` (Android 15, `system-images;android-35;google_apis;arm64-v8a`), lancement `$ANDROID_SDK_ROOT/emulator/emulator -avd ciaocloud35`.
-- Appareil réel : Pixel 10 Pro (Android 17) via `adb`. Son unique port USB-C sert au câble du Mac : pour tester sans SSD, choisir un dossier du stockage interne (ex. `Documents/CiaoCloudTest`) comme destination.
-- `local.properties` (non versionné, à la racine) doit contenir `sdk.dir=/opt/homebrew/share/android-commandlinetools`.
-
-Commandes de référence :
+Commandes (depuis la racine de la suite) :
 
 ```bash
-export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
-export PATH="$JAVA_HOME/bin:$PATH"
-export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
-./gradlew :app:assembleDebug        # build debug — vérifié OK
-./gradlew :app:testDebugUnitTest    # tests unitaires domain — vérifié OK (191 tests, 0 échec)
+./gradlew :apps:galerie:assembleDebug        # build debug
+./gradlew :apps:galerie:testDebugUnitTest    # tests unitaires (191 tests)
 ```
 
-Pas de ktlint/detekt intégré pour l'instant (jugé non prioritaire, cf. README).
-
-Note : `TopAppBar` (Material3) est une API expérimentale — opt-in global via `freeCompilerArgs` dans `app/build.gradle.kts` (`-opt-in=androidx.compose.material3.ExperimentalMaterial3Api`), plutôt que d'annoter chaque écran individuellement.
+`TopAppBar` (Material3) est une API expérimentale : l'opt-in `ExperimentalMaterial3Api` est global,
+posé par le plugin de convention `ciao.android.compose` — pas d'annotation écran par écran.
 
 ## Projet
 
@@ -79,10 +60,9 @@ Pas de DI framework lourd sauf s'il simplifie réellement l'injection dans ViewM
 
 - Code (noms de classes, fonctions, variables) en anglais technique standard, conventions Android/Kotlin.
 - UI et messages utilisateur en français.
-- Branches Git : `main` stable/protégée (jamais de commit direct, uniquement via merge/PR depuis `develop`) ; `develop` est la branche de travail par défaut.
 - Commits au format `type: description` (ex: `feat: scan MediaStore photos et vidéos`).
 - Tests unitaires ciblés sur la logique pure (chemins, collisions, doublons, fuseau, chronologie) et les use cases via faux repositories — pas de sur-investissement en tests UI/instrumentation.
-- Base Room : migrations explicites uniquement (`data/local/Migrations.kt`), jamais de migration destructive ; schémas exportés dans `app/schemas/` (à commiter).
+- Base Room : migrations explicites uniquement (`data/local/Migrations.kt`), jamais de migration destructive ; schémas exportés dans `schemas/` (à commiter).
 - La galerie v2 (lots 1 à 7 de la spec v2) est implémentée. La visionneuse suit la DA néo-brutaliste de l'app (barres `NeoTopBar`/`NeoActionBar`, fond de page du thème), pas un fond noir.
 - La v3 (lots 1 à 7 de la spec v3 : édition des photos, métadonnées, partage sans métadonnées) est implémentée. Points à vérifier sur le Pixel listés dans la section « Points ouverts » de la spec (Ultra HDR, photo animée, vidéos HDR/Dolby Vision au partage, durée d'export 50 Mpx, `moveDocument` sur le SSD USB).
 - La v4 (lots 1 à 7 de la spec v4 : onglet **Trier**, bilan, confirmation des suppressions, réinitialisation) est implémentée. Choix des points ouverts : gauche = supprimer, droite = garder, haut = plus tard ; snooze fixe de 7 jours (`TriageRules`) ; icône `Style` ; pas de badge de file en attente sur l'onglet.
