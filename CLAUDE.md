@@ -57,13 +57,21 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
 ## Conventions
 
 - Code (classes, fonctions, variables) en anglais ; UI, messages utilisateur, docs et commits en français.
-- Branches : `develop` = travail par défaut ; `main` stable, uniquement via merge/PR depuis `develop`.
-- Commits `type: description`, avec l'app en portée quand le commit ne touche qu'une app :
-  `feat(galerie): …`, `fix(clavier): …` ; sans portée pour le transverse (`build: …`, `docs: …`, `ci: …`).
-- Tags de version par app : `<app>-v<semver>` (ex. `galerie-v1.0.0`) ; `versionCode`/`versionName`
-  propres à chaque app.
+- **Git : suivre `docs/workflow-git.md`** (ADR 0002). Points à respecter systématiquement :
+  - `main` est la seule branche permanente ; **ne jamais commiter sur `main` ni `release/*`**.
+    Avant toute modification, créer une branche `<type>/<app>-<sujet>` (ex. `feat/galerie-albums`).
+  - Messages de commit : `<type>(<portée>): <description>` sans point final, première ligne ≤ 72
+    caractères ; portée = app ou module (`galerie`, `clavier`, `designsystem`…), omise si transverse.
+  - Tant que le dépôt n'est pas sur GitHub : fusion locale `git merge --ff-only` après rebase sur
+    `main` et build + tests verts. Ensuite : PR en squash.
+  - Ne jamais créer, déplacer ou supprimer de tag, ni pousser, sans demande explicite.
+  - Hooks actifs via `git config core.hooksPath .githooks` : ne pas les contourner (`--no-verify`)
+    sans accord explicite.
+- Versions par app : tag `<app>-v<semver>`, `versionCode` +1 à chaque version taguée,
+  `apps/<app>/CHANGELOG.md` (section « Non publié » complétée pour tout changement visible).
 - CI : un workflow par app (`.github/workflows/<app>.yml`, filtré par chemins) qui appelle
-  `_android-app.yml`. Ajouter `core/<module>/**` n'exige rien : `core/**` est déjà dans les filtres.
+  `_android-app.yml` ; `pr-title.yml` vérifie les titres de PR. Ajouter `core/<module>/**` n'exige
+  rien : `core/**` est déjà dans les filtres.
 - Tests unitaires ciblés sur la logique pure et les use cases (faux repositories) ; pas de
   sur-investissement en tests UI/instrumentation.
 - Nouvelle décision structurante (nouveau module `core/`, dépendance réseau, changement de stack,

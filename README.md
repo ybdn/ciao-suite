@@ -26,12 +26,14 @@ ciao-suite/
 │   ├── src/ …
 │   ├── docs/            specs de l'app (versionnées : spec-v2…, spec-v3…)
 │   ├── PRIVACY.md       politique de confidentialité de l'app
+│   ├── CHANGELOG.md     journal des versions de l'app
 │   ├── README.md
 │   └── CLAUDE.md        contexte propre à l'app
 ├── core/<module>/       code partagé entre apps (créé à la demande, voir ci-dessous)
 ├── build-logic/         plugins de convention Gradle (configuration commune des modules)
 ├── gradle/libs.versions.toml   versions de toutes les dépendances, pour toute la suite
-├── docs/                vision, décisions d'architecture (adr/)
+├── docs/                vision, workflow Git, décisions d'architecture (adr/)
+├── .githooks/           hooks Git (règles de branches et de commits)
 └── .github/workflows/   un workflow réutilisable + un workflow par app
 ```
 
@@ -67,23 +69,30 @@ d'importation pour toutes les apps (Play App Signing). Détails dans le
 
 ## Workflow Git
 
-- `develop` : branche de travail par défaut.
-- `main` : stable, uniquement via merge/PR depuis `develop`.
-- Commits `type: description`, en précisant l'app quand c'est utile :
-  `feat(galerie): …`, `fix(clavier): …`, `build: …`, `docs: …`.
-- Versions indépendantes par app, taguées `<app>-v<semver>` (ex. `galerie-v1.0.0`).
+Règles complètes et procédures (publier, corriger une version) : [`docs/workflow-git.md`](docs/workflow-git.md).
+
+- `main` : **seule branche permanente**, toujours buildable ; jamais de commit direct.
+- Branches de travail courtes `<type>/<app>-<sujet>` (ex. `feat/galerie-albums`), fusionnées
+  dans `main` par PR en squash, puis supprimées.
+- Commits et titres de PR : `<type>(<portée>): <description>` (ex. `fix(clavier): accents sur les majuscules`).
+- Une version = un tag annoté `<app>-v<semver>` sur `main` (ex. `galerie-v1.2.0`), chaque app
+  ayant sa propre version et son `CHANGELOG.md`.
+- Branche `release/<app>-<majeur.mineur>` créée seulement pour corriger une version publiée.
+
+Après un clone, activer les hooks qui vérifient ces règles : `git config core.hooksPath .githooks`.
 
 ## CI
 
 `.github/workflows/<app>.yml` ne se déclenche que si l'app, `core/`, `build-logic/` ou la
-configuration Gradle changent. Il appelle `_android-app.yml` (build debug + tests unitaires ;
-APK en artifact sur `main`). Pas de publication automatique sur le Play Store.
+configuration Gradle changent (PR et push vers `main` ou `release/<app>-*`). Il appelle
+`_android-app.yml` (build debug + tests unitaires ; APK en artifact sur push). `pr-title.yml`
+vérifie le format du titre des PR. Pas de publication automatique sur le Play Store.
 
 ## Ajouter une app
 
 1. Créer `apps/<app>/build.gradle.kts` avec `ciao.android.application` (+ `ciao.android.compose`),
    `namespace`/`applicationId` = `dev.ybdn.ciao.<app>`.
 2. `include(":apps:<app>")` dans `settings.gradle.kts`.
-3. Copier `.github/workflows/galerie.yml` en `<app>.yml` et adapter chemins et nom.
-4. Créer `README.md`, `CLAUDE.md`, `PRIVACY.md` et `docs/` dans le dossier de l'app, et l'ajouter
-   au tableau ci-dessus.
+3. Copier `.github/workflows/galerie.yml` en `<app>.yml` et adapter chemins, branches et nom.
+4. Créer `README.md`, `CLAUDE.md`, `PRIVACY.md`, `CHANGELOG.md` et `docs/` dans le dossier de
+   l'app, et l'ajouter au tableau ci-dessus.

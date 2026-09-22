@@ -7,6 +7,7 @@ l'ancien (et l'ancien passe au statut « Remplacé par NNNN »).
 | N° | Décision | Statut |
 |---|---|---|
 | [0001](0001-monorepo.md) | Monorepo Gradle unique avec plugins de convention | Accepté |
+| [0002](0002-branches-et-versions.md) | Une seule branche permanente, versions par tags d'app | Accepté |
 
 ## Modèle
 
