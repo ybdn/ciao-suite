@@ -18,7 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,10 +34,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.ybdn.ciao.clavier.R
 import dev.ybdn.ciao.clavier.domain.input.ShiftState
 import dev.ybdn.ciao.clavier.domain.input.afterLetterTyped
 import dev.ybdn.ciao.clavier.domain.input.onShiftTap
@@ -67,6 +76,19 @@ private val KeyGap = 6.dp
 private val SidePadding = 4.dp
 private val TopPadding = 8.dp
 private val BottomPadding = 8.dp
+
+/**
+ * Bandeau au-dessus des touches (suggestions, presse-papiers), comme la barre d'outils de Gboard :
+ * `height: 48px; padding: 0px 8px; gap: 6px` dans la maquette, bouton presse-papiers de 36 × 34 px
+ * suivi d'un séparateur vertical de 2 × 24 px.
+ */
+private val StripHeight = 48.dp
+private val StripHorizontalPadding = 8.dp
+private val StripGap = 6.dp
+private val ClipboardButtonWidth = 36.dp
+private val ClipboardButtonHeight = 34.dp
+private val ClipboardIconSize = 18.dp
+private val StripDividerHeight = 24.dp
 
 /** Marge droite de chaque rangée, pour que l'ombre de la dernière touche ne soit pas coupée. */
 private val RowEndPadding = 3.dp
@@ -105,6 +127,8 @@ fun KeyboardScreen(
     ) {
         // Bord supérieur du clavier : séparateur de section (anatomie §5.1 de la spec).
         HorizontalDivider(thickness = BorderWidth, color = palette.outline)
+
+        SuggestionStrip()
 
         Column(
             modifier = Modifier
@@ -205,6 +229,66 @@ fun KeyboardScreen(
                 }
             }
         }
+    }
+}
+
+/**
+ * Bandeau de 48 dp au-dessus des touches. Pour l'instant, seuls le bouton presse-papiers (inactif
+ * jusqu'au lot 7) et le séparateur sont affichés ; les suggestions arrivent au lot 4. Le bandeau est
+ * posé dès maintenant pour que le clavier ait la même hauteur que Gboard.
+ */
+@Composable
+private fun SuggestionStrip() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(StripHeight)
+            .padding(horizontal = StripHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(StripGap),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NeoKey(
+            modifier = Modifier.width(ClipboardButtonWidth).height(ClipboardButtonHeight),
+            tone = NeoTone.Muted,
+            // Historique du presse-papiers : lot 7.
+            enabled = false,
+            onClick = {},
+        ) {
+            Icon(
+                clipboardIcon(),
+                contentDescription = stringResource(R.string.keyboard_clipboard_history),
+                modifier = Modifier.size(ClipboardIconSize),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .width(BorderThin)
+                .height(StripDividerHeight)
+                .background(NeoTheme.palette.outline),
+        )
+    }
+}
+
+/** Icône presse-papiers de la maquette (tracé SVG 24 × 24, trait de 2,2), à la couleur du texte. */
+@Composable
+private fun clipboardIcon(): ImageVector {
+    val color = LocalContentColor.current
+    return remember(color) {
+        ImageVector.Builder(
+            name = "Clipboard",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).addPath(
+            pathData = addPathNodes(
+                "M7,4H17A2,2 0 0,1 19,6V19A2,2 0 0,1 17,21H7A2,2 0 0,1 5,19V6A2,2 0 0,1 7,4Z" +
+                    "M9,2.5H15V6.5H9Z",
+            ),
+            stroke = SolidColor(color),
+            strokeLineWidth = 2.2f,
+            strokeLineJoin = StrokeJoin.Round,
+        ).build()
     }
 }
 

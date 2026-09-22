@@ -101,7 +101,7 @@ symboles, emojis, presse-papiers, en clair et en sombre) sert de référence vis
 | Bord supérieur du clavier | 3 px | — | Séparateur de section |
 
 - **Dimensions calées sur Gboard** (hauteur normale, téléphone en portrait) : bandeau de
-  suggestions de 48 dp ; touches de 46 dp de haut, au pas de 56 dp (10 dp entre rangées) ; 6 dp
+  suggestions de 48 dp, toujours affiché (bouton presse-papiers, séparateur, puis suggestions) ; touches de 46 dp de haut, au pas de 56 dp (10 dp entre rangées) ; 6 dp
   entre deux touches ; 4 dp de marge latérale ; 8 dp au-dessus de la première rangée et sous la
   dernière. Soit environ 278 dp avec le bandeau, hors barre de navigation.
 - **Coins carrés** partout (0 dp).

@@ -2,6 +2,8 @@
 <resources>
     <string name="app_name">C!ao Clavier</string>
 
+    <string name="keyboard_clipboard_history">Historique du presse-papiers</string>
+
     <string name="onboarding_title">Mise en route</string>
     <string name="onboarding_intro">C!ao Clavier ne se connecte jamais à Internet : aucune frappe ne quitte l’appareil.</string>
     <string name="onboarding_step_enable_title">1. Activer le clavier</string>

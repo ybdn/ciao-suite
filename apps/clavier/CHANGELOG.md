@@ -13,4 +13,5 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
 - Page lettres du clavier AZERTY : majuscule (simple/verrouillage), retour arrière avec
   répétition à l'appui long, touche Entrée adaptée au champ actif, vibration à la frappe.
   Accents, pages symboles et claviers spécialisés à venir.
-- Dimensions du clavier alignées sur Gboard : touches plus hautes (46 dp) et mieux espacées.
+- Dimensions du clavier alignées sur Gboard : touches plus hautes (46 dp) et mieux espacées,
+  bandeau de 48 dp au-dessus des touches, barre d'espace plus large.
