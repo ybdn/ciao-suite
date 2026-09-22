@@ -9,7 +9,7 @@ gratuite et open source ([MIT](LICENSE)). Principes détaillés : [`docs/vision.
 | App | Dossier | Rôle | État |
 |---|---|---|---|
 | C!ao Galerie | [`apps/galerie`](apps/galerie) | Galerie photo/vidéo, délestage vers un SSD, édition, tri | En développement |
-| C!ao Clavier | [`apps/clavier`](apps/clavier) | Clavier français, suggestions locales, emojis, presse-papiers | En spécification ([spec v1](apps/clavier/docs/spec-v1.md)) |
+| C!ao Clavier | [`apps/clavier`](apps/clavier) | Clavier français, suggestions locales, emojis, presse-papiers | En développement ([spec v1](apps/clavier/docs/spec-v1.md)) |
 | C!ao Messages | `apps/messages` | SMS (app SMS par défaut) | À venir |
 | C!ao Téléphone | `apps/telephone` | Téléphone (app d'appel par défaut) | À venir |
 

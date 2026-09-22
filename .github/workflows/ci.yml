@@ -22,6 +22,7 @@ jobs:
       pull-requests: read
     outputs:
       galerie: ${{ steps.filter.outputs.galerie }}
+      clavier: ${{ steps.filter.outputs.clavier }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
@@ -40,6 +41,9 @@ jobs:
             galerie:
               - *commun
               - "apps/galerie/**"
+            clavier:
+              - *commun
+              - "apps/clavier/**"
 
   galerie:
     name: Galerie
@@ -50,10 +54,19 @@ jobs:
       app: galerie
       upload-apk: ${{ github.event_name == 'push' }}
 
+  clavier:
+    name: Clavier
+    needs: changes
+    if: needs.changes.outputs.clavier == 'true'
+    uses: ./.github/workflows/_android-app.yml
+    with:
+      app: clavier
+      upload-apk: ${{ github.event_name == 'push' }}
+
   ci-ok:
     name: CI OK
     if: always()
-    needs: [changes, galerie]
+    needs: [changes, galerie, clavier]
     runs-on: ubuntu-latest
     steps:
       - name: Un job a échoué ou a été annulé
