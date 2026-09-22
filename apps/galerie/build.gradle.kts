@@ -1,91 +1,18 @@
-import java.util.Properties
-
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ciao.android.application)
+    alias(libs.plugins.ciao.android.compose)
     alias(libs.plugins.ksp)
 }
 
-// Clé de signature release : fichier local non commité (voir README, section "Signature release").
-// Si absent (CI, build local sans clé), le build release reste simplement non signé.
-val keystorePropertiesFile = rootProject.file("keystore.properties")
-val keystoreProperties = Properties().apply {
-    if (keystorePropertiesFile.exists()) {
-        keystorePropertiesFile.inputStream().use { load(it) }
-    }
-}
-val hasReleaseSigning = keystorePropertiesFile.exists()
-
 android {
+    // Identifiants historiques (CiaoCloud) conservés tant que le renommage n'est pas décidé :
+    // changer l'applicationId crée une nouvelle app (base Room, DataStore et accès SAF perdus).
     namespace = "dev.ybdn.ciaocloud"
-    compileSdk = 35
 
     defaultConfig {
         applicationId = "dev.ybdn.ciaocloud"
-        minSdk = 33
-        targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    signingConfigs {
-        if (hasReleaseSigning) {
-            create("release") {
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-            }
-        }
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            if (hasReleaseSigning) {
-                signingConfig = signingConfigs.getByName("release")
-            }
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += listOf("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
-    }
-
-    buildFeatures {
-        compose = true
-    }
-
-    sourceSets {
-        getByName("main") {
-            java.srcDirs("src/main/kotlin")
-        }
-        getByName("test") {
-            java.srcDirs("src/test/kotlin")
-        }
-        getByName("androidTest") {
-            java.srcDirs("src/androidTest/kotlin")
-        }
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
     }
 }
 
@@ -101,11 +28,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.documentfile)
@@ -125,14 +47,9 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui.compose)
 
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
 }

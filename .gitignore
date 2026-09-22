@@ -35,3 +35,6 @@ gradle-app.setting
 
 # Log files
 *.log
+
+# Kotlin 2.x (état local du compilateur)
+.kotlin/
