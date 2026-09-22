@@ -83,51 +83,54 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
 
 ## 5. Design : néo-brutalisme, thèmes clair et sombre
 
-Le clavier est **néo-brutaliste**, comme toute la suite C!ao : aplats de couleurs saturées, bordures
-franches, ombres dures décalées sans flou, typographie affirmée. C'est l'élément le plus visible de
-l'app (il s'affiche des centaines de fois par jour) : il doit être immédiatement reconnaissable
-comme un clavier C!ao, sans sacrifier la lisibilité ni la vitesse de frappe.
+Le clavier applique le **design system de la suite** ([`docs/design-system.md`](../../../docs/design-system.md),
+ADR 0003), lui-même fondé sur [neubrutalism.com](https://neubrutalism.com/#anatomy) : coins carrés,
+bordures franches, ombres dures sans flou, palette canonique aux rôles fixes. Cette section ne
+précise que ce qui est propre au clavier. La maquette interactive validée le 2026-09-22 (lettres,
+symboles, emojis, presse-papiers, en clair et en sombre) sert de référence visuelle pour le lot 2.
 
-### 5.1 Langage visuel
+### 5.1 Anatomie des éléments du clavier
 
-Mêmes fondations que la Galerie, extraites dans `core/designsystem` (lot 0) :
+| Élément | Bordure | Ombre dure | Justification |
+|---|---|---|---|
+| Touches | 2 px (fine) | 3 px (petite) | Une quarantaine de touches d'environ 32 dp : la bordure fine garde les libellés lisibles |
+| Puces de la barre de suggestions, onglet emoji actif | 2 px | 3 px (petite) | Actions en ligne |
+| Champ de test des réglages | 3 px | 5 px (moyenne), soulevé de 1 px au focus | Champ actif |
+| Cartes du presse-papiers | 3 px | 5 px (moyenne) | Cartes |
+| Aperçu de touche, fenêtre des accents et des couleurs de peau | 3 px | 8 px (grande) | Éléments flottants |
+| Bord supérieur du clavier | 3 px | — | Séparateur de section |
 
-| Élément | Suite C!ao (Galerie) | Clavier |
+- **Coins carrés** partout (0 dp).
+- **Appui** : la touche glisse de 3 dp dans le sens de son ombre, qui disparaît. Le passage à
+  l'état appuyé est **instantané** (une animation se sentirait en frappe rapide) ; le retour dure
+  100 ms, comme la transition du design system.
+- **Polices** : DM Sans gras pour les libellés des touches ; Archivo Black pour le logo « C!ao » de la
+  barre d'espace et les titres.
+
+### 5.2 Couleurs
+
+Le clavier est un écran d'usage courant : il reste **calme**. Les touches de saisie sont neutres et
+il n'utilise que **trois accents**, avec leur rôle de la suite :
+
+| Accent | Rôle | Dans le clavier |
 |---|---|---|
-| Bordure | 3 dp, couleur `outline` | **2 dp** : des touches de 32 dp de large n'ont pas la place pour plus |
-| Ombre dure | décalée de 4 dp, vers le bas et la droite, sans flou | **décalée de 3 dp** |
-| Rayon des coins | 8 dp (contrôles) | 6 dp |
-| Effet d'appui | le composant glisse dans son ombre (120 ms) | la touche glisse dans son ombre **instantanément**, et revient en 60 ms au relâchement ; une animation plus lente se ferait sentir en frappe rapide |
-| Polices | Archivo Black (titres), DM Sans (texte) | DM Sans gras pour les libellés des touches (lisibilité) ; Archivo Black pour la barre d'espace (« C!ao ») et les titres des réglages |
+| Yellow `#FFD23F` | Action principale | Touche Entrée, puce « Coller » |
+| Sky `#74B9FF` | Sélection, état actif | Majuscule active et verrouillée, suggestion appliquée par l'autocorrection, variante présélectionnée, onglet emoji actif, élément épinglé |
+| Coral Pink `#FF6B6B` | Action destructive | « Tout effacer » (presse-papiers, dictionnaire personnel) |
 
-### 5.2 Couleurs des touches
-
-Les tons neutres (`page`, `surface`, `surfaceMuted`, `content`, `outline`) s'inversent entre clair
-et sombre ; les accents (Coral, Lime, Yellow, Teal, Sky, Brick) restent identiques et portent
-toujours du texte `Ink`, comme dans la Galerie.
-
-| Élément | Couleur |
+| Élément neutre | Couleur (clair) |
 |---|---|
-| Fond du clavier | `page` |
-| Touches de lettres, barre d'espace | `surface` |
-| Touches de fonction (⇧ inactive, ⌫, `?123`, emoji, virgule, point) | `surfaceMuted` |
-| Touche Entrée | **Lime** |
-| ⇧ active (une majuscule) | **Yellow** ; verrouillée : Yellow + icône de verrou |
-| Aperçu de touche, fenêtre des accents | carte `surface` avec ombre dure ; variante sélectionnée en **Coral** |
-| Barre de suggestions | fond `page` ; la suggestion qui sera appliquée par l'autocorrection est une étiquette **Yellow** bordée, les autres sont en texte simple |
-| Puce « coller » (presse-papiers) | étiquette **Teal** |
-| Panneau emojis | onglets de catégories en choix segmenté néo-brutaliste ; catégorie active en **Sky** |
-| Historique du presse-papiers | cartes `surface` ; éléments épinglés marqués d'une étiquette **Teal** |
+| Fond du clavier | `page` `#FFFDF5` |
+| Touches de lettres, barre d'espace | `surface` `#FFFFFF` |
+| Touches de fonction (⇧ inactive, ⌫, `?123`, emoji, virgule, point) | `surfaceMuted` `#EFEBE0` |
 
-Ces associations sont indicatives : elles seront ajustées sur maquette puis sur le Pixel (lot 2),
-mais la règle reste la suivante : **touches de saisie en neutre, accents réservés aux états et aux
-actions**, pour que la couleur signifie toujours quelque chose.
+Aucun état n'est signalé par la couleur seule : majuscule = icône pleine (verrou + trait si
+verrouillée) ; suggestion appliquée = étiquette bordée et gras ; épinglé = icône pleine.
 
 ### 5.3 Clair et sombre
 
-- **Deux thèmes complets**, clair et sombre, dessinés tous les deux : palettes `LightPalette` et
-  `DarkPalette` du design system (en sombre, l'encre devient crème : bordures et ombres claires sur
-  fond presque noir).
+- **Deux thèmes complets**, clair et sombre, selon les palettes du design system (en sombre : encre
+  crème, bordures et ombres claires sur fond presque noir ; les accents ne changent pas).
 - Réglage **Thème** : *Système* (par défaut), *Clair*, *Sombre*. Il s'applique au clavier **et** à
   l'app de réglages.
 - En mode *Système*, le clavier suit le changement de thème du téléphone **en direct**, y compris
@@ -137,12 +140,10 @@ actions**, pour que la couleur signifie toujours quelque chose.
 
 ### 5.4 Contraintes
 
-- **Contraste** : libellés de touches et suggestions au moins AA (4,5:1), vérifié pour chaque
-  couleur de touche, dans les deux thèmes (tests unitaires sur les paires de couleurs).
+- **Contraste** : noir sur chaque accent de 7,6:1 à 14,5:1 ; libellés et suggestions au moins AA
+  (4,5:1), vérifiés par des tests unitaires sur les paires de couleurs, dans les deux thèmes.
 - **Performance** : bordures et ombres dessinées sans flou ni calque hors écran ; l'appui sur une
   touche ne doit recomposer que cette touche, jamais tout le clavier.
-- **Maquette avant le code** : maquette des pages lettres, symboles, emojis et presse-papiers, en
-  clair et en sombre, validée avant l'implémentation du lot 2.
 
 ## 6. Frappe
 
@@ -295,9 +296,9 @@ Chaque lot = une ou plusieurs PR, avec une issue dédiée dans le jalon « C!ao 
 
 | Lot | Contenu | Dépend de |
 |---|---|---|
-| 0 | **`core/designsystem`** : extraction du thème et des composants `Neo*` de la Galerie, sans changement visuel ; garde-fou `INTERNET` dans `build-logic` | — |
+| 0 | **`core/designsystem`** : extraction du thème et des composants `Neo*` de la Galerie, mis aux règles de la suite (ADR 0003) ; garde-fou `INTERNET` dans `build-logic` | — |
 | 1 | **Squelette** : module `apps/clavier`, `InputMethodService` + Compose, app de réglages avec la mise en route, job CI, `PRIVACY.md`, `CHANGELOG.md`, `CLAUDE.md` | 0 |
-| 2 | **Frappe** : maquette validée (§5.4), touches néo-brutalistes en clair et sombre, AZERTY, majuscules, accents, pages symboles, claviers spécialisés, touche Entrée, retour arrière, curseur sur l'espace, vibration, aperçu | 1 |
+| 2 | **Frappe** : touches néo-brutalistes en clair et sombre (§5, maquette validée), AZERTY, majuscules, accents, pages symboles, claviers spécialisés, touche Entrée, retour arrière, curseur sur l'espace, vibration, aperçu | 1 |
 | 3 | **Règles françaises** : majuscule automatique, double espace, élisions, espace insécable | 2 |
 | 4 | **Dictionnaire et suggestions** : choix de la source (licence), format compilé, moteur (complétion, proximité, accents), barre de suggestions, autocorrection et annulation | 3 |
 | 5 | **Apprentissage et vie privée** : dictionnaire personnel, champs sensibles, navigation privée, exclusion des sauvegardes, écran de gestion | 4 |
