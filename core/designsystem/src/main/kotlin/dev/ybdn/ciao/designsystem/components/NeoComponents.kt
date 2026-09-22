@@ -12,11 +12,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -538,4 +540,50 @@ fun NeoTextField(
             Text(error, style = MaterialTheme.typography.bodySmall, color = Pink, fontWeight = FontWeight.Medium)
         }
     }
+}
+
+/**
+ * Touche de clavier : bordure fine et petite ombre (anatomie §5.1 de la spec clavier), appui
+ * instantané et retour animé comme [NeoButton], mais dimensionnée par l'appelant (pas de taille
+ * minimale imposée) et avec un appui long optionnel (accents, répétition du retour arrière).
+ */
+@Composable
+fun NeoKey(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tone: NeoTone = NeoTone.Surface,
+    enabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
+    onDoubleClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressOffset by animateDpAsState(
+        targetValue = if (isPressed && enabled) PressOffset else 0.dp,
+        animationSpec = tween(durationMillis = if (isPressed) 0 else PressReleaseMillis),
+        label = "keyPressOffset",
+    )
+    Box(
+        modifier = modifier
+            .alpha(if (enabled) 1f else 0.5f)
+            .offset(pressOffset, pressOffset)
+            .neoSurface(
+                color = tone.containerColor,
+                outline = NeoTheme.palette.outline,
+                shadowOffset = if (enabled && pressOffset == 0.dp) ShadowSmall else 0.dp,
+                borderWidth = BorderThin,
+            )
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                role = Role.Button,
+                onLongClick = onLongClick,
+                onDoubleClick = onDoubleClick,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+        content = content,
+    )
 }

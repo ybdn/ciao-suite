@@ -10,3 +10,6 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
 
 - Squelette de l'app : service de clavier (`InputMethodService`), écran de mise en route
   (activation et sélection du clavier dans les réglages système, zone de test).
+- Page lettres du clavier AZERTY : majuscule (simple/verrouillage), retour arrière avec
+  répétition à l'appui long, touche Entrée adaptée au champ actif, vibration à la frappe.
+  Accents, pages symboles et claviers spécialisés à venir.

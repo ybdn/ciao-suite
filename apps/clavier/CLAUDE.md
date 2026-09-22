@@ -22,13 +22,17 @@ Commandes (depuis la racine de la suite) :
 
 ## Suivi de la réalisation
 
-Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12). État à la création de ce
-fichier (lot 1) :
+Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12).
 
 - Lot 0 (`core/designsystem`, garde-fou `INTERNET`) : fait.
-- Lot 1 (squelette : ce commit) : module `apps/clavier`, `InputMethodService` + Compose (interface
-  provisoire, la disposition AZERTY arrive au lot 2), app de réglages avec la mise en route.
-- Lots 2 à 8 : pas commencés.
+- Lot 1 (squelette) : fait. Module `apps/clavier`, `InputMethodService` + Compose, app de
+  réglages avec la mise en route.
+- Lot 2 (frappe AZERTY, issue #11) : en cours, par incréments successifs sur la même issue.
+  Incrément 1 fait : page lettres (AZERTY, majuscule simple/verrouillage, retour arrière avec
+  répétition, touche Entrée adaptée à `imeOptions`, vibration). Restent : accents par appui long,
+  pages symboles, claviers spécialisés (numérique/téléphone/e-mail/URL), curseur sur la barre
+  d'espace, aperçu de touche.
+- Lots 3 à 8 : pas commencés.
 
 ## Architecture
 
@@ -37,13 +41,15 @@ Même découpage que la Galerie (Clean Architecture allégée, séparation par p
 
 ```
 dev.ybdn.ciao.clavier/
-├── ime/           InputMethodService, interface Compose du clavier (lot 2 : touches, pages)
+├── domain/
+│   ├── layout/    modèle des touches et de la disposition AZERTY (Kotlin pur, testé)
+│   └── input/     état de la touche Majuscule (Kotlin pur, testé)
+├── ime/           InputMethodService, interface Compose du clavier
 └── settings/      activité de réglages et de mise en route (Compose)
 ```
 
-Les packages `domain/` (modèle des touches, machine d'états, moteur de suggestions) et `data/`
-(dictionnaire, presse-papiers, préférences) seront ajoutés à partir du lot 2/4, pas avant : pas de
-package vide « au cas où ».
+Le package `data/` (dictionnaire, presse-papiers, préférences) sera ajouté à partir du lot 4/5/7,
+pas avant : pas de package vide « au cas où ».
 
 - **Compose dans l'`InputMethodService`** : le service n'est pas un `LifecycleOwner` /
   `ViewModelStoreOwner` / `SavedStateRegistryOwner` par défaut (contrairement à `ComponentActivity`) ;
@@ -51,6 +57,13 @@ package vide « au cas où ».
   (`setViewTreeLifecycleOwner`/`ViewModelStoreOwner`/`SavedStateRegistryOwner`).
 - **Aucune dépendance réseau** : vérifié automatiquement au build par la tâche
   `checkNoInternetPermission` (`build-logic`, lot 0).
+- **`NeoKey`** (`core/designsystem`) : touche neo-brutaliste (bordure fine, petite ombre, appui
+  instantané/retour animé), avec appui long et double-appui. Le retour arrière n'utilise pas
+  `NeoKey` : sa répétition à l'appui maintenu a besoin d'un geste (`pointerInput`/`detectTapGestures`)
+  que `combinedClickable` ne permet pas d'observer en continu.
+- Testé sur émulateur/Pixel : voir « Tests sur appareil » dans le `CLAUDE.md` racine — un clavier
+  doit en plus être activé (réglages système) puis sélectionné (`showInputMethodPicker`) avant de
+  pouvoir taper avec.
 
 ## Conventions
 
