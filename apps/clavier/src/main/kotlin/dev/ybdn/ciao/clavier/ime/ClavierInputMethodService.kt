@@ -50,14 +50,21 @@ class ClavierInputMethodService :
         super.onCreate()
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
+
+        // Le recomposeur de Compose cherche le ViewTreeLifecycleOwner en remontant depuis la
+        // racine de la fenêtre de l'IME (un conteneur système au-dessus de la vue qu'on renvoie
+        // depuis onCreateInputView), pas seulement sur la ComposeView elle-même : sans ceci,
+        // IllegalStateException "ViewTreeLifecycleOwner not found" au premier affichage.
+        window.window?.decorView?.let { decorView ->
+            decorView.setViewTreeLifecycleOwner(this)
+            decorView.setViewTreeViewModelStoreOwner(this)
+            decorView.setViewTreeSavedStateRegistryOwner(this)
+        }
     }
 
     override fun onCreateInputView(): View {
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
         return ComposeView(this).apply {
-            setViewTreeLifecycleOwner(this@ClavierInputMethodService)
-            setViewTreeViewModelStoreOwner(this@ClavierInputMethodService)
-            setViewTreeSavedStateRegistryOwner(this@ClavierInputMethodService)
             setContent {
                 CiaoTheme {
                     KeyboardScreen(
