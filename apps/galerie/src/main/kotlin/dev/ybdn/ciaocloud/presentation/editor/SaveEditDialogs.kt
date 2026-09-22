@@ -23,10 +23,10 @@ import dev.ybdn.ciaocloud.domain.model.EditCapabilities
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.model.SaveMode
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoTone
 
 /**
  * Choix d'enregistrement : copie (action principale) ou remplacement de l'original (secondaire,
@@ -50,6 +50,7 @@ fun SaveEditDialog(
                         stringResource(R.string.editor_save_copy),
                         onClick = { onSave(SaveMode.COPY) },
                         enabled = capabilities.editCopy.isAvailable,
+                        tone = NeoTone.Pink,
                     )
                     val replace = capabilities.replace
                     if (replace !is EditAvailability.Unavailable || !replace.reason.hidesAction) {
@@ -68,12 +69,12 @@ fun SaveEditDialog(
                         stringResource(
                             if (item.location == GalleryLocation.BOTH) R.string.editor_replace_confirm_both else R.string.editor_replace_confirm,
                         ),
-                        tone = NeoTone.Coral,
+                        tone = NeoTone.Pink,
                     )
                     NeoButton(
                         stringResource(R.string.editor_replace_confirm_button),
                         onClick = { onSave(SaveMode.REPLACE) },
-                        tone = NeoTone.Brick,
+                        tone = NeoTone.Pink,
                     )
                     NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = { confirmReplace = false }, tone = NeoTone.Surface)
                 }
@@ -85,7 +86,7 @@ fun SaveEditDialog(
 @Composable
 private fun AvailabilityNotice(availability: EditAvailability) {
     val reason = (availability as? EditAvailability.Unavailable)?.reason ?: return
-    if (!reason.hidesAction) NeoNotice(stringResource(reason.messageRes()))
+    if (!reason.hidesAction) NeoNotice(stringResource(reason.messageRes()), tone = NeoTone.Yellow)
 }
 
 @Composable
@@ -94,7 +95,7 @@ fun DiscardChangesDialog(onDiscard: () -> Unit, onDismiss: () -> Unit) {
         NeoCard(modifier = Modifier.padding(8.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.editor_discard_title), style = MaterialTheme.typography.titleLarge)
-                NeoButton(stringResource(R.string.editor_discard), onClick = onDiscard, tone = NeoTone.Brick)
+                NeoButton(stringResource(R.string.editor_discard), onClick = onDiscard, tone = NeoTone.Pink)
                 NeoButton(stringResource(R.string.editor_keep_editing), onClick = onDismiss, tone = NeoTone.Surface)
             }
         }

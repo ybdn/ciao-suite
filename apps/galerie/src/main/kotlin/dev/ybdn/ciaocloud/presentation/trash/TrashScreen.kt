@@ -25,14 +25,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.R
-import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
+import dev.ybdn.ciao.designsystem.components.stableNavigationBarsPadding
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
-import dev.ybdn.ciaocloud.presentation.components.NeoTopBar
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoTopBar
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryTile
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
@@ -114,13 +114,13 @@ fun TrashScreen(onBack: () -> Unit) {
                 NeoButton(
                     stringResource(R.string.trash_restore),
                     onClick = { viewModel.restoreSelection() },
-                    tone = NeoTone.Lime,
+                    tone = NeoTone.Green,
                     enabled = selectedIds.isNotEmpty(),
                 )
                 NeoButton(
                     stringResource(R.string.trash_delete_forever),
                     onClick = { viewModel.deleteSelectionForever() },
-                    tone = NeoTone.Brick,
+                    tone = NeoTone.Pink,
                     enabled = selectedIds.isNotEmpty(),
                 )
             }

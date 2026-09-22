@@ -20,4 +20,5 @@ rootProject.name = "ciao-suite"
 // Applications de la suite (une entrée par app publiée sur le Play Store).
 include(":apps:galerie")
 
-// Modules partagés : à créer au moment où une deuxième app en a besoin (voir docs/adr/0001).
+// Modules partagés (docs/adr/0001) : créés quand une deuxième app en a besoin.
+include(":core:designsystem")

@@ -21,8 +21,14 @@ la publication se fera quand toutes les apps seront développées.
 
 - `apps/<app>/` : un module Gradle par app (`:apps:<app>`), publié séparément.
 - `core/<module>/` : code partagé. **Ne créer un module `core/` que lorsqu'une deuxième app a
-  besoin du code** — jamais « au cas où ». Candidat prévu : le design system néo-brutaliste
-  (`Neo*`) de la Galerie.
+  besoin du code** — jamais « au cas où ». Existant : `core/designsystem`.
+- **Design system : `core/designsystem`, règles dans `docs/design-system.md` (ADR 0003)**, fondé
+  sur neubrutalism.com. Toute UI passe par lui : coins carrés, bordure `BorderWidth` (3 dp) ou
+  `BorderThin` (2 dp), ombres dures `ShadowSmall`/`ShadowMedium`/`ShadowLarge` (3/5/8 dp, jamais
+  de flou), appui `PressOffset` (3 dp). Couleurs par **rôle** (`NeoTone.Primary`, `Selected`,
+  `Danger`, `Success`, `Warning`, `Info`) ; les teintes seules ne servent qu'à des catégories ;
+  trois accents au plus par écran ; jamais la couleur seule pour une information. Aucune couleur,
+  bordure ou ombre en dur dans une app : un besoin nouveau s'ajoute au design system.
 - Dépendances : `apps/*` → `core/*`, jamais l'inverse ; jamais une app vers une autre app.
 - `build-logic/` : plugins de convention (`ciao.android.application`, `ciao.android.library`,
   `ciao.android.compose`, `ciao.jvm.library`). Toute configuration commune (SDK, Java 17, R8,

@@ -1,4 +1,4 @@
-package dev.ybdn.ciaocloud.presentation.components
+package dev.ybdn.ciao.designsystem.components
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -6,12 +6,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,7 +31,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
@@ -46,9 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -58,27 +57,69 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.ybdn.ciaocloud.presentation.theme.Brick
-import dev.ybdn.ciaocloud.presentation.theme.Coral
-import dev.ybdn.ciaocloud.presentation.theme.Ink
-import dev.ybdn.ciaocloud.presentation.theme.LabelMono
-import dev.ybdn.ciaocloud.presentation.theme.Lime
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
-import dev.ybdn.ciaocloud.presentation.theme.Sky
-import dev.ybdn.ciaocloud.presentation.theme.Teal
-import dev.ybdn.ciaocloud.presentation.theme.Yellow
+import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.Ink
+import dev.ybdn.ciao.designsystem.theme.Lavender
+import dev.ybdn.ciao.designsystem.theme.Orange
+import dev.ybdn.ciao.designsystem.theme.Pink
+import dev.ybdn.ciao.designsystem.theme.LabelMono
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.Sky
+import dev.ybdn.ciao.designsystem.theme.Yellow
 
+// Anatomie néo-brutaliste (docs/design-system.md) : coins carrés, bordures franches, ombres
+// dures sans flou sur trois niveaux, appui qui enfonce l'élément dans son ombre.
+
+/** Bordure canonique des composants. */
 val BorderWidth = 3.dp
-val ShadowOffset = 4.dp
-val CardRadius = 12.dp
-val ControlRadius = 8.dp
-val SmallRadius = 6.dp
+
+/** Bordure fine : éléments denses ou secondaires (touches de clavier, séparateurs). */
+val BorderThin = 2.dp
+
+/** Ombre des étiquettes, puces, actions en ligne et touches. */
+val ShadowSmall = 3.dp
+
+/** Ombre des cartes, boutons et panneaux (niveau par défaut). */
+val ShadowMedium = 5.dp
+
+/** Ombre des éléments flottants : feuilles, dialogues, fenêtres surgissantes. */
+val ShadowLarge = 8.dp
+
+/** Déplacement d'un élément appuyé, dans le sens de son ombre, qui disparaît. */
+val PressOffset = 3.dp
+
+/** Durée du retour d'un élément appuyé (ms). */
+const val PressReleaseMillis = 100
 
 /**
- * Couleur de fond d'un composant. Les tons neutres suivent le thème clair/sombre ;
- * les accents restent identiques et portent toujours du texte Ink.
+ * Couleur de fond d'un composant. Les tons neutres suivent le thème clair/sombre ; les accents
+ * restent identiques et portent toujours du texte Ink. Pour une action, un état ou un message,
+ * utiliser le rôle (Primary, Selected…) plutôt que la teinte ; les teintes seules servent aux
+ * catégories (distinguer des types de contenu), jamais à une action.
  */
-enum class NeoTone { Surface, Muted, Inverse, Coral, Lime, Yellow, Teal, Sky, Brick }
+enum class NeoTone {
+    Surface, Muted, Inverse, Yellow, Pink, Sky, Green, Orange, Lavender;
+
+    companion object {
+        /** Action principale. */
+        val Primary = Yellow
+
+        /** Sélection, état actif, élément choisi. */
+        val Selected = Sky
+
+        /** Action destructive, erreur. */
+        val Danger = Pink
+
+        /** Succès, confirmation, élément sauvegardé. */
+        val Success = Green
+
+        /** Avertissement. */
+        val Warning = Orange
+
+        /** Information neutre, catégorie secondaire. */
+        val Info = Lavender
+    }
+}
 
 private val NeoTone.containerColor: Color
     @Composable
@@ -87,12 +128,12 @@ private val NeoTone.containerColor: Color
         NeoTone.Surface -> NeoTheme.palette.surface
         NeoTone.Muted -> NeoTheme.palette.surfaceMuted
         NeoTone.Inverse -> NeoTheme.palette.content
-        NeoTone.Coral -> Coral
-        NeoTone.Lime -> Lime
         NeoTone.Yellow -> Yellow
-        NeoTone.Teal -> Teal
+        NeoTone.Pink -> Pink
         NeoTone.Sky -> Sky
-        NeoTone.Brick -> Brick
+        NeoTone.Green -> Green
+        NeoTone.Orange -> Orange
+        NeoTone.Lavender -> Lavender
     }
 
 private val NeoTone.contentColor: Color
@@ -105,31 +146,23 @@ private val NeoTone.contentColor: Color
     }
 
 /**
- * Surface néo-brutaliste : aplat de couleur, bordure et ombre dure décalée (sans flou)
- * dessinée derrière le composant.
+ * Surface néo-brutaliste : aplat de couleur à coins carrés, bordure et ombre dure décalée (sans
+ * flou) dessinée derrière le composant.
  */
 fun Modifier.neoSurface(
     color: Color,
     outline: Color,
-    cornerRadius: Dp = CardRadius,
-    shadowOffset: Dp = ShadowOffset,
-): Modifier {
-    val shape = RoundedCornerShape(cornerRadius)
-    return this
-        .drawBehind {
-            if (shadowOffset > 0.dp) {
-                val offset = shadowOffset.toPx()
-                drawRoundRect(
-                    color = outline,
-                    topLeft = Offset(offset, offset),
-                    size = size,
-                    cornerRadius = CornerRadius(cornerRadius.toPx()),
-                )
-            }
+    shadowOffset: Dp = ShadowMedium,
+    borderWidth: Dp = BorderWidth,
+): Modifier = this
+    .drawBehind {
+        if (shadowOffset > 0.dp) {
+            val offset = shadowOffset.toPx()
+            drawRect(color = outline, topLeft = Offset(offset, offset), size = size)
         }
-        .background(color, shape)
-        .border(BorderWidth, outline, shape)
-}
+    }
+    .background(color, RectangleShape)
+    .border(borderWidth, outline, RectangleShape)
 
 /** Structure commune des écrans : barre de titre, en-tête optionnel, contenu défilant. */
 @Composable
@@ -198,7 +231,7 @@ fun NeoTopBar(
 /** Bandeau défilant en capitales, motif signature du site de référence. */
 @Composable
 fun NeoMarquee(text: String) {
-    Column(modifier = Modifier.fillMaxWidth().background(Lime)) {
+    Column(modifier = Modifier.fillMaxWidth().background(Green)) {
         Text(
             text = text.uppercase(),
             style = MaterialTheme.typography.titleLarge,
@@ -227,15 +260,16 @@ fun NeoButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tone: NeoTone = NeoTone.Coral,
+    tone: NeoTone = NeoTone.Primary,
     enabled: Boolean = true,
     horizontalPadding: Dp = 24.dp,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressOffset by animateDpAsState(
-        targetValue = if (isPressed && enabled) ShadowOffset else 0.dp,
-        animationSpec = tween(durationMillis = 120),
+        targetValue = if (isPressed && enabled) PressOffset else 0.dp,
+        // Enfoncement immédiat, retour animé.
+        animationSpec = tween(durationMillis = if (isPressed) 0 else PressReleaseMillis),
         label = "pressOffset",
     )
     val effectiveTone = if (enabled) tone else NeoTone.Muted
@@ -248,8 +282,7 @@ fun NeoButton(
             .neoSurface(
                 color = effectiveTone.containerColor,
                 outline = NeoTheme.palette.outline,
-                cornerRadius = ControlRadius,
-                shadowOffset = if (enabled) ShadowOffset - pressOffset else 0.dp,
+                shadowOffset = if (enabled && pressOffset == 0.dp) ShadowMedium else 0.dp,
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -288,7 +321,7 @@ fun NeoCard(
     }
 }
 
-/** Étiquette monospace en capitales, sans ombre. */
+/** Étiquette monospace en capitales, avec la petite ombre des badges. */
 @Composable
 fun NeoTag(text: String, tone: NeoTone = NeoTone.Muted) {
     Text(
@@ -296,7 +329,7 @@ fun NeoTag(text: String, tone: NeoTone = NeoTone.Muted) {
         style = LabelMono,
         color = tone.contentColor,
         modifier = Modifier
-            .neoSurface(tone.containerColor, NeoTheme.palette.outline, SmallRadius, shadowOffset = 0.dp)
+            .neoSurface(tone.containerColor, NeoTheme.palette.outline, shadowOffset = ShadowSmall)
             .padding(horizontal = 10.dp, vertical = 5.dp),
     )
 }
@@ -337,9 +370,9 @@ fun NeoStat(
     }
 }
 
-/** Message mis en avant : jaune pour un avertissement, corail pour une erreur. */
+/** Message mis en avant : NeoTone.Warning pour un avertissement, NeoTone.Danger pour une erreur. */
 @Composable
-fun NeoNotice(text: String, tone: NeoTone = NeoTone.Yellow, modifier: Modifier = Modifier) {
+fun NeoNotice(text: String, tone: NeoTone = NeoTone.Warning, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
@@ -347,14 +380,15 @@ fun NeoNotice(text: String, tone: NeoTone = NeoTone.Yellow, modifier: Modifier =
         color = tone.contentColor,
         modifier = modifier
             .fillMaxWidth()
-            .neoSurface(tone.containerColor, NeoTheme.palette.outline, ControlRadius)
+            .neoSurface(tone.containerColor, NeoTheme.palette.outline)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     )
 }
 
 /**
- * Choix exclusif entre quelques options : l'option sélectionnée est « enfoncée »
- * (sans ombre, décalée sur son ombre) et colorée, les autres restent en relief.
+ * Choix exclusif entre quelques options : l'option sélectionnée est « enfoncée » (décalée dans
+ * le sens de son ombre, qui disparaît) et prend la couleur de sélection ; les autres restent en
+ * relief.
  */
 @Composable
 fun NeoSegmentedChoice(
@@ -369,8 +403,8 @@ fun NeoSegmentedChoice(
     ) {
         options.forEachIndexed { index, label ->
             val isSelected = index == selectedIndex
-            val tone = if (isSelected) NeoTone.Lime else NeoTone.Surface
-            val offset = if (isSelected) ShadowOffset else 0.dp
+            val tone = if (isSelected) NeoTone.Selected else NeoTone.Surface
+            val offset = if (isSelected) PressOffset else 0.dp
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -379,8 +413,7 @@ fun NeoSegmentedChoice(
                     .neoSurface(
                         color = tone.containerColor,
                         outline = NeoTheme.palette.outline,
-                        cornerRadius = ControlRadius,
-                        shadowOffset = ShadowOffset - offset,
+                        shadowOffset = if (isSelected) 0.dp else ShadowSmall,
                     )
                     .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(index) })
                     .padding(horizontal = 8.dp, vertical = 12.dp),
@@ -401,7 +434,7 @@ fun NeoSegmentedChoice(
 fun NeoProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
-    color: Color = Lime,
+    color: Color = Green,
     height: Dp = 24.dp,
 ) {
     val animatedProgress by animateFloatAsState(progress.coerceIn(0f, 1f), label = "progress")
@@ -409,20 +442,19 @@ fun NeoProgressBar(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .neoSurface(NeoTheme.palette.surface, NeoTheme.palette.outline, SmallRadius, shadowOffset = 0.dp)
+            .neoSurface(NeoTheme.palette.surface, NeoTheme.palette.outline, shadowOffset = 0.dp)
             .padding(BorderWidth),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(animatedProgress)
-                .clip(RoundedCornerShape(SmallRadius - BorderWidth))
                 .background(color),
         )
     }
 }
 
-/** Interrupteur libellé : toute la ligne est cliquable, piste citron une fois activé. */
+/** Interrupteur libellé : toute la ligne est cliquable, piste de sélection une fois activé. */
 @Composable
 fun NeoSwitchRow(
     label: String,
@@ -445,7 +477,7 @@ fun NeoSwitchRow(
             onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Ink,
-                checkedTrackColor = Lime,
+                checkedTrackColor = Sky,
                 checkedBorderColor = palette.outline,
                 uncheckedThumbColor = palette.outline,
                 uncheckedTrackColor = palette.surfaceMuted,
@@ -455,7 +487,10 @@ fun NeoSwitchRow(
     }
 }
 
-/** Champ de saisie libellé : aplat de surface bordé, sans ombre ; message d'erreur en brique. */
+/**
+ * Champ de saisie libellé : aplat de surface bordé avec la petite ombre ; au focus, il se soulève
+ * de 1 dp et prend l'ombre moyenne. Message d'erreur en couleur Danger.
+ */
 @Composable
 fun NeoTextField(
     label: String,
@@ -468,9 +503,12 @@ fun NeoTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
     val palette = NeoTheme.palette
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label.uppercase(), style = LabelMono, color = palette.content)
         BasicTextField(
+            interactionSource = interactionSource,
             value = value,
             onValueChange = onValueChange,
             singleLine = singleLine,
@@ -480,7 +518,12 @@ fun NeoTextField(
             keyboardOptions = keyboardOptions,
             modifier = Modifier
                 .fillMaxWidth()
-                .neoSurface(palette.surface, if (error != null) Brick else palette.outline, ControlRadius, shadowOffset = 0.dp)
+                .offset(if (isFocused) (-1).dp else 0.dp, if (isFocused) (-1).dp else 0.dp)
+                .neoSurface(
+                    color = palette.surface,
+                    outline = if (error != null) Pink else palette.outline,
+                    shadowOffset = if (isFocused) ShadowMedium else ShadowSmall,
+                )
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             decorationBox = { inner ->
                 Box {
@@ -492,7 +535,7 @@ fun NeoTextField(
             },
         )
         if (error != null) {
-            Text(error, style = MaterialTheme.typography.bodySmall, color = Brick, fontWeight = FontWeight.Medium)
+            Text(error, style = MaterialTheme.typography.bodySmall, color = Pink, fontWeight = FontWeight.Medium)
         }
     }
 }

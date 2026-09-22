@@ -23,7 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.R
-import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
+import dev.ybdn.ciao.designsystem.components.stableNavigationBarsPadding
 import dev.ybdn.ciaocloud.domain.model.EditAvailability
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
@@ -36,13 +36,13 @@ import dev.ybdn.ciaocloud.domain.model.MediaDetails
 import dev.ybdn.ciaocloud.domain.model.MeteringMode
 import dev.ybdn.ciaocloud.domain.model.SceneType
 import dev.ybdn.ciaocloud.domain.util.MediaMetadataCodes
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciaocloud.presentation.gallery.formatDay
 import dev.ybdn.ciaocloud.presentation.gallery.formatDuration
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 import java.time.Instant
 import java.time.ZoneId
@@ -125,14 +125,14 @@ fun InfoSheet(
             if (details == DetailsState.Loading) CircularProgressIndicator()
 
             loaded?.let { cameraLines(it) }?.let { lines -> InfoCard(R.string.info_camera, NeoTone.Yellow, lines) }
-            loaded?.let { videoLines(it) }?.let { lines -> InfoCard(R.string.info_video, NeoTone.Coral, lines) }
+            loaded?.let { videoLines(it) }?.let { lines -> InfoCard(R.string.info_video, NeoTone.Pink, lines) }
 
             val latitude = loaded?.latitude
             val longitude = loaded?.longitude
             if (latitude != null && longitude != null) {
                 val context = LocalContext.current
                 NeoCard {
-                    NeoTag(stringResource(R.string.info_location), tone = NeoTone.Teal)
+                    NeoTag(stringResource(R.string.info_location), tone = NeoTone.Lavender)
                     InfoLine(String.format(Locale.US, "%.6f, %.6f", latitude, longitude), monospace = true)
                     loaded.altitudeMeters?.let {
                         InfoLine(stringResource(R.string.info_altitude, String.format(Locale.FRENCH, "%.0f", it)))
@@ -166,7 +166,7 @@ fun InfoSheet(
             loaded?.let { imageLines(it) }?.let { lines -> InfoCard(R.string.info_image, NeoTone.Sky, lines) }
 
             NeoCard {
-                NeoTag(stringResource(R.string.info_storage), tone = NeoTone.Lime)
+                NeoTag(stringResource(R.string.info_storage), tone = NeoTone.Green)
                 item.phone?.let { InfoLine(stringResource(R.string.info_on_phone, (it.relativePath.orEmpty()) + it.displayName), monospace = true) }
                 item.ssd?.let { InfoLine(stringResource(R.string.info_on_ssd, it.relativePath), monospace = true) }
                 InfoLine(

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -30,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -44,19 +44,17 @@ import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciaocloud.domain.model.TriageDecision
-import dev.ybdn.ciaocloud.presentation.components.BorderWidth
-import dev.ybdn.ciaocloud.presentation.components.CardRadius
-import dev.ybdn.ciaocloud.presentation.components.ControlRadius
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
-import dev.ybdn.ciaocloud.presentation.components.neoSurface
+import dev.ybdn.ciao.designsystem.components.BorderWidth
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.neoSurface
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryImages
 import dev.ybdn.ciaocloud.presentation.gallery.formatDuration
-import dev.ybdn.ciaocloud.presentation.theme.Coral
-import dev.ybdn.ciaocloud.presentation.theme.Ink
-import dev.ybdn.ciaocloud.presentation.theme.Lime
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
-import dev.ybdn.ciaocloud.presentation.theme.Yellow
+import dev.ybdn.ciao.designsystem.theme.Pink
+import dev.ybdn.ciao.designsystem.theme.Ink
+import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.Yellow
 import dev.ybdn.ciaocloud.presentation.viewer.OriginalUri
 import dev.ybdn.ciaocloud.presentation.viewer.SsdUnpluggedNotice
 import dev.ybdn.ciaocloud.presentation.viewer.VideoPage
@@ -166,9 +164,9 @@ fun TriageCard(
                         }
                 },
             )
-            .neoSurface(palette.surfaceMuted, palette.outline, CardRadius)
+            .neoSurface(palette.surfaceMuted, palette.outline)
             .padding(BorderWidth)
-            .clip(RoundedCornerShape(CardRadius - BorderWidth)),
+            .clip(RectangleShape),
     ) {
         val originalUri = rememberOriginalUri(item, ssdAvailable, resolveOriginal)
         when (item.mediaType) {
@@ -247,7 +245,7 @@ private fun VideoContent(item: GalleryItem, originalUri: OriginalUri, interactiv
                 contentDescription = stringResource(R.string.viewer_play),
                 tint = Ink,
                 modifier = Modifier
-                    .neoSurface(Lime, NeoTheme.palette.outline, ControlRadius)
+                    .neoSurface(Green, NeoTheme.palette.outline)
                     .padding(12.dp)
                     .size(40.dp),
             )
@@ -259,7 +257,7 @@ private fun VideoContent(item: GalleryItem, originalUri: OriginalUri, interactiv
 private fun BackupTag(location: GalleryLocation) {
     when (location) {
         GalleryLocation.PHONE -> NeoTag(stringResource(R.string.triage_badge_not_backed_up), tone = NeoTone.Yellow)
-        GalleryLocation.BOTH -> NeoTag(stringResource(R.string.triage_badge_backed_up), tone = NeoTone.Lime)
+        GalleryLocation.BOTH -> NeoTag(stringResource(R.string.triage_badge_backed_up), tone = NeoTone.Green)
         GalleryLocation.SSD -> NeoTag(stringResource(R.string.triage_badge_ssd), tone = NeoTone.Sky)
     }
 }
@@ -284,8 +282,8 @@ private fun BoxScope.DecisionStampOverlay(state: SwipeCardState) {
 @Composable
 private fun DecisionStamp(decision: TriageDecision, alpha: Float, modifier: Modifier = Modifier) {
     val (label, color) = when (decision) {
-        TriageDecision.KEPT -> R.string.triage_keep to Lime
-        TriageDecision.QUEUED_FOR_DELETION -> R.string.triage_delete to Coral
+        TriageDecision.KEPT -> R.string.triage_keep to Green
+        TriageDecision.QUEUED_FOR_DELETION -> R.string.triage_delete to Pink
         TriageDecision.SNOOZED -> R.string.triage_later to Yellow
     }
     Text(
@@ -302,7 +300,7 @@ private fun DecisionStamp(decision: TriageDecision, alpha: Float, modifier: Modi
                     TriageDecision.SNOOZED -> 0f
                 }
             }
-            .neoSurface(color, Ink, ControlRadius)
+            .neoSurface(color, Ink)
             .padding(horizontal = 16.dp, vertical = 10.dp),
     )
 }

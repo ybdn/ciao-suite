@@ -1,4 +1,4 @@
-package dev.ybdn.ciaocloud.presentation.theme
+package dev.ybdn.ciao.designsystem.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -9,7 +9,7 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import dev.ybdn.ciaocloud.R
+import dev.ybdn.ciao.designsystem.R
 
 /** Police d'affichage (titres, grands chiffres) : une seule graisse, très épaisse. */
 val DisplayFont = FontFamily(Font(R.font.archivo_black))
@@ -34,7 +34,7 @@ val LabelMono = TextStyle(
     letterSpacing = 0.08.em,
 )
 
-val CiaoCloudTypography = Typography(
+val CiaoTypography = Typography(
     displayLarge = TextStyle(fontFamily = DisplayFont, fontSize = 48.sp, lineHeight = 50.sp, letterSpacing = (-0.02).em),
     displayMedium = TextStyle(fontFamily = DisplayFont, fontSize = 36.sp, lineHeight = 40.sp, letterSpacing = (-0.02).em),
     displaySmall = TextStyle(fontFamily = DisplayFont, fontSize = 28.sp, lineHeight = 32.sp, letterSpacing = (-0.01).em),

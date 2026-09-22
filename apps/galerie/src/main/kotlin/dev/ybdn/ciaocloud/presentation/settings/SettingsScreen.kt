@@ -21,13 +21,13 @@ import androidx.compose.ui.text.font.FontFamily
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.ThemeMode
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoScreen
-import dev.ybdn.ciaocloud.presentation.components.NeoSegmentedChoice
-import dev.ybdn.ciaocloud.presentation.components.NeoSwitchRow
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoScreen
+import dev.ybdn.ciao.designsystem.components.NeoSegmentedChoice
+import dev.ybdn.ciao.designsystem.components.NeoSwitchRow
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciaocloud.presentation.gallery.SsdIndexControls
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 
@@ -98,7 +98,7 @@ fun SettingsScreen() {
         }
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_privacy_label), tone = NeoTone.Coral)
+            NeoTag(stringResource(R.string.settings_privacy_label), tone = NeoTone.Pink)
             NeoSwitchRow(
                 label = stringResource(R.string.settings_share_strip_metadata),
                 checked = shareStripMetadata,
@@ -108,7 +108,7 @@ fun SettingsScreen() {
         }
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_gallery_label), tone = NeoTone.Teal)
+            NeoTag(stringResource(R.string.settings_gallery_label), tone = NeoTone.Lavender)
             Text(stringResource(R.string.settings_ssd_index_hint), style = MaterialTheme.typography.bodyMedium)
             SsdIndexControls(state = ssdIndexState, onRefresh = viewModel::refreshSsdIndex)
         }
@@ -124,7 +124,7 @@ fun SettingsScreen() {
         }
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_thumbnail_cache_label), tone = NeoTone.Lime)
+            NeoTag(stringResource(R.string.settings_thumbnail_cache_label), tone = NeoTone.Green)
             cacheUsedBytes?.let { used ->
                 Text(
                     stringResource(R.string.settings_thumbnail_cache_usage, formatBytes(used), formatBytes(cacheMaxBytes)),
@@ -154,7 +154,7 @@ private fun TriageResetDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         NeoCard(modifier = Modifier.padding(8.dp)) {
             Text(stringResource(R.string.settings_triage_reset_title), style = MaterialTheme.typography.titleLarge)
             Text(stringResource(R.string.settings_triage_reset_message), style = MaterialTheme.typography.bodyMedium)
-            NeoButton(stringResource(R.string.settings_triage_reset_confirm), onClick = onConfirm, tone = NeoTone.Coral)
+            NeoButton(stringResource(R.string.settings_triage_reset_confirm), onClick = onConfirm, tone = NeoTone.Pink)
             NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = onDismiss, tone = NeoTone.Surface)
         }
     }

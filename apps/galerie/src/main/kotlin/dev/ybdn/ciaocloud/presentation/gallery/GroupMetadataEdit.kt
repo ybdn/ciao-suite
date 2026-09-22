@@ -34,16 +34,16 @@ import dev.ybdn.ciaocloud.domain.model.GeoPoint
 import dev.ybdn.ciaocloud.domain.model.MetadataChanges
 import dev.ybdn.ciaocloud.domain.model.MetadataEditPreview
 import dev.ybdn.ciaocloud.domain.util.GpsCoordinateParser
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoProgressBar
-import dev.ybdn.ciaocloud.presentation.components.NeoSegmentedChoice
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTextField
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
-import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoProgressBar
+import dev.ybdn.ciao.designsystem.components.NeoSegmentedChoice
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTextField
+import dev.ybdn.ciao.designsystem.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.stableNavigationBarsPadding
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import dev.ybdn.ciaocloud.presentation.viewer.OffsetPicker
 import java.util.Locale
 
@@ -104,6 +104,7 @@ fun GroupMetadataSheet(
                     stringResource(R.string.group_metadata_apply),
                     onClick = { onApply(MetadataChanges(dateShift = shift)) },
                     enabled = !shift.isZero,
+                    tone = NeoTone.Pink,
                 )
             }
 
@@ -116,11 +117,12 @@ fun GroupMetadataSheet(
                     onClick = {
                         onApply(MetadataChanges(utcOffsetMinutes = offset?.let { FieldChange.Set(it) } ?: FieldChange.Remove))
                     },
+                    tone = NeoTone.Pink,
                 )
             }
 
             NeoCard {
-                NeoTag(stringResource(R.string.info_location), tone = NeoTone.Teal)
+                NeoTag(stringResource(R.string.info_location), tone = NeoTone.Lavender)
                 NeoTextField(
                     label = stringResource(R.string.metadata_coordinates),
                     value = location,
@@ -146,6 +148,7 @@ fun GroupMetadataSheet(
                         if (point == null) locationError = true else onApply(MetadataChanges(location = FieldChange.Set(point)))
                     },
                     enabled = location.isNotBlank(),
+                    tone = NeoTone.Pink,
                 )
                 NeoButton(
                     stringResource(R.string.metadata_remove_location),
@@ -155,7 +158,7 @@ fun GroupMetadataSheet(
             }
 
             NeoCard {
-                NeoTag(stringResource(R.string.metadata_texts), tone = NeoTone.Lime)
+                NeoTag(stringResource(R.string.metadata_texts), tone = NeoTone.Green)
                 Text(stringResource(R.string.group_metadata_texts_hint), style = MaterialTheme.typography.bodySmall)
                 NeoTextField(stringResource(R.string.metadata_description), description, { description = it }, singleLine = false)
                 NeoTextField(stringResource(R.string.metadata_artist), artist, { artist = it })
@@ -165,13 +168,14 @@ fun GroupMetadataSheet(
                     stringResource(R.string.group_metadata_apply),
                     onClick = { onApply(MetadataChanges(change(description), change(artist), change(copyright))) },
                     enabled = description.isNotBlank() || artist.isNotBlank() || copyright.isNotBlank(),
+                    tone = NeoTone.Pink,
                 )
             }
 
             NeoButton(
                 stringResource(R.string.metadata_remove_sensitive),
                 onClick = { onApply(MetadataChanges(removeSensitiveData = true)) },
-                tone = NeoTone.Brick,
+                tone = NeoTone.Pink,
             )
         }
     }
@@ -197,11 +201,11 @@ fun GroupMetadataConfirmDialog(
                         if (preview.toMove > 0) add(pluralStringResource(R.plurals.group_metadata_moved, preview.toMove, preview.toMove))
                         if (preview.skipped > 0) add(pluralStringResource(R.plurals.group_metadata_skipped, preview.skipped, preview.skipped))
                     }
-                    NeoNotice(lines.joinToString(", "))
+                    NeoNotice(lines.joinToString(", "), tone = NeoTone.Yellow)
                     if (removesSensitiveData) {
                         Text(stringResource(R.string.metadata_remove_sensitive_list), style = MaterialTheme.typography.bodySmall)
                     }
-                    NeoButton(stringResource(R.string.group_metadata_confirm), onClick = onConfirm, enabled = preview.editable > 0)
+                    NeoButton(stringResource(R.string.group_metadata_confirm), onClick = onConfirm, enabled = preview.editable > 0, tone = NeoTone.Pink)
                 }
                 NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = onDismiss, tone = NeoTone.Surface)
             }

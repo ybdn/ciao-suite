@@ -24,10 +24,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import dev.ybdn.ciaocloud.R
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciaocloud.presentation.util.MEDIA_LOCATION_PERMISSION
 import dev.ybdn.ciaocloud.presentation.util.MEDIA_PERMISSIONS
 import dev.ybdn.ciaocloud.presentation.util.MEDIA_READ_PERMISSIONS
@@ -88,7 +88,7 @@ fun PermissionsCard(
     }
 
     NeoCard {
-        NeoTag(stringResource(R.string.permissions_label), tone = NeoTone.Coral)
+        NeoTag(stringResource(R.string.permissions_label), tone = NeoTone.Pink)
         Text(stringResource(R.string.permissions_hint), style = MaterialTheme.typography.bodyMedium)
 
         PermissionRow(
@@ -121,7 +121,7 @@ fun PermissionsCard(
             NeoButton(
                 text = stringResource(R.string.permissions_grant_all),
                 onClick = { request(MEDIA_PERMISSIONS + NOTIFICATION_PERMISSION) },
-                tone = NeoTone.Coral,
+                tone = NeoTone.Pink,
             )
         }
         NeoButton(
@@ -151,9 +151,9 @@ private fun PermissionRow(
                     },
                 ),
                 tone = when (status) {
-                    PermissionStatus.GRANTED -> NeoTone.Lime
+                    PermissionStatus.GRANTED -> NeoTone.Green
                     PermissionStatus.PARTIAL -> NeoTone.Yellow
-                    PermissionStatus.MISSING -> NeoTone.Brick
+                    PermissionStatus.MISSING -> NeoTone.Pink
                 },
             )
         }

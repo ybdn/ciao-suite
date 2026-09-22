@@ -38,14 +38,14 @@ import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.TriageDecision
 import dev.ybdn.ciaocloud.domain.model.TriageSummary
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoStat
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
-import dev.ybdn.ciaocloud.presentation.components.NeoTopBar
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoStat
+import dev.ybdn.ciao.designsystem.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoTopBar
 import dev.ybdn.ciaocloud.presentation.gallery.formatDay
-import dev.ybdn.ciaocloud.presentation.theme.LabelMono
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.LabelMono
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 import kotlinx.coroutines.launch
 
@@ -171,9 +171,9 @@ private fun TriagePile(
                 .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 20.dp),
         ) {
             listOf(
-                Triple(TriageDecision.QUEUED_FOR_DELETION, R.string.triage_delete, NeoTone.Coral),
+                Triple(TriageDecision.QUEUED_FOR_DELETION, R.string.triage_delete, NeoTone.Pink),
                 Triple(TriageDecision.SNOOZED, R.string.triage_later, NeoTone.Yellow),
-                Triple(TriageDecision.KEPT, R.string.triage_keep, NeoTone.Lime),
+                Triple(TriageDecision.KEPT, R.string.triage_keep, NeoTone.Green),
             ).forEach { (decision, label, tone) ->
                 NeoButton(
                     text = stringResource(label),
@@ -231,13 +231,13 @@ private fun TriageSummaryContent(
             NeoStat(
                 value = summary.kept.toString(),
                 caption = pluralStringResource(R.plurals.triage_stat_kept, summary.kept),
-                tone = NeoTone.Lime,
+                tone = NeoTone.Green,
                 modifier = Modifier.fillMaxWidth(),
             )
             NeoStat(
                 value = summary.queued.toString(),
                 caption = pluralStringResource(R.plurals.triage_stat_queued, summary.queued),
-                tone = NeoTone.Coral,
+                tone = NeoTone.Pink,
                 modifier = Modifier.fillMaxWidth(),
             )
             if (summary.queued > 0) {
@@ -263,8 +263,9 @@ private fun TriageSummaryContent(
                     summary.totalQueued,
                     formatBytes(summary.totalQueuedBytes),
                 ),
+                tone = NeoTone.Yellow,
             )
-            NeoButton(stringResource(R.string.triage_open_queue), onClick = onOpenDeletionQueue, tone = NeoTone.Coral)
+            NeoButton(stringResource(R.string.triage_open_queue), onClick = onOpenDeletionQueue, tone = NeoTone.Pink)
         }
         if (onUndo != null) {
             NeoButton(stringResource(R.string.triage_undo), onClick = onUndo, tone = NeoTone.Surface)

@@ -12,11 +12,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoScreen
-import dev.ybdn.ciaocloud.presentation.components.NeoStat
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoScreen
+import dev.ybdn.ciao.designsystem.components.NeoStat
+import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 
 @Composable
@@ -39,25 +39,26 @@ fun DeleteConfirmationScreen(
                 NeoStat(
                     value = formatBytes(uiState.freeableBytes),
                     caption = stringResource(R.string.delete_confirm_stat_freeable),
-                    tone = NeoTone.Lime,
+                    tone = NeoTone.Green,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 NeoStat(
                     value = uiState.verifiedCount.toString(),
                     caption = stringResource(R.string.delete_confirm_stat_verified),
-                    tone = NeoTone.Teal,
+                    tone = NeoTone.Lavender,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(stringResource(R.string.delete_confirm_explanation), style = MaterialTheme.typography.bodyLarge)
             }
         }
 
-        uiState.errorMessage?.let { NeoNotice(it, tone = NeoTone.Coral) }
+        uiState.errorMessage?.let { NeoNotice(it, tone = NeoTone.Pink) }
 
         NeoButton(
             text = stringResource(R.string.delete_confirm_button),
             onClick = viewModel::confirmDeletion,
             enabled = uiState.canDelete,
+            tone = NeoTone.Pink,
         )
 
         if (uiState.isDeleting) CircularProgressIndicator()

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,18 +30,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import dev.ybdn.ciaocloud.presentation.components.BorderWidth
-import dev.ybdn.ciaocloud.presentation.components.ControlRadius
-import dev.ybdn.ciaocloud.presentation.components.neoSurface
-import dev.ybdn.ciaocloud.presentation.theme.Ink
-import dev.ybdn.ciaocloud.presentation.theme.LabelMono
-import dev.ybdn.ciaocloud.presentation.theme.Lime
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.components.BorderWidth
+import dev.ybdn.ciao.designsystem.components.neoSurface
+import dev.ybdn.ciao.designsystem.theme.Ink
+import dev.ybdn.ciao.designsystem.theme.LabelMono
+import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -135,7 +134,7 @@ fun FastScroller(
                             maxLines = 1,
                             modifier = Modifier
                                 .padding(end = 10.dp)
-                                .neoSurface(Lime, NeoTheme.palette.outline, ControlRadius, shadowOffset = 3.dp)
+                                .neoSurface(Green, NeoTheme.palette.outline, shadowOffset = 3.dp)
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                         )
                     }
@@ -143,9 +142,9 @@ fun FastScroller(
                         modifier = Modifier
                             .size(width = TRACK_WIDTH, height = THUMB_HEIGHT)
                             .padding(end = 4.dp)
-                            .background(NeoTheme.palette.outline, RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp))
+                            .background(NeoTheme.palette.outline, RectangleShape)
                             .padding(start = BorderWidth, top = BorderWidth, bottom = BorderWidth)
-                            .background(Lime, RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp))
+                            .background(Green, RectangleShape)
                             .pointerInput(trackHeightPx) {
                                 detectVerticalDragGestures(
                                     onDragStart = {
