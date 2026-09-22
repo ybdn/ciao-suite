@@ -3,7 +3,7 @@ name: Galerie
 # Ne se déclenche que si la Galerie, le code partagé ou la configuration de build change.
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [main, "release/galerie-*"]
     paths:
       - "apps/galerie/**"
       - "core/**"
@@ -14,7 +14,7 @@ on:
       - ".github/workflows/galerie.yml"
       - ".github/workflows/_android-app.yml"
   push:
-    branches: [main]
+    branches: [main, "release/galerie-*"]
     paths:
       - "apps/galerie/**"
       - "core/**"

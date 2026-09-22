@@ -1,0 +1,25 @@
+name: PR title
+
+# Le titre de la PR devient le message du commit sur main (fusion en squash) :
+# il doit respecter le format de commit (docs/workflow-git.md, sections 2 et 3).
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier le format du titre
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|refactor|perf|test|docs|style|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: [^ ].*[^.]$'
+          if ! printf '%s' "$TITLE" | grep -Eq "$pattern"; then
+            echo "::error::Titre hors format : « $TITLE ». Attendu : <type>(<portée>): <description>, ex. feat(galerie): albums personnalisés"
+            exit 1
+          fi
+          if [ "$(printf '%s' "$TITLE" | wc -m)" -gt 100 ]; then
+            echo "::error::Titre trop long (100 caractères maximum)."
+            exit 1
+          fi
