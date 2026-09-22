@@ -1,0 +1,23 @@
+# Mises à jour automatiques proposées en PR. Les titres respectent le format de commit exigé par
+# pr-title.yml (docs/workflow-git.md) ; les mises à jour sont groupées pour limiter le bruit.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: build
+    groups:
+      gradle:
+        patterns: ["*"]

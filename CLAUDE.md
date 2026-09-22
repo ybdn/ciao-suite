@@ -73,6 +73,8 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
   appelle `_android-app.yml`, et un job agrégateur « CI OK » (check exigé) ; `pr-title.yml`
   vérifie les titres de PR. Ajouter un module `core/` n'exige rien (`core/**` est dans les filtres
   communs) ; ajouter une app demande un filtre, un job et une entrée dans les `needs` de `ci-ok`.
+  Actions uniquement open source : pas de `gradle/actions` (cache propriétaire depuis la v6), le
+  cache Gradle vient de `actions/setup-java` (`cache: gradle`). Dependabot : PR mensuelles groupées.
 - Dépôt GitHub public : `ybdn/ciao-suite`. Email d'auteur des commits : l'adresse noreply GitHub
   (`108177058+ybdn@users.noreply.github.com`, réglée dans la config locale du dépôt).
 - Tests unitaires ciblés sur la logique pure et les use cases (faux repositories) ; pas de

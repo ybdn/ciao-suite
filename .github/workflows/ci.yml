@@ -23,8 +23,8 @@ jobs:
     outputs:
       galerie: ${{ steps.filter.outputs.galerie }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           # Ajouter une entrée par app (voir « Ajouter une app » dans le README).

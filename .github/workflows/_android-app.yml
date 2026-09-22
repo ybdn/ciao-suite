@@ -20,23 +20,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Configurer le JDK
-        uses: actions/setup-java@v4
+      # Cache Gradle fourni par setup-java (MIT). Pas de gradle/actions : depuis la v6, son cache
+      # est un composant propriétaire soumis à des conditions d'utilisation.
+      - name: Configurer le JDK et le cache Gradle
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
-
-      - name: Configurer Gradle (cache inclus)
-        uses: gradle/actions/setup-gradle@v4
+          cache: gradle
 
       - name: Build et tests unitaires
         run: ./gradlew :apps:${{ inputs.app }}:assembleDebug :apps:${{ inputs.app }}:testDebugUnitTest --no-daemon
 
       - name: Upload de l'APK en artifact
         if: ${{ inputs.upload-apk }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ciao-${{ inputs.app }}-debug-apk
           path: apps/${{ inputs.app }}/build/outputs/apk/debug/*.apk
