@@ -1,6 +1,7 @@
 import com.android.build.api.dsl.ApplicationExtension
 import dev.ybdn.ciao.buildlogic.CiaoSdk
 import dev.ybdn.ciao.buildlogic.configureKotlinAndroid
+import dev.ybdn.ciao.buildlogic.configureNoInternetPermissionGuard
 import dev.ybdn.ciao.buildlogic.configureReleaseSigning
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -30,6 +31,8 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
                 configureReleaseSigning(this)
             }
+
+            configureNoInternetPermissionGuard()
         }
     }
 }
