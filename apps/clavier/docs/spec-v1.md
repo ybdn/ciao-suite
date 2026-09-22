@@ -33,7 +33,7 @@ qui gèrent correctement le français (accents, apostrophes, typographie).
 
 Saisie par glissement, saisie vocale hors ligne, autres langues et dispositions (anglais, QWERTY,
 BÉPO), prédiction du mot suivant (sauf si les données du dictionnaire le permettent sans surcoût,
-voir §6.2), recherche d'emojis, GIF et stickers (impossibles sans service en ligne), mode une main,
+voir §7.2), recherche d'emojis, GIF et stickers (impossibles sans service en ligne), mode une main,
 clavier flottant, traduction.
 
 ## 3. Principes non négociables
@@ -41,7 +41,7 @@ clavier flottant, traduction.
 Déclinaison de `docs/vision.md` pour un clavier, qui voit **tout** ce que l'utilisateur tape :
 
 1. **Aucune permission réseau.** Le manifeste fusionné ne doit pas contenir `INTERNET`. C'est
-   vérifié automatiquement au build (voir §9) : c'est la garantie la plus forte qu'on puisse donner
+   vérifié automatiquement au build (voir §10) : c'est la garantie la plus forte qu'on puisse donner
    à un utilisateur de clavier.
 2. **Aucune collecte.** Ni journalisation des frappes, ni statistiques, ni rapport de plantage
    envoyé. Les logs de debug ne contiennent jamais de texte saisi.
@@ -78,14 +78,75 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
 - **Latence** : aucun travail lourd sur le fil principal pendant la frappe. Le calcul des
   suggestions tourne sur un dispatcher dédié et le résultat périmé d'une frappe précédente est
   annulé.
-- **Design system** : le clavier et ses réglages utilisent `core/designsystem` (palette, polices
-  Archivo Black et DM Sans, composants `Neo*`), pour une identité C!ao reconnaissable. Le clavier
-  lui-même reprend la palette et les bordures dures, mais adapte les formes à la frappe (touches
-  denses, cibles tactiles d'au moins 48 dp de haut).
+- **Design system** : le clavier et ses réglages utilisent `core/designsystem` (palette, polices,
+  composants `Neo*`). Direction visuelle détaillée au §5.
 
-## 5. Frappe
+## 5. Design : néo-brutalisme, thèmes clair et sombre
 
-### 5.1 Disposition AZERTY (page lettres)
+Le clavier est **néo-brutaliste**, comme toute la suite C!ao : aplats de couleurs saturées, bordures
+franches, ombres dures décalées sans flou, typographie affirmée. C'est l'élément le plus visible de
+l'app (il s'affiche des centaines de fois par jour) : il doit être immédiatement reconnaissable
+comme un clavier C!ao, sans sacrifier la lisibilité ni la vitesse de frappe.
+
+### 5.1 Langage visuel
+
+Mêmes fondations que la Galerie, extraites dans `core/designsystem` (lot 0) :
+
+| Élément | Suite C!ao (Galerie) | Clavier |
+|---|---|---|
+| Bordure | 3 dp, couleur `outline` | **2 dp** : des touches de 32 dp de large n'ont pas la place pour plus |
+| Ombre dure | décalée de 4 dp, vers le bas et la droite, sans flou | **décalée de 3 dp** |
+| Rayon des coins | 8 dp (contrôles) | 6 dp |
+| Effet d'appui | le composant glisse dans son ombre (120 ms) | la touche glisse dans son ombre **instantanément**, et revient en 60 ms au relâchement ; une animation plus lente se ferait sentir en frappe rapide |
+| Polices | Archivo Black (titres), DM Sans (texte) | DM Sans gras pour les libellés des touches (lisibilité) ; Archivo Black pour la barre d'espace (« C!ao ») et les titres des réglages |
+
+### 5.2 Couleurs des touches
+
+Les tons neutres (`page`, `surface`, `surfaceMuted`, `content`, `outline`) s'inversent entre clair
+et sombre ; les accents (Coral, Lime, Yellow, Teal, Sky, Brick) restent identiques et portent
+toujours du texte `Ink`, comme dans la Galerie.
+
+| Élément | Couleur |
+|---|---|
+| Fond du clavier | `page` |
+| Touches de lettres, barre d'espace | `surface` |
+| Touches de fonction (⇧ inactive, ⌫, `?123`, emoji, virgule, point) | `surfaceMuted` |
+| Touche Entrée | **Lime** |
+| ⇧ active (une majuscule) | **Yellow** ; verrouillée : Yellow + icône de verrou |
+| Aperçu de touche, fenêtre des accents | carte `surface` avec ombre dure ; variante sélectionnée en **Coral** |
+| Barre de suggestions | fond `page` ; la suggestion qui sera appliquée par l'autocorrection est une étiquette **Yellow** bordée, les autres sont en texte simple |
+| Puce « coller » (presse-papiers) | étiquette **Teal** |
+| Panneau emojis | onglets de catégories en choix segmenté néo-brutaliste ; catégorie active en **Sky** |
+| Historique du presse-papiers | cartes `surface` ; éléments épinglés marqués d'une étiquette **Teal** |
+
+Ces associations sont indicatives : elles seront ajustées sur maquette puis sur le Pixel (lot 2),
+mais la règle reste la suivante : **touches de saisie en neutre, accents réservés aux états et aux
+actions**, pour que la couleur signifie toujours quelque chose.
+
+### 5.3 Clair et sombre
+
+- **Deux thèmes complets**, clair et sombre, dessinés tous les deux : palettes `LightPalette` et
+  `DarkPalette` du design system (en sombre, l'encre devient crème : bordures et ombres claires sur
+  fond presque noir).
+- Réglage **Thème** : *Système* (par défaut), *Clair*, *Sombre*. Il s'applique au clavier **et** à
+  l'app de réglages.
+- En mode *Système*, le clavier suit le changement de thème du téléphone **en direct**, y compris
+  quand il est affiché (passage automatique en sombre le soir), sans redémarrage.
+- Les barres système de l'app de réglages et la barre de navigation sous le clavier prennent la
+  couleur `page` du thème actif.
+
+### 5.4 Contraintes
+
+- **Contraste** : libellés de touches et suggestions au moins AA (4,5:1), vérifié pour chaque
+  couleur de touche, dans les deux thèmes (tests unitaires sur les paires de couleurs).
+- **Performance** : bordures et ombres dessinées sans flou ni calque hors écran ; l'appui sur une
+  touche ne doit recomposer que cette touche, jamais tout le clavier.
+- **Maquette avant le code** : maquette des pages lettres, symboles, emojis et presse-papiers, en
+  clair et en sombre, validée avant l'implémentation du lot 2.
+
+## 6. Frappe
+
+### 6.1 Disposition AZERTY (page lettres)
 
 ```
  a  z  e  r  t  y  u  i  o  p
@@ -107,7 +168,7 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
 - **Retour** : vibration courte à chaque frappe (réglable, activée par défaut) ; son désactivé par
   défaut.
 
-### 5.2 Autres pages
+### 6.2 Autres pages
 
 - **Symboles** (`?123`) : chiffres et ponctuation courante, puis une seconde page (`=\<`) pour les
   symboles plus rares (€ £ ¥ § ° © ® ™ ¿ ¡ etc.).
@@ -116,7 +177,7 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
 - **E-mail** : touche `@` à la place de la virgule. **URL** : touches `/` et `.fr`/`.com`
   (appui long) à la place de la virgule et de l'emoji.
 
-### 5.3 Règles typographiques françaises
+### 6.3 Règles typographiques françaises
 
 - **Majuscule automatique** en début de champ et après `. ! ?`, si le champ le demande
   (`TYPE_TEXT_FLAG_CAP_SENTENCES`, via `getCursorCapsMode`). Réglable.
@@ -127,9 +188,9 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
 - **Espace insécable** avant `; : ! ?` : réglage désactivé par défaut (beaucoup d'apps et de
   messageries l'affichent mal).
 
-## 6. Suggestions et correction
+## 7. Suggestions et correction
 
-### 6.1 Comportement
+### 7.1 Comportement
 
 - **Barre de suggestions** au-dessus des touches : trois propositions au maximum. Au centre, la
   meilleure proposition, qui sera appliquée par l'autocorrection.
@@ -145,7 +206,7 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
   (`TYPE_TEXT_FLAG_NO_SUGGESTIONS`, champs non textuels).
 - Réglages : suggestions (activées), autocorrection (activée).
 
-### 6.2 Dictionnaire embarqué
+### 7.2 Dictionnaire embarqué
 
 - Un dictionnaire français d'environ 150 000 à 200 000 formes fléchies avec leur fréquence,
   embarqué dans l'APK dans un format compact et rapide à charger (précompilé au build ; l'app
@@ -162,7 +223,7 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
 - Si la source retenue fournit des bigrammes, la prédiction du mot suivant pourra entrer en v1 ;
   sinon, elle est repoussée.
 
-### 6.3 Apprentissage personnel
+### 7.3 Apprentissage personnel
 
 - Un mot inconnu tapé et **conservé** par l'utilisateur deux fois est ajouté au dictionnaire
   personnel. Il est alors suggéré, mais jamais corrigé.
@@ -170,13 +231,13 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
 - **Jamais d'apprentissage** dans les champs sensibles ni en navigation privée (§3).
 - Réglages : liste des mots appris (recherche, suppression unitaire), ajout manuel, effacement total.
 
-### 6.4 Objectifs de qualité
+### 7.4 Objectifs de qualité
 
 - Moins de 50 ms entre une frappe et l'affichage des suggestions sur le Pixel 10 Pro.
 - Le moteur est testé unitairement sur un jeu de cas français versionné dans le dépôt : fautes de
   frappe courantes, accents, élisions, majuscules, noms propres.
 
-## 7. Emojis
+## 8. Emojis
 
 - Touche 😊 (appui long sur la virgule quand la touche est masquée) → panneau emojis à la place des
   touches.
@@ -188,7 +249,7 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
   la version d'emoji affichable par la police système (`EmojiCompat` si nécessaire).
 - Pas d'emojis récents enregistrés en navigation privée.
 
-## 8. Presse-papiers
+## 9. Presse-papiers
 
 - L'historique s'affiche depuis une touche dédiée de la barre de suggestions (icône
   presse-papiers) : les derniers textes copiés, du plus récent au plus ancien ; un appui colle.
@@ -201,7 +262,7 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
   gestionnaires de mots de passe) ne sont ni enregistrées ni proposées.
 - Réglages : activer/désactiver l'historique (activé), durée, tout effacer.
 
-## 9. Réglages et installation
+## 10. Réglages et installation
 
 **App de réglages** (icône C!ao Clavier dans le lanceur), en Compose avec le design system C!ao :
 
@@ -211,8 +272,8 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
    zone de test pour essayer le clavier.
 2. **Préférences** : frappe (vibration, son, aperçu, majuscule automatique, double espace, espace
    insécable), correction (suggestions, autocorrection), presse-papiers, apparence (thème
-   système/clair/sombre, hauteur du clavier en 3 tailles).
-3. **Dictionnaire personnel** (§6.3) et **données** : tout effacer (mots, récents, presse-papiers).
+   système/clair/sombre, voir §5.3 ; hauteur du clavier en 3 tailles).
+3. **Dictionnaire personnel** (§7.3) et **données** : tout effacer (mots, récents, presse-papiers).
 4. **À propos** : version, licences (dictionnaire, données Unicode, polices), lien vers le code
    source et la politique de confidentialité.
 
@@ -220,15 +281,15 @@ apps/clavier/src/main/kotlin/dev/ybdn/ciao/clavier/
 déclare pas la permission `INTERNET` (le build échoue sinon). Elle est ajoutée aux plugins de
 convention pour s'appliquer à toutes les apps de la suite qui n'en ont pas besoin.
 
-## 10. Accessibilité
+## 11. Accessibilité
 
 - Chaque touche a une description TalkBack (« e accent aigu », « Majuscule verrouillée »…) ;
   compatibilité avec l'exploration tactile du clavier par TalkBack.
-- Contrastes de la palette C!ao vérifiés pour les libellés de touches, en clair et en sombre.
+- Contrastes vérifiés pour les libellés de touches, en clair et en sombre (§5.4).
 - Respect de la taille de police système dans les réglages (le clavier garde des libellés à taille
   fixe, mais la hauteur est réglable).
 
-## 11. Plan de réalisation
+## 12. Plan de réalisation
 
 Chaque lot = une ou plusieurs PR, avec une issue dédiée dans le jalon « C!ao Clavier v1 ».
 
@@ -236,7 +297,7 @@ Chaque lot = une ou plusieurs PR, avec une issue dédiée dans le jalon « C!ao 
 |---|---|---|
 | 0 | **`core/designsystem`** : extraction du thème et des composants `Neo*` de la Galerie, sans changement visuel ; garde-fou `INTERNET` dans `build-logic` | — |
 | 1 | **Squelette** : module `apps/clavier`, `InputMethodService` + Compose, app de réglages avec la mise en route, job CI, `PRIVACY.md`, `CHANGELOG.md`, `CLAUDE.md` | 0 |
-| 2 | **Frappe** : AZERTY, majuscules, accents, pages symboles, claviers spécialisés, touche Entrée, retour arrière, curseur sur l'espace, vibration, aperçu | 1 |
+| 2 | **Frappe** : maquette validée (§5.4), touches néo-brutalistes en clair et sombre, AZERTY, majuscules, accents, pages symboles, claviers spécialisés, touche Entrée, retour arrière, curseur sur l'espace, vibration, aperçu | 1 |
 | 3 | **Règles françaises** : majuscule automatique, double espace, élisions, espace insécable | 2 |
 | 4 | **Dictionnaire et suggestions** : choix de la source (licence), format compilé, moteur (complétion, proximité, accents), barre de suggestions, autocorrection et annulation | 3 |
 | 5 | **Apprentissage et vie privée** : dictionnaire personnel, champs sensibles, navigation privée, exclusion des sauvegardes, écran de gestion | 4 |
@@ -246,7 +307,7 @@ Chaque lot = une ou plusieurs PR, avec une issue dédiée dans le jalon « C!ao 
 
 Les lots 6 et 7 sont indépendants des lots 3 à 5 et peuvent avancer en parallèle.
 
-## 12. Points ouverts
+## 13. Points ouverts
 
 1. **Source du dictionnaire** et sa licence (lot 4) : c'est le seul point qui peut remettre en cause
    la qualité des suggestions.
