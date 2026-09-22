@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">C!ao Clavier</string>
+
+    <string name="onboarding_title">Mise en route</string>
+    <string name="onboarding_intro">C!ao Clavier ne se connecte jamais à Internet : aucune frappe ne quitte l’appareil.</string>
+    <string name="onboarding_step_enable_title">1. Activer le clavier</string>
+    <string name="onboarding_step_enable_body">Ouvre les réglages système pour autoriser C!ao Clavier parmi les claviers disponibles.</string>
+    <string name="onboarding_step_enable_action">Activer C!ao Clavier</string>
+    <string name="onboarding_step_enable_done">C!ao Clavier est activé.</string>
+    <string name="onboarding_step_select_title">2. Choisir le clavier</string>
+    <string name="onboarding_step_select_body">Sélectionne C!ao Clavier comme clavier actif pour l’utiliser.</string>
+    <string name="onboarding_step_select_action">Choisir C!ao Clavier</string>
+    <string name="onboarding_test_title">Zone de test</string>
+    <string name="onboarding_test_label">Essaie le clavier ici</string>
+    <string name="onboarding_test_placeholder">Touche ce champ, puis tape…</string>
+
+    <string name="ime_placeholder">C!ao Clavier — frappe à venir (lot 2)</string>
+    <string name="ime_placeholder_space">espace</string>
+</resources>
