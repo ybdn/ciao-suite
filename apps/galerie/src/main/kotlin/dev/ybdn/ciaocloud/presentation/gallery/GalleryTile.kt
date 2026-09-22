@@ -35,9 +35,9 @@ import coil3.compose.AsyncImage
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.model.MediaType
-import dev.ybdn.ciaocloud.presentation.theme.Ink
-import dev.ybdn.ciaocloud.presentation.theme.Lime
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.Ink
+import dev.ybdn.ciao.designsystem.theme.Lime
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 
 @OptIn(ExperimentalFoundationApi::class)
 /** Vignette carrée sans bordure (lisibilité et performance), badges discrets sur voile sombre. */

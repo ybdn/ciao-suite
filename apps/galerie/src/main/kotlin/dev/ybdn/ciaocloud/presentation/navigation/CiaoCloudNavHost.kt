@@ -24,14 +24,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.GalleryFilter
-import dev.ybdn.ciaocloud.presentation.components.NeoBottomBar
-import dev.ybdn.ciaocloud.presentation.components.NeoNavItem
+import dev.ybdn.ciao.designsystem.components.NeoBottomBar
+import dev.ybdn.ciao.designsystem.components.NeoNavItem
 import dev.ybdn.ciaocloud.presentation.deleteconfirm.DeleteConfirmationScreen
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryScreen
 import dev.ybdn.ciaocloud.presentation.home.HomeScreen
 import dev.ybdn.ciaocloud.presentation.progress.ProgressScreen
 import dev.ybdn.ciaocloud.presentation.settings.SettingsScreen
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import dev.ybdn.ciaocloud.presentation.trash.TrashScreen
 import dev.ybdn.ciaocloud.presentation.triage.TriageScreen
 import dev.ybdn.ciaocloud.presentation.triageconfirm.TriageConfirmScreen

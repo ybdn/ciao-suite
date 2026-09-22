@@ -1,4 +1,4 @@
-package dev.ybdn.ciaocloud.presentation.components
+package dev.ybdn.ciao.designsystem.components
 
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets

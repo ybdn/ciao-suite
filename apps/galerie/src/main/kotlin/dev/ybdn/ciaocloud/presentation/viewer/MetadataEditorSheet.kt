@@ -31,7 +31,7 @@ import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.CaptureTimestamp
 import dev.ybdn.ciaocloud.domain.model.FieldChange
 import dev.ybdn.ciaocloud.domain.util.CaptureDates
-import dev.ybdn.ciaocloud.presentation.theme.Brick
+import dev.ybdn.ciao.designsystem.theme.Brick
 import androidx.compose.ui.text.font.FontFamily
 import java.time.ZoneId
 import dev.ybdn.ciaocloud.domain.model.GeoPoint
@@ -39,14 +39,14 @@ import dev.ybdn.ciaocloud.domain.model.MediaDetails
 import dev.ybdn.ciaocloud.domain.model.MetadataChanges
 import dev.ybdn.ciaocloud.domain.util.ExifWritePlan
 import dev.ybdn.ciaocloud.domain.util.GpsCoordinateParser
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTextField
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
-import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTextField
+import dev.ybdn.ciao.designsystem.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.stableNavigationBarsPadding
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import java.util.Locale
 
 /**

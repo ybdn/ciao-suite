@@ -42,16 +42,16 @@ import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.TriageDeletionPlan
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.components.BorderWidth
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
-import dev.ybdn.ciaocloud.presentation.components.NeoTopBar
-import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
+import dev.ybdn.ciao.designsystem.components.BorderWidth
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoTopBar
+import dev.ybdn.ciao.designsystem.components.stableNavigationBarsPadding
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryEventsEffect
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryTile
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 
 /**

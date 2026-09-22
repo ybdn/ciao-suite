@@ -1,4 +1,4 @@
-package dev.ybdn.ciaocloud.presentation.theme
+package dev.ybdn.ciao.designsystem.theme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color

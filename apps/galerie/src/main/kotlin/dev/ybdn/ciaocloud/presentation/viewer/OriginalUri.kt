@@ -10,8 +10,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoTone
 
 /** Accès à l'original d'une page de la visionneuse. */
 sealed interface OriginalUri {

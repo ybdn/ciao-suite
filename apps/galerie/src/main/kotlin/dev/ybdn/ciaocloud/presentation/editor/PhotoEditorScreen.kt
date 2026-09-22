@@ -61,19 +61,19 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
-import dev.ybdn.ciaocloud.presentation.components.BorderWidth
-import dev.ybdn.ciaocloud.presentation.theme.Lime
+import dev.ybdn.ciao.designsystem.components.BorderWidth
+import dev.ybdn.ciao.designsystem.theme.Lime
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
 import dev.ybdn.ciaocloud.presentation.ciaoCloudSavedStateViewModel
-import dev.ybdn.ciaocloud.presentation.components.NeoAction
-import dev.ybdn.ciaocloud.presentation.components.NeoActionBar
-import dev.ybdn.ciaocloud.presentation.components.NeoChipRow
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoTopBar
+import dev.ybdn.ciao.designsystem.components.NeoAction
+import dev.ybdn.ciao.designsystem.components.NeoActionBar
+import dev.ybdn.ciao.designsystem.components.NeoChipRow
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoTopBar
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryImages
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 
 /** Onglets d'outils de l'éditeur. */
 enum class EditorTab { CROP, LIGHT, COLOR, EFFECTS, FILTERS }

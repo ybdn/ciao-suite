@@ -20,8 +20,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.domain.util.CropGeometry
-import dev.ybdn.ciaocloud.presentation.theme.Coral
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.Coral
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import java.util.Locale
 import kotlin.math.floor
 import kotlin.math.roundToInt

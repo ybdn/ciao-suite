@@ -1,4 +1,4 @@
-package dev.ybdn.ciaocloud.presentation.theme
+package dev.ybdn.ciao.designsystem.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -19,7 +19,7 @@ object NeoTheme {
 }
 
 @Composable
-fun CiaoCloudTheme(
+fun CiaoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
@@ -44,7 +44,7 @@ fun CiaoCloudTheme(
     CompositionLocalProvider(LocalNeoPalette provides palette) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = CiaoCloudTypography,
+            typography = CiaoTypography,
             content = content,
         )
     }

@@ -21,13 +21,13 @@ import androidx.compose.ui.text.font.FontFamily
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.ThemeMode
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoScreen
-import dev.ybdn.ciaocloud.presentation.components.NeoSegmentedChoice
-import dev.ybdn.ciaocloud.presentation.components.NeoSwitchRow
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoScreen
+import dev.ybdn.ciao.designsystem.components.NeoSegmentedChoice
+import dev.ybdn.ciao.designsystem.components.NeoSwitchRow
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciaocloud.presentation.gallery.SsdIndexControls
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 

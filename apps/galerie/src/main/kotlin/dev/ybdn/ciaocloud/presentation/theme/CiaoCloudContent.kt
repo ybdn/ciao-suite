@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.data.datastore.SettingsDataStore
 import dev.ybdn.ciaocloud.domain.model.ThemeMode
+import dev.ybdn.ciao.designsystem.theme.CiaoTheme
 
 /**
  * Racine commune des activités : thème choisi dans les réglages, barres système transparentes aux
@@ -38,5 +39,5 @@ fun ComponentActivity.CiaoCloudContent(
         onDispose { }
     }
 
-    CiaoCloudTheme(darkTheme = darkTheme, content = content)
+    CiaoTheme(darkTheme = darkTheme, content = content)
 }

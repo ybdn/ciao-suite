@@ -15,15 +15,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.model.TransferAbortReason
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoProgressBar
-import dev.ybdn.ciaocloud.presentation.components.NeoScreen
-import dev.ybdn.ciaocloud.presentation.components.NeoStat
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
-import dev.ybdn.ciaocloud.presentation.theme.Teal
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoProgressBar
+import dev.ybdn.ciao.designsystem.components.NeoScreen
+import dev.ybdn.ciao.designsystem.components.NeoStat
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTone
+import dev.ybdn.ciao.designsystem.theme.Teal
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 
 @Composable

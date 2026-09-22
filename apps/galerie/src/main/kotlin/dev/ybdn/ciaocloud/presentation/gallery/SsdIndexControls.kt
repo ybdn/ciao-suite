@@ -7,9 +7,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.R
 import dev.ybdn.ciaocloud.domain.usecase.SsdIndexState
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoNotice
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoNotice
+import dev.ybdn.ciao.designsystem.components.NeoTone
 
 /** Bouton « Actualiser le SSD » et état de la réindexation (Réglages et galerie vide). */
 @Composable

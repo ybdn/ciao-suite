@@ -1,4 +1,4 @@
-package dev.ybdn.ciaocloud.presentation.components
+package dev.ybdn.ciao.designsystem.components
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -58,15 +58,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.ybdn.ciaocloud.presentation.theme.Brick
-import dev.ybdn.ciaocloud.presentation.theme.Coral
-import dev.ybdn.ciaocloud.presentation.theme.Ink
-import dev.ybdn.ciaocloud.presentation.theme.LabelMono
-import dev.ybdn.ciaocloud.presentation.theme.Lime
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
-import dev.ybdn.ciaocloud.presentation.theme.Sky
-import dev.ybdn.ciaocloud.presentation.theme.Teal
-import dev.ybdn.ciaocloud.presentation.theme.Yellow
+import dev.ybdn.ciao.designsystem.theme.Brick
+import dev.ybdn.ciao.designsystem.theme.Coral
+import dev.ybdn.ciao.designsystem.theme.Ink
+import dev.ybdn.ciao.designsystem.theme.LabelMono
+import dev.ybdn.ciao.designsystem.theme.Lime
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.Sky
+import dev.ybdn.ciao.designsystem.theme.Teal
+import dev.ybdn.ciao.designsystem.theme.Yellow
 
 val BorderWidth = 3.dp
 val ShadowOffset = 4.dp

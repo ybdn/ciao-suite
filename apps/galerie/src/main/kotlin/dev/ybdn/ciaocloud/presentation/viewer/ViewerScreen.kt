@@ -56,13 +56,13 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.ui.draw.alpha
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciaocloud.presentation.ciaoCloudViewModel
-import dev.ybdn.ciaocloud.presentation.components.NeoAction
-import dev.ybdn.ciaocloud.presentation.components.NeoActionBar
-import dev.ybdn.ciaocloud.presentation.components.NeoTopBar
+import dev.ybdn.ciao.designsystem.components.NeoAction
+import dev.ybdn.ciao.designsystem.components.NeoActionBar
+import dev.ybdn.ciao.designsystem.components.NeoTopBar
 import dev.ybdn.ciaocloud.presentation.gallery.DeleteItemsDialog
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryEventsEffect
 import dev.ybdn.ciaocloud.presentation.gallery.ShareDialogs
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 

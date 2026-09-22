@@ -23,7 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.R
-import dev.ybdn.ciaocloud.presentation.components.stableNavigationBarsPadding
+import dev.ybdn.ciao.designsystem.components.stableNavigationBarsPadding
 import dev.ybdn.ciaocloud.domain.model.EditAvailability
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
@@ -36,13 +36,13 @@ import dev.ybdn.ciaocloud.domain.model.MediaDetails
 import dev.ybdn.ciaocloud.domain.model.MeteringMode
 import dev.ybdn.ciaocloud.domain.model.SceneType
 import dev.ybdn.ciaocloud.domain.util.MediaMetadataCodes
-import dev.ybdn.ciaocloud.presentation.components.NeoButton
-import dev.ybdn.ciaocloud.presentation.components.NeoCard
-import dev.ybdn.ciaocloud.presentation.components.NeoTag
-import dev.ybdn.ciaocloud.presentation.components.NeoTone
+import dev.ybdn.ciao.designsystem.components.NeoButton
+import dev.ybdn.ciao.designsystem.components.NeoCard
+import dev.ybdn.ciao.designsystem.components.NeoTag
+import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciaocloud.presentation.gallery.formatDay
 import dev.ybdn.ciaocloud.presentation.gallery.formatDuration
-import dev.ybdn.ciaocloud.presentation.theme.NeoTheme
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import dev.ybdn.ciaocloud.presentation.util.formatBytes
 import java.time.Instant
 import java.time.ZoneId
