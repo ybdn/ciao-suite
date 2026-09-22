@@ -1,3 +1,9 @@
+> **Note (v5)** : la clause "Pas de publication Play Store" de ce document (section CI/CD
+> ci-dessous) est obsolète — voir [`docs/spec-v5-publication-publique.md`](docs/spec-v5-publication-publique.md),
+> qui prime sur ce document pour tout ce qui touche à la distribution, la licence et la
+> confidentialité. Le reste de ce document (modèle d'usage mono-utilisateur, architecture,
+> workflow) reste d'actualité.
+
 # Projet : C!ao — Application Android personnelle de délestage photos/vidéos vers SSD
 
 ## Contexte
