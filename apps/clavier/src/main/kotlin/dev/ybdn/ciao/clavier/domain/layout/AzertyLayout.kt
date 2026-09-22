@@ -2,8 +2,8 @@ package dev.ybdn.ciao.clavier.domain.layout
 
 /**
  * Disposition AZERTY, page lettres uniquement (apps/clavier/docs/spec-v1.md §6.1).
- * Chaque touche porte un poids relatif (largeur dans sa rangée) ; toutes les rangées totalisent
- * le même poids (10) pour rester alignées entre elles.
+ * Chaque touche porte un poids relatif (largeur dans sa rangée), repris de la maquette : les trois
+ * premières rangées totalisent 10, la dernière 10,5 (barre d'espace de 4,5).
  */
 object AzertyLayout {
 
@@ -26,7 +26,7 @@ object AzertyLayout {
         Slot(Key.Symbols, weight = 1.5f),
         Slot(Key.Comma),
         Slot(Key.Emoji),
-        Slot(Key.Space, weight = 4f),
+        Slot(Key.Space, weight = 4.5f),
         Slot(Key.Period),
         Slot(Key.Enter, weight = 1.5f),
     )

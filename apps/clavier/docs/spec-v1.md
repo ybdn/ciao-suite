@@ -93,13 +93,17 @@ symboles, emojis, presse-papiers, en clair et en sombre) sert de référence vis
 
 | Élément | Bordure | Ombre dure | Justification |
 |---|---|---|---|
-| Touches | 2 px (fine) | 3 px (petite) | Une quarantaine de touches d'environ 32 dp : la bordure fine garde les libellés lisibles |
+| Touches | 2 px (fine) | 3 px (petite) | Une quarantaine de touches d'environ 33 dp de large : la bordure fine garde les libellés lisibles |
 | Puces de la barre de suggestions, onglet emoji actif | 2 px | 3 px (petite) | Actions en ligne |
 | Champ de test des réglages | 3 px | 5 px (moyenne), soulevé de 1 px au focus | Champ actif |
 | Cartes du presse-papiers | 3 px | 5 px (moyenne) | Cartes |
 | Aperçu de touche, fenêtre des accents et des couleurs de peau | 3 px | 8 px (grande) | Éléments flottants |
 | Bord supérieur du clavier | 3 px | — | Séparateur de section |
 
+- **Dimensions calées sur Gboard** (hauteur normale, téléphone en portrait) : bandeau de
+  suggestions de 48 dp, toujours affiché (bouton presse-papiers, séparateur, puis suggestions) ; touches de 46 dp de haut, au pas de 56 dp (10 dp entre rangées) ; 6 dp
+  entre deux touches ; 4 dp de marge latérale ; 8 dp au-dessus de la première rangée et sous la
+  dernière. Soit environ 278 dp avec le bandeau, hors barre de navigation.
 - **Coins carrés** partout (0 dp).
 - **Appui** : la touche glisse de 3 dp dans le sens de son ombre, qui disparaît. Le passage à
   l'état appuyé est **instantané** (une animation se sentirait en frappe rapide) ; le retour dure
