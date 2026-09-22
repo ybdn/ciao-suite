@@ -1,11 +1,15 @@
-# C!ao
+# C!ao Galerie
 
-Application Android **strictement personnelle**, sans backend ni compte, qui délestage
-manuellement les photos et vidéos du stockage local d'un téléphone vers un SSD externe branché
-en USB-C (OTG), en les rangeant par date (`DCIM/{année}/{mois}/{jour}`), puis supprime les
-originaux du téléphone uniquement après vérification de la copie.
+Application Android **sans backend, sans compte, sans cloud**, qui délestage manuellement les
+photos et vidéos du stockage local d'un téléphone vers un SSD externe branché en USB-C (OTG), en
+les rangeant par date (`DCIM/{année}/{mois}/{jour}`), puis supprime les originaux du téléphone
+uniquement après vérification de la copie. Conçue pour un usage mono-utilisateur/mono-device :
+chacun l'installe pour son propre usage, sans synchronisation entre appareils.
 
-La spécification complète et faisant autorité du projet est [`prompt-initial.md`](prompt-initial.md).
+La spécification complète et faisant autorité du projet est [`prompt-initial.md`](prompt-initial.md)
+(voir aussi [`docs/spec-v5-publication-publique.md`](docs/spec-v5-publication-publique.md) pour la
+publication publique, qui prime en cas de contradiction). Licence [MIT](LICENSE) —
+[politique de confidentialité](PRIVACY.md).
 
 ## Prérequis
 
@@ -25,15 +29,38 @@ Depuis la racine du projet :
 
 L'APK généré se trouve dans `app/build/outputs/apk/debug/app-debug.apk`.
 
-Un build `release` nécessite une configuration de signature (`signingConfigs`) qui n'est pas
-fournie dans ce dépôt (usage strictement personnel, distribution par APK debug ou signé
-manuellement). Pour builder en release une fois une configuration de signature ajoutée :
+### Signature release
+
+Le build `release` est minifié (R8) et non signé par défaut. Pour produire un APK/AAB signé,
+créer un fichier `keystore.properties` à la racine du dépôt (gitignored, jamais commité) :
+
+```properties
+storeFile=/chemin/vers/ma-cle.jks
+storePassword=...
+keyAlias=...
+keyPassword=...
+```
+
+Générer la clé si besoin (à faire une seule fois, à conserver précieusement — sa perte empêche
+toute mise à jour future de l'app publiée) :
+
+```bash
+keytool -genkeypair -v -keystore ma-cle.jks -alias ciao -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Puis builder :
 
 ```bash
 ./gradlew :app:assembleRelease
+# ou pour le Play Store :
+./gradlew :app:bundleRelease
 ```
 
-## Installer l'APK en local (pas de Play Store)
+Sans `keystore.properties`, `assembleRelease` reste utilisable (build non signé, ex. CI).
+
+## Installer l'APK en local
+
+Pour un usage hors Play Store (dev, test) :
 
 1. Récupérer l'APK (build local ci-dessus, ou artifact téléchargé depuis un run GitHub Actions —
    voir [CI/CD](#cicd)).
@@ -44,7 +71,7 @@ manuellement). Pour builder en release une fois une configuration de signature a
 ## Autoriser l'accès au SSD (première utilisation)
 
 1. Brancher le SSD au téléphone via l'adaptateur USB-C OTG.
-2. Ouvrir C!ao, puis appuyer sur **Choisir le dossier SSD** (écran d'accueil ou Paramètres).
+2. Ouvrir C!ao Galerie, puis appuyer sur **Choisir le dossier SSD** (écran d'accueil ou Paramètres).
 3. Dans le sélecteur système, naviguer jusqu'à la racine du SSD et confirmer.
 4. L'autorisation est persistée (`takePersistableUriPermission`) : elle n'est pas redemandée aux
    lancements suivants, tant que le SSD reste accessible avec le même volume/chemin. Si la
@@ -116,12 +143,12 @@ appliquée, JPEG qualité 95, HEIC/AVIF convertis en JPEG), vidéos remultiplex�
 média qui ne peut pas être nettoyé (GIF, piste vidéo refusée…) n'est jamais partagé tel quel :
 l'app propose de partager les autres ou d'annuler.
 
-### Définir C!ao comme visionneuse par défaut
+### Définir C!ao Galerie comme visionneuse par défaut
 
-C!ao répond à l'ouverture d'images/vidéos (`VIEW`) et au retour de l'appareil photo
+C!ao Galerie répond à l'ouverture d'images/vidéos (`VIEW`) et au retour de l'appareil photo
 (`REVIEW`, et `REVIEW_SECURE` écran verrouillé). Pour l'utiliser à la place de Google Photos :
 Paramètres Android › Applis › Applis par défaut (ou, pour une app donnée, « Ouvrir par défaut »),
-puis choisir C!ao au prochain choix d'app proposé.
+puis choisir C!ao Galerie au prochain choix d'app proposé.
 
 À vérifier sur le Pixel : l'app Appareil photo Pixel peut ouvrir Google Photos en priorité quand
 elle est installée ; procédure exacte à compléter après test sur l'appareil.
@@ -139,9 +166,10 @@ passage de la CI.
 
 ## CI/CD
 
-- **`build-main.yml`** : sur push/merge vers `main`, build l'APK (`assembleDebug`, en attendant
-  une configuration de signature pour `assembleRelease`) et l'upload comme artifact du run
-  GitHub Actions — récupérable manuellement sans build local.
+- **`build-main.yml`** : sur push/merge vers `main`, build l'APK (`assembleDebug`) et l'upload
+  comme artifact du run GitHub Actions — récupérable manuellement sans build local. Pas de
+  publication automatique sur le Play Store (`bundleRelease` signé se fait manuellement en local,
+  voir [Signature release](#signature-release)).
 - **`pr-check.yml`** : sur pull request vers `develop`/`main`, build de vérification
   (`assembleDebug`) + tests unitaires, pour éviter de casser `main`.
 
@@ -206,4 +234,12 @@ Base Room versionnée avec migrations explicites (schémas exportés dans `app/s
 Voir [`CLAUDE.md`](CLAUDE.md), [`prompt-initial.md`](prompt-initial.md) et
 [`docs/spec-v2-fiabilisation-visionneuse.md`](docs/spec-v2-fiabilisation-visionneuse.md) et
 [`docs/spec-v3-edition-photos.md`](docs/spec-v3-edition-photos.md) et
-[`docs/spec-v4-tri-pellicule.md`](docs/spec-v4-tri-pellicule.md) pour le détail complet.
+[`docs/spec-v4-tri-pellicule.md`](docs/spec-v4-tri-pellicule.md) et
+[`docs/spec-v5-publication-publique.md`](docs/spec-v5-publication-publique.md) pour le détail
+complet.
+
+## Licence et confidentialité
+
+Code source sous licence [MIT](LICENSE). Voir la [politique de confidentialité](PRIVACY.md) pour
+le détail des données locales accédées par l'application (aucune donnée n'est jamais collectée
+ni transmise).
