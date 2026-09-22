@@ -38,8 +38,25 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      # Non signée : pas de keystore.properties en CI (fichier local, jamais versionné).
-      # Cf. « Signature release » dans apps/galerie/CLAUDE.md et le CLAUDE.md racine.
+      # keystore.properties reconstitué depuis les secrets du repo : clé d'importation release
+      # commune à toutes les apps (cf. ReleaseSigning.kt et le CLAUDE.md racine). Absent de la
+      # CI si les secrets ne sont pas configurés : le build release reste alors non signé.
+      - name: Reconstituer keystore.properties depuis les secrets
+        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > ciao-suite-release.jks
+          cat > keystore.properties <<EOF
+          storeFile=ciao-suite-release.jks
+          storePassword=$RELEASE_KEYSTORE_PASSWORD
+          keyAlias=$RELEASE_KEY_ALIAS
+          keyPassword=$RELEASE_KEY_PASSWORD
+          EOF
+
       - name: Build de l'APK release
         run: ./gradlew :apps:${{ steps.tag.outputs.app }}:assembleRelease --no-daemon
 
@@ -56,7 +73,7 @@ jobs:
             found { print }
           ' "$changelog" > "$notes_file"
           if [ ! -s "$notes_file" ]; then
-            echo "APK release de $app $version (non signée)." > "$notes_file"
+            echo "APK release de $app $version." > "$notes_file"
           fi
           echo "notes_file=$notes_file" >> "$GITHUB_OUTPUT"
 
@@ -76,3 +93,7 @@ jobs:
             --title "C!ao $app_title $version" \
             --notes-file "${{ steps.notes.outputs.notes_file }}" \
             "${prerelease_flag[@]}"
+
+      - name: Nettoyer le keystore du runner
+        if: always()
+        run: rm -f ciao-suite-release.jks keystore.properties
