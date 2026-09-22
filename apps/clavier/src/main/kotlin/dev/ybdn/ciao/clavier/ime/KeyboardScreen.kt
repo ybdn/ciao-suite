@@ -57,16 +57,16 @@ private const val BackspaceInitialDelayMs = 400L
 private const val BackspaceRepeatDelayMs = 60L
 
 /**
- * Dimensions reprises au pixel près de la maquette validée (`renderVals()` de la maquette
- * interactive citée en apps/clavier/docs/spec-v1.md §5 : `padding: 8px 6px 12px`, rangées
- * `gap: 5px; padding-right: 3px`, touches `height: 44px`).
+ * Dimensions calées sur Gboard (hauteur « normale », téléphone en portrait), reprises au pixel
+ * près de la maquette (apps/clavier/docs/spec-v1.md §5.1) : touches de 46 dp au pas de 56 dp,
+ * 6 dp entre deux touches, 4 dp de marge latérale, 8 dp en haut et en bas.
  */
-private val KeyHeight = 44.dp
+private val KeyHeight = 46.dp
 private val RowGap = 10.dp
-private val KeyGap = 5.dp
-private val SidePadding = 6.dp
+private val KeyGap = 6.dp
+private val SidePadding = 4.dp
 private val TopPadding = 8.dp
-private val BottomPadding = 12.dp
+private val BottomPadding = 8.dp
 
 /** Marge droite de chaque rangée, pour que l'ombre de la dernière touche ne soit pas coupée. */
 private val RowEndPadding = 3.dp
