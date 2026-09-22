@@ -1,0 +1,43 @@
+# Workflow réutilisable : build + tests unitaires d'une app de la suite.
+# Appelé par un workflow par app (galerie.yml, ...) qui filtre sur les chemins concernés.
+name: App Android (réutilisable)
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: "Nom du module sous apps/ (ex. galerie)"
+        required: true
+        type: string
+      upload-apk:
+        description: "Publier l'APK debug comme artifact du run"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurer le JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurer Gradle (cache inclus)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build et tests unitaires
+        run: ./gradlew :apps:${{ inputs.app }}:assembleDebug :apps:${{ inputs.app }}:testDebugUnitTest --no-daemon
+
+      - name: Upload de l'APK en artifact
+        if: ${{ inputs.upload-apk }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciao-${{ inputs.app }}-debug-apk
+          path: apps/${{ inputs.app }}/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

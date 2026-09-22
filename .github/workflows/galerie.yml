@@ -1,0 +1,33 @@
+name: Galerie
+
+# Ne se déclenche que si la Galerie, le code partagé ou la configuration de build change.
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "apps/galerie/**"
+      - "core/**"
+      - "build-logic/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/galerie.yml"
+      - ".github/workflows/_android-app.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/galerie/**"
+      - "core/**"
+      - "build-logic/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/galerie.yml"
+      - ".github/workflows/_android-app.yml"
+
+jobs:
+  galerie:
+    uses: ./.github/workflows/_android-app.yml
+    with:
+      app: galerie
+      upload-apk: ${{ github.event_name == 'push' }}
