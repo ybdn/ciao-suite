@@ -26,6 +26,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Vérifier le wrapper Gradle
+        run: sh .github/scripts/verify-gradle-wrapper.sh
+
       # Cache Gradle fourni par setup-java (MIT). Pas de gradle/actions : depuis la v6, son cache
       # est un composant propriétaire soumis à des conditions d'utilisation.
       - name: Configurer le JDK et le cache Gradle
@@ -39,6 +42,20 @@ jobs:
         env:
           APP: ${{ inputs.app }}
         run: ./gradlew ":apps:$APP:assembleDebug" ":apps:$APP:testDebugUnitTest" --no-daemon
+
+      - name: Lint
+        env:
+          APP: ${{ inputs.app }}
+        run: ./gradlew ":apps:$APP:lintDebug" --no-daemon
+
+      - name: Upload du rapport de lint en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ciao-${{ inputs.app }}-lint-report
+          path: apps/${{ inputs.app }}/build/reports/lint-results-debug.html
+          retention-days: 7
+          if-no-files-found: ignore
 
       # R8 ne tourne qu'en release : sans ce build, une régression (règles keep, minification)
       # n'apparaîtrait qu'au tag de version. L'APK reste non signé, sans keystore.properties.
