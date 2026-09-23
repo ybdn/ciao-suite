@@ -1,5 +1,11 @@
 # Mises à jour automatiques proposées en PR. Les titres respectent le format de commit exigé par
-# pr-title.yml (docs/workflow-git.md) ; les mises à jour sont groupées pour limiter le bruit.
+# pr-title.yml (docs/workflow-git.md).
+#
+# Groupes Gradle, dans l'ordre de priorité (une dépendance va dans le premier qui la correspond) :
+#  - `toolchain` : AGP, Kotlin, KSP et compilateur Compose, dont les versions sont couplées ;
+#    ils montent ensemble (même en majeur) pour ne pas casser `build-logic/` isolément ;
+#  - `minor-patch` : tout le reste en mise à jour mineure ou corrective, sans risque de rupture ;
+#  - les mises à jour majeures restantes ont chacune leur PR, pour ne pas bloquer les autres.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -8,9 +14,13 @@ updates:
       interval: monthly
     commit-message:
       prefix: ci
+    labels: [dependencies, suite]
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 3
     groups:
-      actions:
-        patterns: ["*"]
+      actions-minor-patch:
+        update-types: [minor, patch]
 
   - package-ecosystem: gradle
     directory: /
@@ -18,6 +28,16 @@ updates:
       interval: monthly
     commit-message:
       prefix: build
+    labels: [dependencies, suite]
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 3
     groups:
-      gradle:
-        patterns: ["*"]
+      toolchain:
+        patterns:
+          - "com.android.*"
+          - "org.jetbrains.kotlin.*"
+          - "org.jetbrains.kotlin:*"
+          - "com.google.devtools.ksp*"
+      minor-patch:
+        update-types: [minor, patch]
