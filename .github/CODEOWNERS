@@ -1,0 +1,5 @@
+# Relecture demandée automatiquement sur les PR. Les workflows et le build ont accès aux secrets
+# de signature : toute modification y est à relire avec attention.
+*                    @ybdn
+/.github/            @ybdn
+/build-logic/        @ybdn

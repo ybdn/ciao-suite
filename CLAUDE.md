@@ -47,7 +47,8 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
 
 ./gradlew :apps:galerie:assembleDebug        # build debug d'une app
 ./gradlew :apps:galerie:testDebugUnitTest    # tests unitaires d'une app
-./gradlew :apps:galerie:assembleRelease      # release R8 (non signée sans keystore.properties)
+./gradlew :apps:galerie:lintDebug            # lint d'une app (exigé par la CI)
+./gradlew :apps:galerie:assembleRelease      # release R8 (non signé sans keystore.properties ; la CI de release exige la signature)
 ```
 
 - JDK 17 via `brew install openjdk@17`. Android SDK via `brew install --cask android-commandlinetools`
@@ -77,7 +78,9 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
   `apps/<app>/CHANGELOG.md` (section « Non publié » complétée pour tout changement visible).
 - CI : `.github/workflows/ci.yml`, un job par app filtré par chemins (`dorny/paths-filter`) qui
   appelle `_android-app.yml`, et un job agrégateur « CI OK » (check exigé) ; `pr-title.yml`
-  vérifie les titres de PR. Ajouter un module `core/` n'exige rien (`core/**` est dans les filtres
+  vérifie les titres de PR ; un job `actionlint` valide les workflows ; chaque app passe aussi
+  lint, `assembleRelease` (R8) et la vérification du jar du wrapper Gradle. Actions épinglées par
+  SHA de commit (Dependabot met les SHA à jour). Ajouter un module `core/` n'exige rien (`core/**` est dans les filtres
   communs) ; ajouter une app demande un filtre, un job et une entrée dans les `needs` de `ci-ok`.
   Actions uniquement open source : pas de `gradle/actions` (cache propriétaire depuis la v6), le
   cache Gradle vient de `actions/setup-java` (`cache: gradle`). Dependabot : PR mensuelles groupées.
