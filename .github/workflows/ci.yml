@@ -9,14 +9,20 @@ on:
   push:
     branches: [main, "release/**"]
 
+permissions:
+  contents: read
+
+# On n'annule que les runs de PR obsolètes : annuler un run de `main` ferait échouer « CI OK »
+# et perdrait l'APK du commit fusionné.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:
     name: Apps modifiées
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
@@ -73,6 +79,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - name: actionlint
@@ -83,6 +90,7 @@ jobs:
     if: always()
     needs: [changes, actionlint, galerie, clavier]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Un job a échoué ou a été annulé
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')

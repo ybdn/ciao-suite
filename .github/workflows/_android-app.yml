@@ -15,9 +15,13 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -32,7 +36,25 @@ jobs:
           cache: gradle
 
       - name: Build et tests unitaires
-        run: ./gradlew :apps:${{ inputs.app }}:assembleDebug :apps:${{ inputs.app }}:testDebugUnitTest --no-daemon
+        env:
+          APP: ${{ inputs.app }}
+        run: ./gradlew ":apps:$APP:assembleDebug" ":apps:$APP:testDebugUnitTest" --no-daemon
+
+      # R8 ne tourne qu'en release : sans ce build, une régression (règles keep, minification)
+      # n'apparaîtrait qu'au tag de version. L'APK reste non signé, sans keystore.properties.
+      - name: Build release (R8)
+        env:
+          APP: ${{ inputs.app }}
+        run: ./gradlew ":apps:$APP:assembleRelease" --no-daemon
+
+      - name: Upload des rapports de tests en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ciao-${{ inputs.app }}-test-reports
+          path: apps/${{ inputs.app }}/build/reports/tests/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Upload de l'APK en artifact
         if: ${{ inputs.upload-apk }}
@@ -40,4 +62,5 @@ jobs:
         with:
           name: ciao-${{ inputs.app }}-debug-apk
           path: apps/${{ inputs.app }}/build/outputs/apk/debug/*.apk
+          retention-days: 14
           if-no-files-found: error

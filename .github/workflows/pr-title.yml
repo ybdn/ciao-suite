@@ -6,10 +6,13 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
+permissions: {}
+
 jobs:
   check:
     name: Titre de PR
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Vérifier le format du titre
         env:
