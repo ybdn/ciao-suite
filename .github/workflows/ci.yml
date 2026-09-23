@@ -23,6 +23,7 @@ jobs:
     outputs:
       galerie: ${{ steps.filter.outputs.galerie }}
       clavier: ${{ steps.filter.outputs.clavier }}
+      workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
@@ -38,6 +39,8 @@ jobs:
               - "gradle.properties"
               - ".github/workflows/ci.yml"
               - ".github/workflows/_android-app.yml"
+            workflows:
+              - ".github/**"
             galerie:
               - *commun
               - "apps/galerie/**"
@@ -63,10 +66,22 @@ jobs:
       app: clavier
       upload-apk: ${{ github.event_name == 'push' }}
 
+  # Une erreur de syntaxe dans un workflow n'apparaît sinon qu'à son exécution (cas de
+  # release.yml, en échec sur chaque push tant que le `if` sur `secrets` était invalide).
+  actionlint:
+    name: Workflows
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color
+
   ci-ok:
     name: CI OK
     if: always()
-    needs: [changes, galerie, clavier]
+    needs: [changes, actionlint, galerie, clavier]
     runs-on: ubuntu-latest
     steps:
       - name: Un job a échoué ou a été annulé
