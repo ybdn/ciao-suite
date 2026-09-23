@@ -62,6 +62,8 @@ fun InfoSheet(
     onCopyLocation: (GeoPoint) -> Unit = {},
 ) {
     // Relu après une modification (date de modification changée).
+    // Faux positif du lint Compose : `value` est bien assigné dans le producteur.
+    @Suppress("ProduceStateDoesNotAssignValue")
     val details by produceState<DetailsState>(
         DetailsState.Loading,
         item.key,

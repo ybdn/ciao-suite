@@ -24,6 +24,8 @@ sealed interface OriginalUri {
 /** Résout l'URI de l'original, et la recalcule quand le SSD est branché ou débranché. */
 @Composable
 fun rememberOriginalUri(item: GalleryItem, ssdAvailable: Boolean, resolve: suspend (GalleryItem) -> String?): OriginalUri {
+    // Faux positif du lint Compose : `value` est bien assigné dans le producteur.
+    @Suppress("ProduceStateDoesNotAssignValue")
     val state by produceState<OriginalUri>(OriginalUri.Loading, item.key, ssdAvailable) {
         value = resolve(item)?.let { OriginalUri.Available(it) } ?: OriginalUri.Unavailable
     }

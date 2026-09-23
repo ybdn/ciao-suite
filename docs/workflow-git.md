@@ -120,10 +120,12 @@ git commit -am "chore(galerie): version 1.2.0"
 git switch main && git pull
 git tag -a galerie-v1.2.0 -m "C!ao Galerie 1.2.0"
 git push origin galerie-v1.2.0
-#    → déclenche .github/workflows/release.yml : build de l'APK release (non signée) et
-#      publication d'une GitHub Release « galerie-v1.2.0 » avec l'APK en pièce jointe et les
-#      notes tirées de la section du CHANGELOG. Générique à toute la suite, rien à adapter
-#      pour une nouvelle app.
+#    → déclenche .github/workflows/release.yml : vérifie que le tag est sur main ou release/*
+#      et que versionName / versionCode sont cohérents, lance les tests, build l'APK release
+#      signé avec la clé de la suite, puis publie une GitHub Release « galerie-v1.2.0 » avec
+#      l'APK, sa somme SHA-256, une attestation de provenance et les notes tirées de la section
+#      du CHANGELOG. Échoue si les secrets de signature manquent. Générique à toute la suite,
+#      rien à adapter pour une nouvelle app.
 
 # 3. Build de l'AAB depuis le tag, puis envoi sur la Play Console
 git switch --detach galerie-v1.2.0
@@ -190,5 +192,9 @@ les hooks. À justifier dans le message du commit.
   PR obligatoire, checks obligatoires **CI OK** et **Titre de PR**, historique linéaire,
   pas de force-push, pas de suppression.
 - Protection des tags `*-v*` : ni suppression ni mise à jour.
+- Environnement `release` (Settings > Environments) : déploiement limité aux tags `*-v*`
+  (*Deployment branches and tags*), et secrets de signature `RELEASE_KEYSTORE_BASE64`,
+  `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD` rattachés à cet
+  environnement plutôt qu'au dépôt, pour qu'une branche ne puisse pas les lire.
 - Fusion : **squash uniquement** (désactiver merge commit et rebase merge), message du squash =
   titre de la PR ; suppression automatique des branches après fusion.

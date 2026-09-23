@@ -10,17 +10,21 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      # GitHub interdit d'utiliser le contexte `secrets` directement dans un `if:` de step
-      # ("Unrecognized named-value: 'secrets'") : on passe par une variable d'env intermédiaire.
-      HAS_KEYSTORE_SECRET: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+    timeout-minutes: 30
+    # Environnement `release` : les secrets de signature y sont rattachés et l'environnement est
+    # limité aux tags de version (Settings > Environments). Une branche ne peut pas les lire.
+    environment: release
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
 
       - name: Extraire l'app et la version depuis le tag
         id: tag
@@ -28,6 +32,12 @@ jobs:
           tag="${GITHUB_REF_NAME}"
           app="${tag%%-v*}"
           version="${tag#"$app"-v}"
+          # Le nom de tag est libre : on valide le format avant de l'utiliser ailleurs.
+          if ! printf '%s' "$app" | grep -Eq '^[a-z0-9-]+$' \
+            || ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Tag $tag hors format <app>-v<semver>" >&2
+            exit 1
+          fi
           if [ ! -d "apps/$app" ]; then
             echo "Aucune app apps/$app pour le tag $tag" >&2
             exit 1
@@ -35,24 +45,59 @@ jobs:
           echo "app=$app" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      # Un tag n'a de sens que sur l'historique de `main` ou d'une branche de maintenance, et doit
+      # correspondre à la version déclarée dans le module (docs/workflow-git.md, section 4).
+      - name: Vérifier le commit taggé et la version
+        env:
+          APP: ${{ steps.tag.outputs.app }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          if ! git branch -r --contains "$GITHUB_SHA" | grep -Eq '^ *origin/(main|release/.+)$'; then
+            echo "::error::Le tag $GITHUB_REF_NAME n'est ni sur main ni sur une branche release/*." >&2
+            exit 1
+          fi
+          gradle_file="apps/$APP/build.gradle.kts"
+          version_name="$(sed -nE 's/^ *versionName = "(.*)"$/\1/p' "$gradle_file")"
+          version_code="$(sed -nE 's/^ *versionCode = ([0-9]+)$/\1/p' "$gradle_file")"
+          if [ "$version_name" != "$VERSION" ]; then
+            echo "::error::versionName ($version_name) différent de la version du tag ($VERSION)." >&2
+            exit 1
+          fi
+          previous="$(git tag --list "$APP-v*" --sort=-v:refname | grep -vx "$GITHUB_REF_NAME" | head -n 1 || true)"
+          if [ -n "$previous" ]; then
+            previous_code="$(git show "$previous:$gradle_file" | sed -nE 's/^ *versionCode = ([0-9]+)$/\1/p')"
+            if [ "$version_code" -le "$previous_code" ]; then
+              echo "::error::versionCode ($version_code) doit dépasser celui de $previous ($previous_code)." >&2
+              exit 1
+            fi
+          fi
+
+      - name: Vérifier le wrapper Gradle
+        run: sh .github/scripts/verify-gradle-wrapper.sh
+
       - name: Configurer le JDK et le cache Gradle
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
           distribution: temurin
           java-version: "17"
           cache: gradle
 
-      # keystore.properties reconstitué depuis les secrets du repo : clé d'importation release
-      # commune à toutes les apps (cf. ReleaseSigning.kt et le CLAUDE.md racine). Absent de la
-      # CI si les secrets ne sont pas configurés : le build release reste alors non signé.
+      # keystore.properties reconstitué depuis les secrets de l'environnement : clé d'importation
+      # release commune à toutes les apps (cf. ReleaseSigning.kt et le CLAUDE.md racine). Une
+      # release sans clé serait un APK non signé, donc non installable : on échoue plutôt que de
+      # publier.
       - name: Reconstituer keystore.properties depuis les secrets
-        if: env.HAS_KEYSTORE_SECRET == 'true'
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ] || [ -z "$RELEASE_KEYSTORE_PASSWORD" ] \
+            || [ -z "$RELEASE_KEY_ALIAS" ] || [ -z "$RELEASE_KEY_PASSWORD" ]; then
+            echo "::error::Secrets de signature RELEASE_* manquants : release impossible." >&2
+            exit 1
+          fi
           echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > ciao-suite-release.jks
           cat > keystore.properties <<EOF
           storeFile=ciao-suite-release.jks
@@ -61,42 +106,81 @@ jobs:
           keyPassword=$RELEASE_KEY_PASSWORD
           EOF
 
-      - name: Build de l'APK release
-        run: ./gradlew :apps:${{ steps.tag.outputs.app }}:assembleRelease --no-daemon
+      - name: Tests et build de l'APK release
+        env:
+          APP: ${{ steps.tag.outputs.app }}
+        run: ./gradlew ":apps:$APP:testDebugUnitTest" ":apps:$APP:assembleRelease" --no-daemon
+
+      - name: Vérifier que l'APK est signé
+        id: apk
+        env:
+          APP: ${{ steps.tag.outputs.app }}
+        run: |
+          apk="$(find "apps/$APP/build/outputs/apk/release" -name '*.apk' -print -quit)"
+          if [ -z "$apk" ]; then
+            echo "::error::Aucun APK release trouvé pour $APP." >&2
+            exit 1
+          fi
+          apksigner="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          "$apksigner" verify --print-certs "$apk"
+          # Somme de contrôle jointe à la release, pour vérifier l'APK téléchargé hors Play Store.
+          (cd "$(dirname "$apk")" && sha256sum "$(basename "$apk")" > "$(basename "$apk").sha256")
+          echo "path=$apk" >> "$GITHUB_OUTPUT"
+          echo "checksum=$apk.sha256" >> "$GITHUB_OUTPUT"
+
+      # Attestation de provenance : prouve que l'APK vient de ce dépôt, de ce tag et de ce workflow.
+      - name: Attester la provenance de l'APK
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: ${{ steps.apk.outputs.path }}
 
       - name: Extraire la section du CHANGELOG
         id: notes
+        env:
+          APP: ${{ steps.tag.outputs.app }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
-          app="${{ steps.tag.outputs.app }}"
-          version="${{ steps.tag.outputs.version }}"
-          changelog="apps/$app/CHANGELOG.md"
+          changelog="apps/$APP/CHANGELOG.md"
           notes_file="$RUNNER_TEMP/release-notes.md"
-          awk -v heading="## $version" '
-            index($0, heading) == 1 { found=1; next }
+          # Titre exact « ## <version> » (éventuellement suivi d'une date) : `## 0.1.1` ne doit
+          # pas correspondre à `## 0.1.10`.
+          awk -v version="$VERSION" '
+            $1 == "##" && $2 == version { found=1; next }
             found && index($0, "## ") == 1 { exit }
             found { print }
           ' "$changelog" > "$notes_file"
           if [ ! -s "$notes_file" ]; then
-            echo "APK release de $app $version." > "$notes_file"
+            echo "::warning::Aucune section « ## $VERSION » dans $changelog : notes génériques."
+            echo "APK release de $APP $VERSION." > "$notes_file"
           fi
           echo "notes_file=$notes_file" >> "$GITHUB_OUTPUT"
 
+      # Idempotent : un re-run après un échec partiel complète la release existante au lieu de
+      # planter sur « release already exists ».
       - name: Publier la GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          APP: ${{ steps.tag.outputs.app }}
+          VERSION: ${{ steps.tag.outputs.version }}
+          APK: ${{ steps.apk.outputs.path }}
+          CHECKSUM: ${{ steps.apk.outputs.checksum }}
+          NOTES_FILE: ${{ steps.notes.outputs.notes_file }}
         run: |
-          app="${{ steps.tag.outputs.app }}"
-          version="${{ steps.tag.outputs.version }}"
-          apk="$(find "apps/$app/build/outputs/apk/release" -name '*.apk' -print -quit)"
-          app_title="$(tr '[:lower:]' '[:upper:]' <<< "${app:0:1}")${app:1}"
-          prerelease_flag=()
-          case "$version" in
-            0.*) prerelease_flag=(--prerelease) ;;
-          esac
-          gh release create "${{ github.ref_name }}" "$apk" \
-            --title "C!ao $app_title $version" \
-            --notes-file "${{ steps.notes.outputs.notes_file }}" \
-            "${prerelease_flag[@]}"
+          app_title="$(tr '[:lower:]' '[:upper:]' <<< "${APP:0:1}")${APP:1}"
+          title="C!ao $app_title $VERSION"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$APK" "$CHECKSUM" --clobber
+            gh release edit "$GITHUB_REF_NAME" --title "$title" --notes-file "$NOTES_FILE"
+          else
+            prerelease_flag=()
+            case "$VERSION" in
+              0.*) prerelease_flag=(--prerelease) ;;
+            esac
+            gh release create "$GITHUB_REF_NAME" "$APK" "$CHECKSUM" \
+              --title "$title" \
+              --notes-file "$NOTES_FILE" \
+              "${prerelease_flag[@]}"
+          fi
 
       - name: Nettoyer le keystore du runner
         if: always()
