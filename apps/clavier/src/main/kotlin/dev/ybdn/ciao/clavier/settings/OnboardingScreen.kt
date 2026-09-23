@@ -49,7 +49,7 @@ private fun isSelected(context: Context): Boolean {
 
 /**
  * Accueil / mise en route (apps/clavier/docs/spec-v1.md §10.1) : tant que le clavier n'est pas
- * activé puis choisi, un parcours en deux étapes, suivi d'une zone de test.
+ * activé puis choisi, un parcours en deux étapes, suivi d’une zone de test et des réglages de frappe.
  */
 @Composable
 fun OnboardingScreen() {
@@ -117,5 +117,7 @@ fun OnboardingScreen() {
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             )
         }
+
+        TypingPreferencesCard(index = "04")
     }
 }

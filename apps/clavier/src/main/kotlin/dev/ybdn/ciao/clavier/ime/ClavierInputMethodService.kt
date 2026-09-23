@@ -1,6 +1,7 @@
 package dev.ybdn.ciao.clavier.ime
 
 import android.inputmethodservice.InputMethodService
+import android.os.SystemClock
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import android.view.View
@@ -15,15 +16,21 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import dev.ybdn.ciao.clavier.data.TypingPreferences
+import dev.ybdn.ciao.clavier.domain.input.FrenchTypography
+import dev.ybdn.ciao.clavier.domain.input.TextEdit
+import dev.ybdn.ciao.clavier.domain.input.TypingSettings
 import dev.ybdn.ciao.clavier.domain.input.wordDeletionLength
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardMode
 import dev.ybdn.ciao.designsystem.theme.CiaoTheme
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 /**
@@ -60,6 +67,17 @@ class ClavierInputMethodService :
     /** Suivie par [onUpdateSelection] : le retour arrière efface alors la sélection entière. */
     private var hasSelection = false
 
+    private var settings = TypingSettings()
+
+    /**
+     * Règles typographiques françaises (§6.3) applicables au champ actif : champ de texte
+     * ordinaire seulement, jamais un mot de passe, une adresse e-mail ou une URL.
+     */
+    private var frenchRulesApply = false
+
+    /** Instant de la dernière espace tapée seule, pour le double espace → point ; 0 sinon. */
+    private var lastSpaceAt = 0L
+
     override fun onCreate() {
         super.onCreate()
         savedStateRegistryController.performRestore(null)
@@ -73,6 +91,13 @@ class ClavierInputMethodService :
             decorView.setViewTreeLifecycleOwner(this)
             decorView.setViewTreeViewModelStoreOwner(this)
             decorView.setViewTreeSavedStateRegistryOwner(this)
+        }
+
+        lifecycleScope.launch {
+            TypingPreferences(this@ClavierInputMethodService).settings.collect {
+                settings = it
+                refreshAutoCapitalize()
+            }
         }
     }
 
@@ -97,6 +122,8 @@ class ClavierInputMethodService :
         super.onStartInputView(info, restarting)
         enterAction = info.enterKeyAction()
         keyboardMode = keyboardModeFor(info?.inputType ?: 0)
+        frenchRulesApply = keyboardMode == KeyboardMode.Text && !isPasswordField(info?.inputType ?: 0)
+        lastSpaceAt = 0L
         if (!restarting) inputSession++
         hasSelection = info != null && info.initialSelStart != info.initialSelEnd
         refreshAutoCapitalize()
@@ -138,10 +165,41 @@ class ClavierInputMethodService :
     }
 
     override fun commitText(text: String) {
-        currentInputConnection?.commitText(text, 1)
+        val connection = currentInputConnection ?: return
+        val edit = typographyEdit(text)
+        if (edit == null) {
+            connection.commitText(text, 1)
+        } else {
+            connection.beginBatchEdit()
+            connection.deleteSurroundingText(edit.deleteBefore, 0)
+            connection.commitText(edit.insert, 1)
+            connection.endBatchEdit()
+        }
+        // Une espace transformée en point ne compte pas : une troisième espace reste une espace.
+        lastSpaceAt = if (text == " " && edit == null) SystemClock.uptimeMillis() else 0L
+    }
+
+    /** Règles typographiques françaises (§6.3) : modification à faire au lieu d'insérer [text]. */
+    private fun typographyEdit(text: String): TextEdit? {
+        if (!frenchRulesApply || hasSelection || text.length != 1) return null
+        val connection = currentInputConnection ?: return null
+        val char = text[0]
+        return when {
+            char == ' ' && settings.doubleSpacePeriod &&
+                SystemClock.uptimeMillis() - lastSpaceAt < DoubleSpaceMaxDelayMs ->
+                connection.getTextBeforeCursor(TypographyLookBehind, 0)
+                    ?.let(FrenchTypography::doubleSpacePeriod)
+
+            settings.nonBreakingSpace && char in ";:!?" ->
+                connection.getTextBeforeCursor(TypographyLookBehind, 0)
+                    ?.let { FrenchTypography.spaceBeforePunctuation(char, it) }
+
+            else -> null
+        }
     }
 
     override fun deleteBackward() {
+        lastSpaceAt = 0L
         val connection = currentInputConnection ?: return
         when {
             hasSelection -> connection.commitText("", 1)
@@ -164,6 +222,7 @@ class ClavierInputMethodService :
     }
 
     override fun moveCursor(steps: Int) {
+        lastSpaceAt = 0L
         val keyCode = if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
         repeat(abs(steps)) { sendDownUpKeyEvents(keyCode) }
     }
@@ -180,7 +239,8 @@ class ClavierInputMethodService :
     private fun refreshAutoCapitalize() {
         val editorInfo = currentInputEditorInfo
         val connection = currentInputConnection
-        autoCapitalize = editorInfo != null &&
+        autoCapitalize = settings.autoCapitalize &&
+            editorInfo != null &&
             connection != null &&
             connection.getCursorCapsMode(editorInfo.inputType) != 0
     }
@@ -204,5 +264,11 @@ class ClavierInputMethodService :
     private companion object {
         /** Assez pour contenir le plus long mot français et les espaces qui le suivent. */
         const val WordLookBehind = 64
+
+        /** Assez pour les règles typographiques : un mot court (« https ») et son espace. */
+        const val TypographyLookBehind = 8
+
+        /** Au-delà, deux espaces tapées l'une après l'autre restent deux espaces. */
+        const val DoubleSpaceMaxDelayMs = 1_000L
     }
 }
