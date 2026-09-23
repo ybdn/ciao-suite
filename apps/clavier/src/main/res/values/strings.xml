@@ -17,4 +17,17 @@
     <string name="onboarding_test_title">Zone de test</string>
     <string name="onboarding_test_label">Essaie le clavier ici</string>
     <string name="onboarding_test_placeholder">Touche ce champ, puis tape…</string>
+
+    <!-- Descriptions TalkBack des touches (spec §11). -->
+    <string name="key_shift">Majuscule</string>
+    <string name="key_shift_on">Majuscule activée</string>
+    <string name="key_caps_lock">Majuscules verrouillées</string>
+    <string name="key_backspace">Effacer</string>
+    <string name="key_emoji">Emojis</string>
+    <string name="key_enter_send">Envoyer</string>
+    <string name="key_enter_search">Rechercher</string>
+    <string name="key_enter_next">Suivant</string>
+    <string name="key_enter_done">OK</string>
+    <string name="key_enter_go">Aller</string>
+    <string name="key_enter_newline">Retour à la ligne</string>
 </resources>

@@ -8,41 +8,59 @@ import org.junit.Test
 class ShiftStateTest {
 
     @Test
-    fun `simple tap from Off goes to Shift`() {
-        assertEquals(ShiftState.Shift, ShiftState.Off.onShiftTap(isDoubleTap = false))
+    fun `without auto capitalization, a tap turns the shift on then off`() {
+        val afterFirstTap = ShiftState.Off.onShiftTap(EffectiveShift.Off, isDoubleTap = false)
+        assertEquals(ShiftState.Shift, afterFirstTap)
+        assertEquals(EffectiveShift.Shift, afterFirstTap.effective(autoCapitalize = false))
+
+        val afterSecondTap = afterFirstTap.onShiftTap(EffectiveShift.Shift, isDoubleTap = false)
+        assertEquals(ShiftState.Off, afterSecondTap)
     }
 
     @Test
-    fun `double tap from Off goes to CapsLock`() {
-        assertEquals(ShiftState.CapsLock, ShiftState.Off.onShiftTap(isDoubleTap = true))
+    fun `a double tap locks, and a tap unlocks`() {
+        val locked = ShiftState.Off.onShiftTap(EffectiveShift.Off, isDoubleTap = true)
+        assertEquals(ShiftState.CapsLock, locked)
+        assertEquals(ShiftState.Off, locked.onShiftTap(EffectiveShift.CapsLock, isDoubleTap = false))
+        assertEquals(ShiftState.Off, locked.onShiftTap(EffectiveShift.CapsLock, isDoubleTap = true))
     }
 
     @Test
-    fun `tap from Shift goes back to Off`() {
-        assertEquals(ShiftState.Off, ShiftState.Shift.onShiftTap(isDoubleTap = false))
+    fun `the field asking for capitalization turns the shift on by itself`() {
+        assertEquals(EffectiveShift.Auto, ShiftState.Off.effective(autoCapitalize = true))
+        assertEquals(EffectiveShift.Off, ShiftState.Off.effective(autoCapitalize = false))
     }
 
     @Test
-    fun `tap from CapsLock unlocks to Off`() {
-        assertEquals(ShiftState.Off, ShiftState.CapsLock.onShiftTap(isDoubleTap = false))
-        assertEquals(ShiftState.Off, ShiftState.CapsLock.onShiftTap(isDoubleTap = true))
+    fun `tapping the shift refuses the automatic capitalization for this position only`() {
+        val refused = ShiftState.Off.onShiftTap(EffectiveShift.Auto, isDoubleTap = false)
+        assertEquals(ShiftState.AutoDisabled, refused)
+        assertEquals(EffectiveShift.Off, refused.effective(autoCapitalize = true))
+
+        // Une fois le caractère tapé, la position suivante est réévaluée.
+        assertEquals(EffectiveShift.Auto, refused.afterCharacterTyped().effective(autoCapitalize = true))
     }
 
     @Test
-    fun `Shift falls back to Off after a letter is typed`() {
-        assertEquals(ShiftState.Off, ShiftState.Shift.afterLetterTyped())
+    fun `automatic capitalization can still be locked with a double tap`() {
+        assertEquals(
+            ShiftState.CapsLock,
+            ShiftState.Off.onShiftTap(EffectiveShift.Auto, isDoubleTap = true),
+        )
     }
 
     @Test
-    fun `CapsLock and Off are unchanged after a letter is typed`() {
-        assertEquals(ShiftState.CapsLock, ShiftState.CapsLock.afterLetterTyped())
-        assertEquals(ShiftState.Off, ShiftState.Off.afterLetterTyped())
+    fun `a one-off shift falls back after a character, the lock stays`() {
+        assertEquals(ShiftState.Off, ShiftState.Shift.afterCharacterTyped())
+        assertEquals(ShiftState.CapsLock, ShiftState.CapsLock.afterCharacterTyped())
+        assertEquals(ShiftState.Off, ShiftState.Off.afterCharacterTyped())
     }
 
     @Test
-    fun `isUpper reflects Shift and CapsLock only`() {
-        assertFalse(ShiftState.Off.isUpper)
-        assertTrue(ShiftState.Shift.isUpper)
-        assertTrue(ShiftState.CapsLock.isUpper)
+    fun `isUpper covers every state but Off`() {
+        assertFalse(EffectiveShift.Off.isUpper)
+        assertTrue(EffectiveShift.Auto.isUpper)
+        assertTrue(EffectiveShift.Shift.isUpper)
+        assertTrue(EffectiveShift.CapsLock.isUpper)
     }
 }

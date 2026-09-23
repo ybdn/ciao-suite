@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Historique du presse-papiers : planchette à pince. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M7,4H17A2,2 0 0,1 19,6V19A2,2 0 0,1 17,21H7A2,2 0 0,1 5,19V6A2,2 0 0,1 7,4ZM9,2.5H15V6.5H9Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#000000"
+        android:strokeWidth="2.2"
+        android:strokeLineJoin="round" />
+</vector>
