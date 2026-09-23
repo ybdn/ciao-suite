@@ -119,5 +119,7 @@ fun OnboardingScreen() {
         }
 
         TypingPreferencesCard(index = "04")
+
+        DataCard(index = "05")
     }
 }

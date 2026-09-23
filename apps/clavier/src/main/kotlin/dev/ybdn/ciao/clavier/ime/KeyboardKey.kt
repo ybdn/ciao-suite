@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -63,11 +64,8 @@ internal class KeyTouch(
 )
 
 /**
- * Touche du clavier : [NeoKeyFace] dans un conteneur fixe qui reçoit les gestes. On ne passe pas par
- * `combinedClickable` (cf. `NeoKey`) : les accents se choisissent en glissant après l'appui long,
- * l'espace déplace le curseur en glissant et le retour arrière se répète tant que le doigt reste
- * posé, ce qui demande de suivre le doigt du début à la fin. Seule cette touche se recompose à
- * l'appui (spec §5.4).
+ * Touche du clavier : [NeoKeyFace] dans un conteneur fixe qui reçoit les gestes (voir
+ * [KeyTouchBox]). Seule cette touche se recompose à l'appui (spec §5.4).
  */
 @Composable
 internal fun RowScope.KeyboardKey(
@@ -78,6 +76,33 @@ internal fun RowScope.KeyboardKey(
     enabled: Boolean = true,
     description: String? = null,
     content: @Composable BoxScope.() -> Unit,
+) {
+    KeyTouchBox(
+        modifier = Modifier.weight(weight).fillMaxHeight(),
+        container = container,
+        touch = touch,
+        enabled = enabled,
+        description = description,
+    ) { pressed ->
+        NeoKeyFace(pressed = pressed, modifier = Modifier.fillMaxSize(), tone = tone, enabled = enabled, content = content)
+    }
+}
+
+/**
+ * Zone tactile d'une touche ou d'une case d'emoji, qui suit le doigt de l'appui au relâcher
+ * (`awaitEachGesture`). On ne passe pas par `combinedClickable` (cf. `NeoKey`) : les variantes se
+ * choisissent en glissant après l'appui long, l'espace déplace le curseur en glissant et le retour
+ * arrière se répète tant que le doigt reste posé. Le conteneur ne bouge pas à l'appui, pour que
+ * les coordonnées du doigt restent stables ; [content] reçoit l'état d'appui.
+ */
+@Composable
+internal fun KeyTouchBox(
+    modifier: Modifier,
+    container: KeyboardContainer,
+    touch: KeyTouch,
+    enabled: Boolean = true,
+    description: String? = null,
+    content: @Composable BoxScope.(pressed: Boolean) -> Unit,
 ) {
     var pressed by remember { mutableStateOf(false) }
     val coordinates = remember { KeyCoordinates() }
@@ -90,9 +115,7 @@ internal fun RowScope.KeyboardKey(
     }
 
     Box(
-        modifier = Modifier
-            .weight(weight)
-            .fillMaxHeight()
+        modifier = modifier
             .onGloballyPositioned { coordinates.value = it }
             .semantics(mergeDescendants = true) {
                 role = Role.Button
@@ -143,7 +166,8 @@ internal fun RowScope.KeyboardKey(
                     }
                 }
             },
+        contentAlignment = Alignment.Center,
     ) {
-        NeoKeyFace(pressed = pressed, modifier = Modifier.fillMaxSize(), tone = tone, enabled = enabled, content = content)
+        content(pressed)
     }
 }

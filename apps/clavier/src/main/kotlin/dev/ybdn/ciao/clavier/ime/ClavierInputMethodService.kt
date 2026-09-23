@@ -23,6 +23,8 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import dev.ybdn.ciao.clavier.data.EmojiCatalog
+import dev.ybdn.ciao.clavier.data.EmojiPreferences
 import dev.ybdn.ciao.clavier.data.TypingPreferences
 import dev.ybdn.ciao.clavier.domain.input.FrenchTypography
 import dev.ybdn.ciao.clavier.domain.input.TextEdit
@@ -30,6 +32,7 @@ import dev.ybdn.ciao.clavier.domain.input.TypingSettings
 import dev.ybdn.ciao.clavier.domain.input.wordDeletionLength
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardMode
 import dev.ybdn.ciao.designsystem.theme.CiaoTheme
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -75,6 +78,15 @@ class ClavierInputMethodService :
      */
     private var frenchRulesApply = false
 
+    /**
+     * Navigation privée ou champ mot de passe (§3) : le clavier n'y retient rien (emojis récents,
+     * couleurs de peau, puis mots appris au lot 5).
+     */
+    private var incognito = false
+
+    private val emojiPreferences by lazy { EmojiPreferences(this) }
+    private var emojiData by mutableStateOf(EmojiPanelData())
+
     /** Instant de la dernière espace tapée seule, pour le double espace → point ; 0 sinon. */
     private var lastSpaceAt = 0L
 
@@ -99,6 +111,12 @@ class ClavierInputMethodService :
                 refreshAutoCapitalize()
             }
         }
+        lifecycleScope.launch {
+            val categories = EmojiCatalog.load(this@ClavierInputMethodService)
+            combine(emojiPreferences.recents, emojiPreferences.skinTones) { recents, skinTones ->
+                EmojiPanelData(categories, recents, skinTones)
+            }.collect { emojiData = it }
+        }
     }
 
     override fun onCreateInputView(): View {
@@ -111,6 +129,7 @@ class ClavierInputMethodService :
                         enterAction = enterAction,
                         autoCapitalize = autoCapitalize,
                         inputSession = inputSession,
+                        emojiData = emojiData,
                         actions = this@ClavierInputMethodService,
                     )
                 }
@@ -124,6 +143,10 @@ class ClavierInputMethodService :
         keyboardMode = keyboardModeFor(info?.inputType ?: 0)
         frenchRulesApply = keyboardMode == KeyboardMode.Text && !isPasswordField(info?.inputType ?: 0)
         lastSpaceAt = 0L
+        incognito = info != null && (
+            info.imeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING != 0 ||
+                isPasswordField(info.inputType)
+            )
         if (!restarting) inputSession++
         hasSelection = info != null && info.initialSelStart != info.initialSelEnd
         refreshAutoCapitalize()
@@ -225,6 +248,16 @@ class ClavierInputMethodService :
         lastSpaceAt = 0L
         val keyCode = if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
         repeat(abs(steps)) { sendDownUpKeyEvents(keyCode) }
+    }
+
+    override fun emojiTyped(emoji: String) {
+        lastSpaceAt = 0L
+        currentInputConnection?.commitText(emoji, 1) ?: return
+        if (!incognito) lifecycleScope.launch { emojiPreferences.addRecent(emoji) }
+    }
+
+    override fun skinToneChosen(base: String, variant: String) {
+        if (!incognito) lifecycleScope.launch { emojiPreferences.setSkinTone(base, variant) }
     }
 
     override fun keyFeedback() {

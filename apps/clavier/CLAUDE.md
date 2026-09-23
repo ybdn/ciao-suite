@@ -31,7 +31,8 @@ Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12).
   et des icônes de touche Entrée par action, reportés au lot 8 avec l'écran de préférences.
 - Lot 3 (règles françaises, issue #12) : fait. `FrenchTypography.splitElision` est prêt pour les
   suggestions du lot 4 (le mot après `l'`, `qu'`… est cherché seul).
-- Lots 4 à 8 : pas commencés.
+- Lot 6 (emojis, issue #15) : fait.
+- Lots 4, 5, 7, 8 : pas commencés.
 
 ## Architecture
 
@@ -42,8 +43,9 @@ Même découpage que la Galerie (Clean Architecture allégée, séparation par p
 dev.ybdn.ciao.clavier/
 ├── domain/
 │   ├── layout/    touches, dispositions (AZERTY, symboles, pavés), variantes (Kotlin pur, testé)
-│   └── input/     majuscule, règles françaises, curseur, effacement par mot (Kotlin pur, testé)
-├── data/          préférences de frappe (DataStore)
+│   ├── input/     majuscule, règles françaises, curseur, effacement par mot (Kotlin pur, testé)
+│   └── emoji/     lecture de emoji-test.txt, couleurs de peau, récents (Kotlin pur, testé)
+├── data/          DataStore partagé (réglages, emojis récents), catalogue emojis
 ├── ime/           InputMethodService, interface Compose du clavier
 └── settings/      activité de réglages et de mise en route (Compose)
 ```
@@ -78,6 +80,12 @@ Le dictionnaire (lot 4/5) et le presse-papiers (lot 7) rejoindront `data/`.
   les deux espaces doivent être tapées à moins d'une seconde d'écart, sans autre action entre.
 - **Réglages** : `TypingPreferences` (DataStore `clavier_settings`), lus en continu par le
   service (`lifecycleScope`) : un changement s'applique sans redémarrer le clavier.
+- **Emojis** : `assets/emoji/emoji-test.txt` d'Unicode (Emoji 18.0, licence Unicode v3 dans
+  `LICENSE-Unicode.txt`), lu une fois par processus en arrière-plan, puis filtré sur l'appareil par
+  `Paint.hasGlyph` : ce que la police du téléphone ne sait pas dessiner n'est pas proposé. Pour
+  passer à une nouvelle version d'Emoji, remplacer le fichier. Récents et couleurs de peau :
+  `EmojiPreferences`, jamais enregistrés quand `incognito` (navigation privée
+  `IME_FLAG_NO_PERSONALIZED_LEARNING` ou mot de passe).
 - **Claviers spécialisés** : `keyboardModeFor(inputType)` choisit le `KeyboardMode` ; pavé
   téléphone avec pause (`,`) et attente (`;`) par appui long sur `*` et `#`, `+` aussi sur `0`.
 - Testé sur émulateur/Pixel : voir « Tests sur appareil » dans le `CLAUDE.md` racine — un clavier
