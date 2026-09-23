@@ -68,12 +68,14 @@ private const val BackspaceInitialDelayMs = 400L
 private const val BackspaceRepeatDelayMs = 60L
 
 /**
- * Dimensions calées sur Gboard (hauteur « normale », téléphone en portrait), reprises au pixel
- * près de la maquette (apps/clavier/docs/spec-v1.md §5.1) : touches de 46 dp au pas de 56 dp,
- * 6 dp entre deux touches, 4 dp de marge latérale, 8 dp en haut et en bas.
+ * Dimensions calées sur Gboard (hauteur « normale », téléphone en portrait), **mesurées** sur une
+ * capture de Gboard prise sur le Pixel 10 Pro (apps/clavier/docs/spec-v1.md §5.1) : touches de
+ * 58 dp au pas de 70 dp, 6 dp entre deux touches, 4 dp de marge latérale, 8 dp au-dessus de la
+ * première rangée. Une touche plus courte paraît écrasée : Gboard tient un rapport hauteur sur
+ * largeur de 1,36, pas 1,1.
  */
-private val KeyHeight = 46.dp
-private val RowGap = 10.dp
+private val KeyHeight = 58.dp
+private val RowGap = 12.dp
 private val KeyGap = 6.dp
 private val SidePadding = 4.dp
 private val TopPadding = 8.dp
@@ -95,8 +97,12 @@ private val StripDividerHeight = 24.dp
 /** Marge droite de chaque rangée, pour que l'ombre de la dernière touche ne soit pas coupée. */
 private val RowEndPadding = 3.dp
 
-/** Hauteur réservée à la rangée système sous le clavier (masquer le clavier, changer de clavier). */
-private val SystemKeyboardRowHeight = 32.dp
+/**
+ * Hauteur réservée sous la dernière rangée pour les boutons qu'Android y dessine (masquer le
+ * clavier, changer de clavier). Avec [BottomPadding], on retrouve les 76 dp que Gboard laisse
+ * sous ses touches sur le même appareil.
+ */
+private val SystemKeyboardRowHeight = 68.dp
 
 /** Taille des caractères (`charKey` de la maquette : `font-size: 21px`). */
 private val CharacterKeyStyle: TextStyle
