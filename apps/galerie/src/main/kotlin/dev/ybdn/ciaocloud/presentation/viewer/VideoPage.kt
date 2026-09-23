@@ -173,6 +173,7 @@ private fun VideoPlayer(item: GalleryItem, uri: String, chromeVisible: Boolean, 
 }
 
 /** Bandeau de lecture posé sur la barre d'actions : mêmes fond, filet et étiquettes que les barres de l'app. */
+@OptIn(UnstableApi::class)
 @Composable
 private fun VideoControls(player: Player) {
     val palette = NeoTheme.palette

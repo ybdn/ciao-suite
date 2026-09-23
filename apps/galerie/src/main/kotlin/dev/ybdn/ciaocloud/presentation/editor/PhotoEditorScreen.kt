@@ -310,6 +310,8 @@ private fun EditorPreview(
 ) {
     val context = LocalContext.current
     val shader = remember { PhotoAdjustmentShader(context.applicationContext) }
+    // Faux positif du lint Compose : `value` est bien assigné dans le producteur.
+    @Suppress("ProduceStateDoesNotAssignValue")
     val originalUri by produceState<String?>(null, item.key) { value = viewModel.originalUri() }
     var showOriginal by remember { mutableStateOf(false) }
     val uri = originalUri
@@ -386,6 +388,8 @@ private fun FilterTools(
 ) {
     val context = LocalContext.current
     val shader = remember { PhotoAdjustmentShader(context.applicationContext) }
+    // Faux positif du lint Compose : `value` est bien assigné dans le producteur.
+    @Suppress("ProduceStateDoesNotAssignValue")
     val originalUri by produceState<String?>(null, item.key) { value = viewModel.originalUri() }
     val uri = originalUri ?: return
     val painter = rememberAsyncImagePainter(remember(uri) { GalleryImages.editorRequest(context, item, uri) })
