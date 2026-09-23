@@ -80,8 +80,21 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
   appelle `_android-app.yml`, et un job agrégateur « CI OK » (check exigé) ; `pr-title.yml`
   vérifie les titres de PR ; un job `actionlint` valide les workflows ; chaque app passe aussi
   lint, `assembleRelease` (R8) et la vérification du jar du wrapper Gradle. Actions épinglées par
-  SHA de commit (Dependabot met les SHA à jour). Ajouter un module `core/` n'exige rien (`core/**` est dans les filtres
-  communs) ; ajouter une app demande un filtre, un job et une entrée dans les `needs` de `ci-ok`.
+  SHA de commit (Dependabot met les SHA à jour). Ajouter un module `core/` n'exige rien
+  (`core/**` est dans les filtres communs) ; ajouter une app demande un filtre, un job et une
+  entrée dans les `needs` de `ci-ok`.
+- **Modifier un workflow** : lancer `actionlint` (avec `shellcheck` installé, sinon il rate les
+  alertes que la CI, elle, remonte) avant de pousser. `release.yml` ne se déclenche que sur tag :
+  aucune PR ne le teste, donc relire chaque changement avec un soin particulier.
+- **Release** (`release.yml`, procédure dans `docs/workflow-git.md`, section 5) : un tag
+  `<app>-v<semver>` exige un commit sur `main` ou `release/*`, `versionName` égal à la version du
+  tag, `versionCode` supérieur à celui du tag précédent de l'app, et les secrets `RELEASE_*`
+  (sinon le workflow échoue plutôt que de publier un APK non signé). Il publie une GitHub Release
+  avec l'APK signé, sa somme SHA-256 et une attestation de provenance.
+- **Un tag `*-v*` est définitif** (ruleset : ni suppression, ni déplacement) et déclenche une
+  Release publique. Ne jamais le créer ni le pousser sans demande explicite, et **prévenir avant
+  de le poser** en rappelant le commit visé et la Release qui en résultera. Même règle pour toute
+  action sur le dépôt GitHub distant qui ne se défait pas (réglages, environnements, secrets).
   Actions uniquement open source : pas de `gradle/actions` (cache propriétaire depuis la v6), le
   cache Gradle vient de `actions/setup-java` (`cache: gradle`). Dependabot : PR mensuelles groupées.
 - Dépôt GitHub public : `ybdn/ciao-suite`. Email d'auteur des commits : l'adresse noreply GitHub
