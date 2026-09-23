@@ -27,14 +27,11 @@ Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12).
 - Lot 0 (`core/designsystem`, garde-fou `INTERNET`) : fait.
 - Lot 1 (squelette) : fait. Module `apps/clavier`, `InputMethodService` + Compose, app de
   réglages avec la mise en route.
-- Lot 2 (frappe AZERTY, issue #11) : en cours, par incréments successifs sur la même issue.
-  Faits : page lettres (AZERTY, majuscule simple/verrouillage, retour arrière avec répétition,
-  touche Entrée adaptée à `imeOptions`, vibration), deux pages de symboles, design aligné sur la
-  maquette. Restent : accents par appui long, claviers spécialisés (numérique/téléphone/e-mail/
-  URL), curseur sur la barre d'espace, aperçu de touche.
+- Lot 2 (frappe AZERTY, issue #11) : fait, sauf le réglage de l'aperçu de touche (désactivable)
+  et des icônes de touche Entrée par action, reportés au lot 8 avec l'écran de préférences.
 - Lot 3 (règles françaises, issue #12) : la majuscule automatique est déjà faite (§6.3). Restent
   le double espace → point, les élisions, l'espace insécable.
-- Lots 3 à 8 : pas commencés.
+- Lots 4 à 8 : pas commencés.
 
 ## Architecture
 
@@ -44,8 +41,8 @@ Même découpage que la Galerie (Clean Architecture allégée, séparation par p
 ```
 dev.ybdn.ciao.clavier/
 ├── domain/
-│   ├── layout/    modèle des touches et de la disposition AZERTY (Kotlin pur, testé)
-│   └── input/     état de la touche Majuscule (Kotlin pur, testé)
+│   ├── layout/    touches, dispositions (AZERTY, symboles, pavés), variantes (Kotlin pur, testé)
+│   └── input/     majuscule, curseur sur l'espace, effacement par mot (Kotlin pur, testé)
 ├── ime/           InputMethodService, interface Compose du clavier
 └── settings/      activité de réglages et de mise en route (Compose)
 ```
@@ -66,10 +63,17 @@ pas avant : pas de package vide « au cas où ».
 - **Zone système sous le clavier** : Android y dessine sa propre rangée (masquer le clavier,
   changer de clavier). L'encart de barre de navigation ne la couvre pas toujours, d'où la
   hauteur plancher `SystemKeyboardRowHeight`.
-- **`NeoKey`** (`core/designsystem`) : touche neo-brutaliste (bordure fine, petite ombre, appui
-  instantané/retour animé), avec appui long et double-appui. Le retour arrière n'utilise pas
-  `NeoKey` : sa répétition à l'appui maintenu a besoin d'un geste (`pointerInput`/`detectTapGestures`)
-  que `combinedClickable` ne permet pas d'observer en continu.
+- **Gestes des touches** (`ime/KeyboardKey.kt`) : chaque touche est une `NeoKeyFace`
+  (`core/designsystem`, apparence seule) dans un conteneur fixe qui suit le doigt
+  (`awaitEachGesture`) de l'appui au relâcher : appui long à 300 ms, choix des variantes en
+  glissant, curseur sur l'espace, répétition du retour arrière. `NeoKey` (`combinedClickable`) ne
+  permet pas de suivre le glissement. Le texte est inséré **au relâcher**, pour pouvoir choisir
+  une variante. Une action TalkBack (`semantics { onClick }`) double chaque touche.
+- **Aperçu et variantes** (`ime/KeyOverlay.kt`) : dessinés dans la vue du clavier, par-dessus le
+  bandeau, pas dans une `Popup` (fenêtre supplémentaire depuis celle de l'IME). Seul `KeyOverlay`
+  lit leur état : un appui ne recompose que la touche et la couche flottante (spec §5.4).
+- **Claviers spécialisés** : `keyboardModeFor(inputType)` choisit le `KeyboardMode` ; pavé
+  téléphone avec pause (`,`) et attente (`;`) par appui long sur `*` et `#`, `+` aussi sur `0`.
 - Testé sur émulateur/Pixel : voir « Tests sur appareil » dans le `CLAUDE.md` racine — un clavier
   doit en plus être activé (réglages système) puis sélectionné (`showInputMethodPicker`) avant de
   pouvoir taper avec.

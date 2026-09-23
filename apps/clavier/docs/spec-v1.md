@@ -185,7 +185,8 @@ verrouillée) ; suggestion appliquée = étiquette bordée et gras ; épinglé =
 - **Symboles** (`?123`) : chiffres et ponctuation courante, puis une seconde page (`=\<`) pour les
   symboles plus rares (€ £ ¥ § ° © ® ™ ¿ ¡ etc.).
 - **Numérique** (`TYPE_CLASS_NUMBER`, `…DATETIME`) : pavé numérique.
-- **Téléphone** (`TYPE_CLASS_PHONE`) : pavé téléphonique (+ * # ,).
+- **Téléphone** (`TYPE_CLASS_PHONE`) : pavé téléphonique (+ * #) ; la pause `,` et l'attente `;`
+  par appui long sur `*` et `#`, `+` aussi par appui long sur `0`.
 - **E-mail** : touche `@` à la place de la virgule. **URL** : touches `/` et `.fr`/`.com`
   (appui long) à la place de la virgule et de l'emoji.
 

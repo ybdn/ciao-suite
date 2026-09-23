@@ -1,71 +1,72 @@
 package dev.ybdn.ciao.clavier.ime
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
+import android.os.SystemClock
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.ybdn.ciao.clavier.R
+import dev.ybdn.ciao.clavier.domain.input.BackspaceRepeat
 import dev.ybdn.ciao.clavier.domain.input.EffectiveShift
 import dev.ybdn.ciao.clavier.domain.input.ShiftState
+import dev.ybdn.ciao.clavier.domain.input.SpaceCursorDrag
 import dev.ybdn.ciao.clavier.domain.input.afterCharacterTyped
 import dev.ybdn.ciao.clavier.domain.input.effective
 import dev.ybdn.ciao.clavier.domain.input.onShiftTap
 import dev.ybdn.ciao.clavier.domain.layout.Key
+import dev.ybdn.ciao.clavier.domain.layout.KeyVariants
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardLayout
+import dev.ybdn.ciao.clavier.domain.layout.KeyboardMode
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardPage
 import dev.ybdn.ciao.designsystem.components.BorderThin
 import dev.ybdn.ciao.designsystem.components.BorderWidth
 import dev.ybdn.ciao.designsystem.components.NeoKey
 import dev.ybdn.ciao.designsystem.components.NeoTone
-import dev.ybdn.ciao.designsystem.components.PressOffset
-import dev.ybdn.ciao.designsystem.components.PressReleaseMillis
-import dev.ybdn.ciao.designsystem.components.ShadowSmall
-import dev.ybdn.ciao.designsystem.components.neoSurface
 import dev.ybdn.ciao.designsystem.theme.DisplayFont
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
-/** Avant la première répétition du retour arrière, et cadence des répétitions suivantes. */
-private const val BackspaceInitialDelayMs = 400L
-private const val BackspaceRepeatDelayMs = 60L
+/** Délai maximal entre deux appuis sur ⇧ pour un verrouillage. */
+private const val ShiftDoubleTapMs = 300L
+
+/**
+ * Glissement sur la barre d'espace : distance avant que le curseur ne bouge (en deçà, c'est un
+ * espace), puis distance par caractère.
+ */
+private val SpaceDragThreshold = 12.dp
+private val SpaceDragStep = 10.dp
 
 /**
  * Dimensions calées sur Gboard (hauteur « normale », téléphone en portrait), **mesurées** sur une
@@ -116,159 +117,319 @@ private val FunctionKeyStyle: TextStyle
 private val SpaceLabelSize = 13.sp
 
 /**
- * Clavier : page lettres AZERTY et deux pages de symboles (apps/clavier/docs/spec-v1.md §6.1,
- * §6.2). Les accents par appui long, les claviers spécialisés, le curseur sur la barre d'espace
- * et l'aperçu de touche arrivent aux incréments suivants du lot 2.
+ * Clavier (apps/clavier/docs/spec-v1.md §6.1, §6.2) : page lettres AZERTY, deux pages de symboles
+ * et pavés numérique, date et téléphone, selon [mode]. Page et majuscule repartent de zéro à chaque
+ * nouveau champ ([inputSession]).
  */
 @Composable
 fun KeyboardScreen(
+    mode: KeyboardMode,
     enterAction: EnterKeyAction,
     autoCapitalize: Boolean,
-    onCommitText: (String) -> Unit,
-    onDeleteBeforeCursor: () -> Unit,
-    onEnter: () -> Unit,
-    onKeyPress: () -> Unit,
+    inputSession: Int,
+    actions: KeyboardActions,
 ) {
-    var page by remember { mutableStateOf(KeyboardPage.Letters) }
-    var shiftState by remember { mutableStateOf(ShiftState.Off) }
-    val shift = shiftState.effective(autoCapitalize)
+    var page by remember(inputSession) { mutableStateOf(KeyboardPage.Letters) }
+    var shiftState by remember(inputSession) { mutableStateOf(ShiftState.Off) }
+    // ⇧ maintenue : les lettres tapées pendant l'appui sont en majuscules, puis ⇧ retombe.
+    var shiftHeld by remember { mutableStateOf(false) }
+    val baseShift = shiftState.effective(autoCapitalize)
+    val shift = if (shiftHeld && !baseShift.isUpper) EffectiveShift.Shift else baseShift
+
+    val gestures = remember { GestureMemory() }
+    val container = remember { KeyboardContainer() }
+    val overlay = remember { KeyOverlayState() }
+    val variantGeometry = rememberVariantGeometryFactory()
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
     val palette = NeoTheme.palette
+    val showPreview = mode == KeyboardMode.Text || mode == KeyboardMode.Email || mode == KeyboardMode.Url
+
+    fun type(text: String) {
+        actions.commitText(text)
+        if (shiftHeld) {
+            gestures.typedWhileShiftHeld = true
+        } else {
+            shiftState = shiftState.afterCharacterTyped()
+        }
+    }
 
     // Sous le clavier, Android dessine sa propre rangée (masquer le clavier, changer de clavier).
     // L'encart de barre de navigation ne la couvre pas toujours : on garde au moins sa hauteur.
     val navigationBarsInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val systemRowPadding = maxOf(navigationBarsInset, SystemKeyboardRowHeight)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(palette.page)
-            .padding(bottom = systemRowPadding),
-    ) {
-        // Bord supérieur du clavier : séparateur de section (anatomie §5.1 de la spec).
-        HorizontalDivider(thickness = BorderWidth, color = palette.outline)
-
-        SuggestionStrip()
-
+    Box(modifier = Modifier.fillMaxWidth().onGloballyPositioned { container.coordinates = it }) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = SidePadding)
-                .padding(top = TopPadding, bottom = BottomPadding),
-            verticalArrangement = Arrangement.spacedBy(RowGap),
+                .background(palette.page)
+                .padding(bottom = systemRowPadding),
         ) {
-            for (row in KeyboardLayout.rows(page)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(KeyHeight).padding(end = RowEndPadding),
-                    horizontalArrangement = Arrangement.spacedBy(KeyGap),
-                ) {
-                    for (slot in row) {
-                        val tone = if (slot.muted) NeoTone.Muted else NeoTone.Surface
-                        when (val key = slot.key) {
-                            is Key.Character -> {
-                                val char = if (shift.isUpper) key.upper else key.lower
-                                NeoKey(
-                                    modifier = Modifier.weight(slot.weight).fillMaxHeight(),
+            // Bord supérieur du clavier : séparateur de section (anatomie §5.1 de la spec).
+            HorizontalDivider(thickness = BorderWidth, color = palette.outline)
+
+            SuggestionStrip()
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = SidePadding)
+                    .padding(top = TopPadding, bottom = BottomPadding),
+                verticalArrangement = Arrangement.spacedBy(RowGap),
+            ) {
+                KeyboardLayout.rows(page, mode).forEachIndexed { rowIndex, row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(KeyHeight).padding(end = RowEndPadding),
+                        horizontalArrangement = Arrangement.spacedBy(KeyGap),
+                    ) {
+                        row.forEachIndexed { columnIndex, slot ->
+                            // Identité de la touche pour l'aperçu et les variantes : stable même si
+                            // la touche se recompose pendant l'appui (majuscule qui change…).
+                            val owner = KeyId(page, rowIndex, columnIndex)
+                            val tone = if (slot.muted) NeoTone.Muted else NeoTone.Surface
+                            when (val key = slot.key) {
+                                is Key.Character, is Key.Text -> {
+                                    val text = when (key) {
+                                        is Key.Character -> (if (shift.isUpper) key.upper else key.lower).toString()
+                                        is Key.Text -> key.text
+                                        else -> error("unreachable")
+                                    }
+                                    val variants = KeyVariants.forCase(slot.variants, shift.isUpper)
+                                    KeyboardKey(
+                                        weight = slot.weight,
+                                        tone = tone,
+                                        container = container,
+                                        touch = KeyTouch(
+                                            onDown = { bounds, _ ->
+                                                actions.keyFeedback()
+                                                gestures.keyBounds = bounds
+                                                if (showPreview) overlay.showPreview(owner, text, bounds)
+                                            },
+                                            onLongPress = if (variants.isEmpty()) null else {
+                                                {
+                                                    actions.keyFeedback()
+                                                    overlay.showVariants(
+                                                        owner,
+                                                        variants,
+                                                        variantGeometry(gestures.keyBounds, variants, container.width),
+                                                    )
+                                                }
+                                            },
+                                            onMove = { position -> overlay.selectVariantAt(owner, position) },
+                                            onUp = {
+                                                overlay.hidePreview(owner)
+                                                if (overlay.hasVariants(owner)) {
+                                                    overlay.closeVariants(owner)?.let(::type)
+                                                } else {
+                                                    type(text)
+                                                }
+                                            },
+                                            onCancel = {
+                                                overlay.hidePreview(owner)
+                                                overlay.closeVariants(owner)
+                                            },
+                                            onAccessibilityClick = { type(text) },
+                                        ),
+                                    ) {
+                                        Text(text, style = if (text.length > 1) FunctionKeyStyle else CharacterKeyStyle)
+                                    }
+                                }
+
+                                is Key.Page -> KeyboardKey(
+                                    weight = slot.weight,
                                     tone = tone,
-                                    onClick = {
-                                        onKeyPress()
-                                        onCommitText(char.toString())
-                                        shiftState = shiftState.afterCharacterTyped()
-                                    },
+                                    container = container,
+                                    touch = KeyTouch(
+                                        onDown = { _, _ -> actions.keyFeedback() },
+                                        onUp = { page = key.target },
+                                        onAccessibilityClick = { page = key.target },
+                                    ),
                                 ) {
-                                    Text(char.toString(), style = CharacterKeyStyle)
+                                    Text(key.label, style = FunctionKeyStyle)
                                 }
-                            }
 
-                            is Key.Page -> NeoKey(
-                                modifier = Modifier.weight(slot.weight).fillMaxHeight(),
-                                tone = tone,
-                                onClick = { onKeyPress(); page = key.target },
-                            ) {
-                                Text(key.label, style = FunctionKeyStyle)
-                            }
+                                Key.Shift -> {
+                                    val icon = when (shift) {
+                                        EffectiveShift.Off -> R.drawable.ic_key_shift
+                                        EffectiveShift.Auto, EffectiveShift.Shift -> R.drawable.ic_key_shift_on
+                                        EffectiveShift.CapsLock -> R.drawable.ic_key_caps_lock
+                                    }
+                                    val description = when (shift) {
+                                        EffectiveShift.Off -> R.string.key_shift
+                                        EffectiveShift.Auto, EffectiveShift.Shift -> R.string.key_shift_on
+                                        EffectiveShift.CapsLock -> R.string.key_caps_lock
+                                    }
+                                    fun tapShift(isDoubleTap: Boolean) {
+                                        shiftState = shiftState.onShiftTap(shiftState.effective(autoCapitalize), isDoubleTap)
+                                    }
 
-                            Key.Shift -> {
-                                val icon = when (shift) {
-                                    EffectiveShift.Off -> R.drawable.ic_key_shift
-                                    EffectiveShift.Auto, EffectiveShift.Shift -> R.drawable.ic_key_shift_on
-                                    EffectiveShift.CapsLock -> R.drawable.ic_key_caps_lock
+                                    // Relâchée après avoir tapé en la maintenant : la majuscule ne
+                                    // valait que pendant l'appui.
+                                    fun releaseShift() {
+                                        shiftHeld = false
+                                        if (gestures.typedWhileShiftHeld) shiftState = shiftState.afterCharacterTyped()
+                                        gestures.typedWhileShiftHeld = false
+                                    }
+                                    KeyboardKey(
+                                        weight = slot.weight,
+                                        tone = if (shift.isUpper) NeoTone.Selected else tone,
+                                        container = container,
+                                        touch = KeyTouch(
+                                            onDown = { _, _ ->
+                                                actions.keyFeedback()
+                                                // Le changement est immédiat, sans attendre de savoir
+                                                // si un second appui suit : le second verrouille.
+                                                val now = SystemClock.uptimeMillis()
+                                                val isDoubleTap = now - gestures.lastShiftDownAt < ShiftDoubleTapMs
+                                                gestures.lastShiftDownAt = if (isDoubleTap) 0L else now
+                                                tapShift(isDoubleTap)
+                                                shiftHeld = true
+                                                gestures.typedWhileShiftHeld = false
+                                            },
+                                            onUp = ::releaseShift,
+                                            onCancel = ::releaseShift,
+                                            onAccessibilityClick = { tapShift(isDoubleTap = false) },
+                                        ),
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(icon),
+                                            contentDescription = stringResource(description),
+                                            modifier = if (shift == EffectiveShift.CapsLock) {
+                                                Modifier.size(width = 20.dp, height = 22.dp)
+                                            } else {
+                                                Modifier.size(20.dp)
+                                            },
+                                        )
+                                    }
                                 }
-                                val description = when (shift) {
-                                    EffectiveShift.Off -> R.string.key_shift
-                                    EffectiveShift.Auto, EffectiveShift.Shift -> R.string.key_shift_on
-                                    EffectiveShift.CapsLock -> R.string.key_caps_lock
+
+                                Key.Backspace -> {
+                                    fun stopRepeat() {
+                                        gestures.backspaceRepeat?.cancel()
+                                        gestures.backspaceRepeat = null
+                                    }
+                                    KeyboardKey(
+                                        weight = slot.weight,
+                                        tone = tone,
+                                        container = container,
+                                        touch = KeyTouch(
+                                            // Efface dès l'appui, puis se répète tant que le doigt
+                                            // reste posé : caractère par caractère, puis mot par mot.
+                                            onDown = { _, _ ->
+                                                actions.keyFeedback()
+                                                actions.deleteBackward()
+                                                stopRepeat()
+                                                gestures.backspaceRepeat = scope.launch {
+                                                    delay(BackspaceRepeat.InitialDelayMs)
+                                                    var repeat = 0
+                                                    while (isActive) {
+                                                        actions.keyFeedback()
+                                                        if (BackspaceRepeat.deletesWord(repeat)) {
+                                                            actions.deleteWordBackward()
+                                                        } else {
+                                                            actions.deleteBackward()
+                                                        }
+                                                        delay(BackspaceRepeat.delayAfter(repeat))
+                                                        repeat++
+                                                    }
+                                                }
+                                            },
+                                            onUp = ::stopRepeat,
+                                            onCancel = ::stopRepeat,
+                                            onAccessibilityClick = actions::deleteBackward,
+                                        ),
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_key_backspace),
+                                            contentDescription = stringResource(R.string.key_backspace),
+                                            modifier = Modifier.size(width = 24.dp, height = 20.dp),
+                                        )
+                                    }
                                 }
-                                NeoKey(
-                                    modifier = Modifier.weight(slot.weight).fillMaxHeight(),
-                                    tone = if (shift.isUpper) NeoTone.Selected else tone,
-                                    onClick = {
-                                        onKeyPress()
-                                        shiftState = shiftState.onShiftTap(shift, isDoubleTap = false)
-                                    },
-                                    onDoubleClick = {
-                                        onKeyPress()
-                                        shiftState = shiftState.onShiftTap(shift, isDoubleTap = true)
-                                    },
+
+                                Key.Space -> KeyboardKey(
+                                    weight = slot.weight,
+                                    tone = tone,
+                                    container = container,
+                                    description = stringResource(R.string.key_space),
+                                    touch = KeyTouch(
+                                        onDown = { _, position ->
+                                            actions.keyFeedback()
+                                            gestures.spaceDownX = position.x
+                                            gestures.spaceDrag = with(density) {
+                                                SpaceCursorDrag(SpaceDragThreshold.toPx(), SpaceDragStep.toPx())
+                                            }
+                                        },
+                                        onMove = { position ->
+                                            val steps = gestures.spaceDrag?.onMove(position.x - gestures.spaceDownX) ?: 0
+                                            if (steps != 0) actions.moveCursor(steps)
+                                        },
+                                        onUp = {
+                                            if (gestures.spaceDrag?.isDragging != true) type(" ")
+                                            gestures.spaceDrag = null
+                                        },
+                                        onCancel = { gestures.spaceDrag = null },
+                                        onAccessibilityClick = { type(" ") },
+                                    ),
+                                ) {
+                                    Text("C!ao", fontFamily = DisplayFont, fontSize = SpaceLabelSize)
+                                }
+
+                                Key.Emoji -> KeyboardKey(
+                                    weight = slot.weight,
+                                    tone = tone,
+                                    container = container,
+                                    // Le panneau emojis arrive au lot 6 : touche inerte, donc grisée
+                                    // plutôt que faussement active.
+                                    enabled = false,
+                                    touch = KeyTouch(onAccessibilityClick = {}),
                                 ) {
                                     Icon(
-                                        painter = painterResource(icon),
-                                        contentDescription = stringResource(description),
-                                        modifier = if (shift == EffectiveShift.CapsLock) {
-                                            Modifier.size(width = 20.dp, height = 22.dp)
-                                        } else {
-                                            Modifier.size(20.dp)
-                                        },
+                                        painter = painterResource(R.drawable.ic_key_emoji),
+                                        contentDescription = stringResource(R.string.key_emoji),
+                                        modifier = Modifier.size(20.dp),
                                     )
                                 }
-                            }
 
-                            Key.Backspace -> BackspaceKey(
-                                weight = slot.weight,
-                                onDelete = onDeleteBeforeCursor,
-                                onKeyPress = onKeyPress,
-                            )
-
-                            Key.Space -> NeoKey(
-                                modifier = Modifier.weight(slot.weight).fillMaxHeight(),
-                                tone = tone,
-                                onClick = { onKeyPress(); onCommitText(" ") },
-                            ) {
-                                Text("C!ao", fontFamily = DisplayFont, fontSize = SpaceLabelSize)
-                            }
-
-                            Key.Emoji -> NeoKey(
-                                modifier = Modifier.weight(slot.weight).fillMaxHeight(),
-                                tone = tone,
-                                // Le panneau emojis arrive au lot 6 : touche inerte, donc grisée
-                                // plutôt que faussement active.
-                                enabled = false,
-                                onClick = {},
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_key_emoji),
-                                    contentDescription = stringResource(R.string.key_emoji),
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-
-                            Key.Enter -> NeoKey(
-                                modifier = Modifier.weight(slot.weight).fillMaxHeight(),
-                                tone = NeoTone.Primary,
-                                onClick = { onKeyPress(); onEnter() },
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_key_enter),
-                                    contentDescription = stringResource(enterAction.descriptionRes),
-                                    modifier = Modifier.size(22.dp),
-                                )
+                                Key.Enter -> KeyboardKey(
+                                    weight = slot.weight,
+                                    tone = NeoTone.Primary,
+                                    container = container,
+                                    touch = KeyTouch(
+                                        onDown = { _, _ -> actions.keyFeedback() },
+                                        onUp = actions::enter,
+                                        onAccessibilityClick = actions::enter,
+                                    ),
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_key_enter),
+                                        contentDescription = stringResource(enterAction.descriptionRes),
+                                        modifier = Modifier.size(22.dp),
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
+        KeyOverlay(overlay, containerWidth = { container.width })
     }
+}
+
+/** Position d'une touche dans la disposition affichée. */
+private data class KeyId(val page: KeyboardPage, val row: Int, val column: Int)
+
+/** Mémoire des gestes en cours, hors état Compose : rien à redessiner quand elle change. */
+private class GestureMemory {
+    var lastShiftDownAt = 0L
+    var typedWhileShiftHeld = false
+    var backspaceRepeat: Job? = null
+    var keyBounds = Rect.Zero
+    var spaceDrag: SpaceCursorDrag? = null
+    var spaceDownX = 0f
 }
 
 /**
@@ -305,70 +466,5 @@ private fun SuggestionStrip() {
                 .height(StripDividerHeight)
                 .background(NeoTheme.palette.outline),
         )
-    }
-}
-
-/**
- * Retour arrière : un appui simple efface un caractère ; un appui maintenu répète après un
- * court délai. L'accélération (lettre puis mot) décrite en §6.1 de la spec est laissée à un
- * prochain incrément. Implémentée à la main (pas via [NeoKey]) : elle doit agir dès l'appui,
- * puis se répéter tant que le doigt reste posé, ce que `combinedClickable` ne permet pas.
- */
-@Composable
-private fun RowScope.BackspaceKey(weight: Float, onDelete: () -> Unit, onKeyPress: () -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val pressOffset by animateDpAsState(
-        targetValue = if (isPressed) PressOffset else 0.dp,
-        animationSpec = tween(durationMillis = if (isPressed) 0 else PressReleaseMillis),
-        label = "backspacePressOffset",
-    )
-    val palette = NeoTheme.palette
-
-    Box(
-        modifier = Modifier
-            .weight(weight)
-            .fillMaxHeight()
-            .offset(pressOffset, pressOffset)
-            .neoSurface(
-                color = palette.surfaceMuted,
-                outline = palette.outline,
-                shadowOffset = if (pressOffset == 0.dp) ShadowSmall else 0.dp,
-                borderWidth = BorderThin,
-            )
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        val press = PressInteraction.Press(it)
-                        interactionSource.emit(press)
-                        onKeyPress()
-                        onDelete()
-                        val released = tryAwaitRelease()
-                        interactionSource.emit(
-                            if (released) PressInteraction.Release(press) else PressInteraction.Cancel(press),
-                        )
-                    },
-                )
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        CompositionLocalProvider(LocalContentColor provides palette.content) {
-            Icon(
-                painter = painterResource(R.drawable.ic_key_backspace),
-                contentDescription = stringResource(R.string.key_backspace),
-                modifier = Modifier.size(width = 24.dp, height = 20.dp),
-            )
-        }
-    }
-
-    LaunchedEffect(isPressed) {
-        if (isPressed) {
-            delay(BackspaceInitialDelayMs)
-            while (isPressed) {
-                onKeyPress()
-                onDelete()
-                delay(BackspaceRepeatDelayMs)
-            }
-        }
     }
 }
