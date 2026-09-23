@@ -1,5 +1,7 @@
 package dev.ybdn.ciao.clavier.ime
 
+import android.content.ClipDescription
+import android.content.ClipboardManager
 import android.inputmethodservice.InputMethodService
 import android.os.SystemClock
 import android.view.HapticFeedbackConstants
@@ -26,12 +28,18 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import dev.ybdn.ciao.clavier.data.EmojiCatalog
 import dev.ybdn.ciao.clavier.data.EmojiPreferences
 import dev.ybdn.ciao.clavier.data.TypingPreferences
+import dev.ybdn.ciao.clavier.data.clipboard.ClipboardHistory
+import dev.ybdn.ciao.clavier.data.clipboard.ClipboardPreferences
+import dev.ybdn.ciao.clavier.domain.clipboard.ClipboardRules
+import dev.ybdn.ciao.clavier.domain.clipboard.ClipboardSettings
 import dev.ybdn.ciao.clavier.domain.input.FrenchTypography
 import dev.ybdn.ciao.clavier.domain.input.TextEdit
 import dev.ybdn.ciao.clavier.domain.input.TypingSettings
 import dev.ybdn.ciao.clavier.domain.input.wordDeletionLength
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardMode
 import dev.ybdn.ciao.designsystem.theme.CiaoTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -87,6 +95,20 @@ class ClavierInputMethodService :
     private val emojiPreferences by lazy { EmojiPreferences(this) }
     private var emojiData by mutableStateOf(EmojiPanelData())
 
+    private val clipboardHistory by lazy { ClipboardHistory(this) }
+    private val clipboardPreferences by lazy { ClipboardPreferences(this) }
+    private var clipboardSettings = ClipboardSettings()
+    private var clipboardData by mutableStateOf(ClipboardPanelData())
+
+    /** Copie pour laquelle la puce « Coller » a déjà servi ou a été écartée. */
+    private val dismissedChipId = MutableStateFlow<Long?>(null)
+
+    /** Horloge pour l'expiration et la puce « Coller » : réévaluées chaque minute. */
+    private val clock = MutableStateFlow(System.currentTimeMillis())
+
+    private val clipboardManager by lazy { getSystemService(ClipboardManager::class.java) }
+    private val clipListener = ClipboardManager.OnPrimaryClipChangedListener(::onClipChanged)
+
     /** Instant de la dernière espace tapée seule, pour le double espace → point ; 0 sinon. */
     private var lastSpaceAt = 0L
 
@@ -117,6 +139,25 @@ class ClavierInputMethodService :
                 EmojiPanelData(categories, recents, skinTones)
             }.collect { emojiData = it }
         }
+        lifecycleScope.launch {
+            combine(clipboardHistory.items, clipboardPreferences.settings, dismissedChipId, clock) { items, settings, dismissed, now ->
+                clipboardSettings = settings
+                ClipboardPanelData(
+                    items = if (settings.historyEnabled) ClipboardRules.displayed(items, now, settings.retention) else emptyList(),
+                    historyEnabled = settings.historyEnabled,
+                    pasteChip = ClipboardRules.pasteChip(items, now)?.takeIf { settings.historyEnabled && it.id != dismissed },
+                )
+            }.collect { clipboardData = it }
+        }
+        lifecycleScope.launch {
+            while (true) {
+                clock.value = System.currentTimeMillis()
+                clipboardHistory.prune(clock.value, clipboardSettings.retention)
+                delay(ClockTickMs)
+            }
+        }
+        // En tant que clavier actif, le service peut lire le presse-papiers en arrière-plan.
+        clipboardManager?.addPrimaryClipChangedListener(clipListener)
     }
 
     override fun onCreateInputView(): View {
@@ -130,6 +171,7 @@ class ClavierInputMethodService :
                         autoCapitalize = autoCapitalize,
                         inputSession = inputSession,
                         emojiData = emojiData,
+                        clipboardData = clipboardData,
                         actions = this@ClavierInputMethodService,
                     )
                 }
@@ -181,6 +223,7 @@ class ClavierInputMethodService :
     }
 
     override fun onDestroy() {
+        clipboardManager?.removePrimaryClipChangedListener(clipListener)
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         viewModelStore.clear()
         keyboardView = null
@@ -260,6 +303,47 @@ class ClavierInputMethodService :
         if (!incognito) lifecycleScope.launch { emojiPreferences.setSkinTone(base, variant) }
     }
 
+    /**
+     * Nouvelle copie (spec §9) : texte seulement, jamais une copie marquée sensible
+     * (`EXTRA_IS_SENSITIVE`, posée par les gestionnaires de mots de passe).
+     */
+    private fun onClipChanged() {
+        if (!clipboardSettings.historyEnabled) return
+        val clip = clipboardManager?.primaryClip ?: return
+        val description = clip.description
+        val isSensitive = description.extras?.getBoolean(ClipDescription.EXTRA_IS_SENSITIVE) == true
+        val isText = description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) ||
+            description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML)
+        val text = clip.takeIf { it.itemCount > 0 && isText }?.getItemAt(0)?.text
+        if (!ClipboardRules.accepts(text, isSensitive)) return
+        val now = System.currentTimeMillis()
+        clock.value = now
+        lifecycleScope.launch {
+            clipboardHistory.add(text.toString(), now, clipboardSettings.retention)
+            // La puce « Coller » disparaît une minute après la copie.
+            delay(ClipboardRules.PasteChipMillis + 1)
+            clock.value = System.currentTimeMillis()
+        }
+    }
+
+    override fun pasteClip(text: String) {
+        lastSpaceAt = 0L
+        currentInputConnection?.commitText(text, 1)
+        dismissPasteChip()
+    }
+
+    override fun setClipPinned(id: Long, pinned: Boolean) {
+        lifecycleScope.launch { clipboardHistory.setPinned(id, pinned) }
+    }
+
+    override fun deleteClip(id: Long) {
+        lifecycleScope.launch { clipboardHistory.delete(id) }
+    }
+
+    override fun dismissPasteChip() {
+        dismissedChipId.value = clipboardData.pasteChip?.id
+    }
+
     override fun keyFeedback() {
         keyboardView?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
     }
@@ -300,6 +384,9 @@ class ClavierInputMethodService :
 
         /** Assez pour les règles typographiques : un mot court (« https ») et son espace. */
         const val TypographyLookBehind = 8
+
+        /** Réévaluation de l'expiration de l'historique et de la puce « Coller ». */
+        const val ClockTickMs = 60_000L
 
         /** Au-delà, deux espaces tapées l'une après l'autre restent deux espaces. */
         const val DoubleSpaceMaxDelayMs = 1_000L

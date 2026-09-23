@@ -22,6 +22,16 @@ interface KeyboardActions {
     /** Retient la couleur de peau choisie pour [base] (hors navigation privée). */
     fun skinToneChosen(base: String, variant: String)
 
+    /** Colle un texte de l'historique ou de la puce « Coller ». */
+    fun pasteClip(text: String)
+
+    fun setClipPinned(id: Long, pinned: Boolean)
+
+    fun deleteClip(id: Long)
+
+    /** Masque la puce « Coller » jusqu'à la prochaine copie. */
+    fun dismissPasteChip()
+
     /** Retour haptique d'une frappe. */
     fun keyFeedback()
 }

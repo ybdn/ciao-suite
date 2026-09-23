@@ -39,3 +39,9 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
   long, retenue pour chaque emoji. Seuls les emojis que le téléphone sait afficher sont proposés.
   Rien n'est retenu en navigation privée ni dans un mot de passe.
 - Réglages : effacer les emojis récents.
+- Historique du presse-papiers : les 25 derniers textes copiés, collés d'un appui ; épinglage ;
+  suppression d'un élément. Conservation 1 heure par défaut (24 heures ou 7 jours au choix), sans
+  limite pour les épinglés. Les copies sensibles (gestionnaires de mots de passe) sont ignorées.
+- Puce « Coller » dans le bandeau pendant une minute après une copie.
+- Réglages : activer l'historique, durée de conservation, effacer l'historique.
+- Les données du clavier sont exclues des sauvegardes et du transfert vers un nouvel appareil.

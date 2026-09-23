@@ -26,6 +26,21 @@
     <string name="data_title">Données</string>
     <string name="data_clear_recent_emojis">Effacer les emojis récents</string>
 
+    <string name="clipboard_empty">Les textes copiés apparaîtront ici.</string>
+    <string name="clipboard_disabled">L’historique du presse-papiers est désactivé dans les réglages de C!ao Clavier.</string>
+    <string name="clipboard_paste">Coller</string>
+    <string name="clipboard_paste_chip">Coller « %1$s »</string>
+    <string name="clipboard_pin">Épingler</string>
+    <string name="clipboard_unpin">Désépingler</string>
+    <string name="clipboard_delete">Supprimer de l’historique</string>
+    <string name="preferences_clipboard_title">Presse-papiers</string>
+    <string name="preferences_clipboard_history">Historique du presse-papiers</string>
+    <string name="preferences_clipboard_retention">Conserver les éléments non épinglés</string>
+    <string name="preferences_clipboard_retention_hour">1 heure</string>
+    <string name="preferences_clipboard_retention_day">24 heures</string>
+    <string name="preferences_clipboard_retention_week">7 jours</string>
+    <string name="data_clear_clipboard">Effacer l’historique du presse-papiers</string>
+
     <string name="emoji_recents_empty">Les emojis utilisés apparaîtront ici.</string>
     <string name="emoji_tab_recents">Récents</string>
     <string name="emoji_tab_smileys">Smileys et émotions</string>

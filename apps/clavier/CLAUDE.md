@@ -32,7 +32,8 @@ Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12).
 - Lot 3 (règles françaises, issue #12) : fait. `FrenchTypography.splitElision` est prêt pour les
   suggestions du lot 4 (le mot après `l'`, `qu'`… est cherché seul).
 - Lot 6 (emojis, issue #15) : fait.
-- Lots 4, 5, 7, 8 : pas commencés.
+- Lot 7 (presse-papiers, issue #16) : fait.
+- Lots 4, 5, 8 : pas commencés.
 
 ## Architecture
 
@@ -44,8 +45,10 @@ dev.ybdn.ciao.clavier/
 ├── domain/
 │   ├── layout/    touches, dispositions (AZERTY, symboles, pavés), variantes (Kotlin pur, testé)
 │   ├── input/     majuscule, règles françaises, curseur, effacement par mot (Kotlin pur, testé)
-│   └── emoji/     lecture de emoji-test.txt, couleurs de peau, récents (Kotlin pur, testé)
-├── data/          DataStore partagé (réglages, emojis récents), catalogue emojis
+│   ├── emoji/     lecture de emoji-test.txt, couleurs de peau, récents (Kotlin pur, testé)
+│   └── clipboard/ règles de l'historique : durée, limite, épinglage, puce Coller (testé)
+├── data/          DataStore partagé (réglages, emojis récents), catalogue emojis,
+│                  clipboard/ : base Room `clavier.db` (schémas dans apps/clavier/schemas)
 ├── ime/           InputMethodService, interface Compose du clavier
 └── settings/      activité de réglages et de mise en route (Compose)
 ```
@@ -86,6 +89,14 @@ Le dictionnaire (lot 4/5) et le presse-papiers (lot 7) rejoindront `data/`.
   passer à une nouvelle version d'Emoji, remplacer le fichier. Récents et couleurs de peau :
   `EmojiPreferences`, jamais enregistrés quand `incognito` (navigation privée
   `IME_FLAG_NO_PERSONALIZED_LEARNING` ou mot de passe).
+- **Presse-papiers** : le service écoute `ClipboardManager` (autorisé en arrière-plan parce qu'il
+  est le clavier actif), ignore les copies `EXTRA_IS_SENSITIVE` et les non-textes, et range dans
+  Room (un même texte recopié remonte au lieu d'être dupliqué). Une horloge interne (`clock`,
+  chaque minute, et une minute après chaque copie) fait expirer les éléments et la puce « Coller ».
+  Les épinglés passent en tête de liste. Schémas Room versionnés : jamais de migration
+  destructive.
+- **Sauvegardes** : `allowBackup="false"` et `data_extraction_rules.xml` (tout exclu, cloud et
+  transfert d'appareil, que `allowBackup` seul ne bloque plus depuis Android 12).
 - **Claviers spécialisés** : `keyboardModeFor(inputType)` choisit le `KeyboardMode` ; pavé
   téléphone avec pause (`,`) et attente (`;`) par appui long sur `*` et `#`, `+` aussi sur `0`.
 - Testé sur émulateur/Pixel : voir « Tests sur appareil » dans le `CLAUDE.md` racine — un clavier
