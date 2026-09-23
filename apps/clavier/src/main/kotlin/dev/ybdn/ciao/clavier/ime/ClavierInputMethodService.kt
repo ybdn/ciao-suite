@@ -44,7 +44,8 @@ class ClavierInputMethodService :
     override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
 
     private var keyboardView: ComposeView? = null
-    private var enterLabel by mutableStateOf(EnterKeyLabel.Newline)
+    private var enterAction by mutableStateOf(EnterKeyAction.Newline)
+    private var autoCapitalize by mutableStateOf(false)
 
     override fun onCreate() {
         super.onCreate()
@@ -68,7 +69,8 @@ class ClavierInputMethodService :
             setContent {
                 CiaoTheme {
                     KeyboardScreen(
-                        enterLabel = enterLabel,
+                        enterAction = enterAction,
+                        autoCapitalize = autoCapitalize,
                         onCommitText = { text -> currentInputConnection?.commitText(text, 1) },
                         onDeleteBeforeCursor = { currentInputConnection?.deleteSurroundingText(1, 0) },
                         onEnter = ::performEnter,
@@ -81,8 +83,30 @@ class ClavierInputMethodService :
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        enterLabel = info.enterKeyLabel()
+        enterAction = info.enterKeyAction()
+        refreshAutoCapitalize()
         lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+    }
+
+    override fun onUpdateSelection(
+        oldSelStart: Int,
+        oldSelEnd: Int,
+        newSelStart: Int,
+        newSelEnd: Int,
+        candidatesStart: Int,
+        candidatesEnd: Int,
+    ) {
+        super.onUpdateSelection(
+            oldSelStart,
+            oldSelEnd,
+            newSelStart,
+            newSelEnd,
+            candidatesStart,
+            candidatesEnd,
+        )
+        // Le champ vient d'être modifié (par le clavier ou par l'app) : la position du curseur
+        // décide de la majuscule automatique.
+        refreshAutoCapitalize()
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
@@ -99,6 +123,19 @@ class ClavierInputMethodService :
 
     private fun performHapticFeedback(constant: Int) {
         keyboardView?.performHapticFeedback(constant)
+    }
+
+    /**
+     * Majuscule automatique (apps/clavier/docs/spec-v1.md §6.3) : c'est le champ qui décide, via
+     * `getCursorCapsMode`, filtré par les drapeaux qu'il demande (`TYPE_TEXT_FLAG_CAP_*`). Un champ
+     * qui ne demande rien — mot de passe, URL — n'aura jamais de majuscule automatique.
+     */
+    private fun refreshAutoCapitalize() {
+        val editorInfo = currentInputEditorInfo
+        val connection = currentInputConnection
+        autoCapitalize = editorInfo != null &&
+            connection != null &&
+            connection.getCursorCapsMode(editorInfo.inputType) != 0
     }
 
     /** Envoie l'action du champ (Envoyer, Rechercher…) si `imeOptions` en demande une, sinon un retour à la ligne. */

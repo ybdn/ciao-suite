@@ -100,10 +100,17 @@ symboles, emojis, presse-papiers, en clair et en sombre) sert de référence vis
 | Aperçu de touche, fenêtre des accents et des couleurs de peau | 3 px | 8 px (grande) | Éléments flottants |
 | Bord supérieur du clavier | 3 px | — | Séparateur de section |
 
-- **Dimensions calées sur Gboard** (hauteur normale, téléphone en portrait) : bandeau de
-  suggestions de 48 dp, toujours affiché (bouton presse-papiers, séparateur, puis suggestions) ; touches de 46 dp de haut, au pas de 56 dp (10 dp entre rangées) ; 6 dp
-  entre deux touches ; 4 dp de marge latérale ; 8 dp au-dessus de la première rangée et sous la
-  dernière. Soit environ 278 dp avec le bandeau, hors barre de navigation.
+- **Dimensions calées sur Gboard** (hauteur normale, téléphone en portrait), mesurées sur une
+  capture de Gboard prise sur le Pixel 10 Pro, pas estimées : bandeau de suggestions de 48 dp,
+  toujours affiché (bouton presse-papiers, séparateur, puis suggestions) ; touches de **58 dp**
+  de haut, au pas de **70 dp** (12 dp entre rangées) ; 6 dp entre deux touches ; 4 dp de marge
+  latérale ; 8 dp au-dessus de la première rangée. Sous la dernière rangée, **76 dp** au total,
+  comme Gboard : c'est là qu'Android dessine ses propres boutons (masquer le clavier, changer de
+  clavier). Soit environ 400 dp en tout, barre de navigation comprise.
+
+  Les cotes de Gboard relevées sur cet appareil : touche 58 dp de haut sur 43 dp de large
+  (rapport 1,36), 12 dp entre rangées, 5 dp entre touches, 4,5 dp de marge latérale. Une touche
+  sensiblement plus courte paraît écrasée.
 - **Coins carrés** partout (0 dp).
 - **Appui** : la touche glisse de 3 dp dans le sens de son ombre, qui disparaît. Le passage à
   l'état appuyé est **instantané** (une animation se sentirait en frappe rapide) ; le retour dure

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Panneau emojis. Les yeux sont des disques pleins de rayon 1,6 : équivalents aux points de la
+  maquette (segments de longueur nulle en bout rond, largeur 3,2), qui ne se dessinent pas
+  toujours dans un VectorDrawable.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M3,12a9,9 0 1,0 18,0a9,9 0 1,0 -18,0Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#000000"
+        android:strokeWidth="2.3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M8.3,14.2c1,1.5 2.3,2.3 3.7,2.3s2.7,-0.8 3.7,-2.3"
+        android:fillColor="#00000000"
+        android:strokeColor="#000000"
+        android:strokeWidth="2.3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M7.4,9.6a1.6,1.6 0 1,0 3.2,0a1.6,1.6 0 1,0 -3.2,0Z"
+        android:fillColor="#000000" />
+    <path
+        android:pathData="M13.4,9.6a1.6,1.6 0 1,0 3.2,0a1.6,1.6 0 1,0 -3.2,0Z"
+        android:fillColor="#000000" />
+</vector>
