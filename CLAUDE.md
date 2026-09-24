@@ -38,7 +38,7 @@ la publication se fera quand toutes les apps seront développées.
 - `namespace`/`applicationId` des nouvelles apps : `dev.ybdn.ciao.<app>`. Exception historique :
   la Galerie est encore en `dev.ybdn.ciaocloud` (voir son `CLAUDE.md`).
 
-## Environnement de build (vérifié le 2026-09-22)
+## Environnement de build (vérifié le 2026-09-24)
 
 ```bash
 export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
@@ -52,7 +52,12 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
 ```
 
 - JDK 17 via `brew install openjdk@17`. Android SDK via `brew install --cask android-commandlinetools`
-  (`platform-tools`, `platforms;android-37`, `build-tools;37.0.0`, licences acceptées).
+  (`platform-tools`, `platforms;android-37.0`, `build-tools;37.0.0`, licences acceptées ; AGP
+  installe lui-même `build-tools;36.0.0` au premier build). Le paquet s'appelle `android-37.0` :
+  `platforms;android-37` n'existe pas.
+- Outils : Gradle 9.7.1 (wrapper), AGP 9.4 (Kotlin intégré), Kotlin 2.4, KSP 2.3 ; versions dans
+  `gradle/libs.versions.toml`. SDK des apps dans `CiaoSdk` (`build-logic/.../KotlinAndroid.kt`) :
+  `compileSdk` 37, `targetSdk` 35 (montée suivie dans #47), `minSdk` 33.
 - `local.properties` (non versionné, à la racine) : `sdk.dir=/opt/homebrew/share/android-commandlinetools`.
 - `keystore.properties` (non versionné, à la racine) : clé d'importation release commune à toutes les apps.
 - Émulateur : AVD `ciaocloud35` (Android 15, arm64), `$ANDROID_SDK_ROOT/emulator/emulator -avd ciaocloud35`.

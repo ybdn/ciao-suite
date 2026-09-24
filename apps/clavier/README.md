@@ -9,8 +9,8 @@ Spécification de référence : [`docs/spec-v1.md`](docs/spec-v1.md). Contexte p
 ## État
 
 En développement (jalon « C!ao Clavier v1 ») : frappe AZERTY, règles typographiques françaises,
-suggestions et correction, emojis et presse-papiers sont faits ; l'apprentissage personnel et les
-finitions arrivent aux lots suivants — voir la spec, §12.
+suggestions et correction, dictionnaire personnel, emojis et presse-papiers sont faits ; restent
+les finitions (lot 8, issue #17) — voir la spec, §12.
 
 Dictionnaire : [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/), CC BY 4.0 — voir
 [`dictionary/README.md`](dictionary/README.md).

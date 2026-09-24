@@ -130,7 +130,7 @@ dev.ybdn.ciao.clavier/
   transfert d'appareil, que `allowBackup` seul ne bloque plus depuis Android 12).
 - **Claviers spécialisés** : `keyboardModeFor(inputType)` choisit le `KeyboardMode` ; pavé
   téléphone avec pause (`,`) et attente (`;`) par appui long sur `*` et `#`, `+` aussi sur `0`.
-- Testé sur émulateur/Pixel : voir « Tests sur appareil » dans le `CLAUDE.md` racine — un clavier
+- Testé sur émulateur/Pixel : voir « Environnement de build » dans le `CLAUDE.md` racine — un clavier
   doit en plus être activé (réglages système) puis sélectionné (`showInputMethodPicker`) avant de
   pouvoir taper avec. Après une réinstallation ou un `am force-stop`, Android revient sur Gboard :
   resélectionner avec `adb shell ime set dev.ybdn.ciao.clavier/.ime.ClavierInputMethodService`.
