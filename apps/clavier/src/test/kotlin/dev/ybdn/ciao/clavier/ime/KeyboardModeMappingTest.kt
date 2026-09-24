@@ -3,6 +3,8 @@ package dev.ybdn.ciao.clavier.ime
 import android.text.InputType
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardMode
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class KeyboardModeMappingTest {
@@ -38,5 +40,15 @@ class KeyboardModeMappingTest {
             keyboardModeFor(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD),
         )
         assertEquals(KeyboardMode.Text, keyboardModeFor(InputType.TYPE_NULL))
+    }
+
+    @Test
+    fun `password fields are recognised`() {
+        assertTrue(isPasswordField(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD))
+        assertTrue(isPasswordField(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD))
+        assertTrue(isPasswordField(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD))
+        assertTrue(isPasswordField(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD))
+        assertFalse(isPasswordField(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES))
+        assertFalse(isPasswordField(InputType.TYPE_CLASS_PHONE))
     }
 }

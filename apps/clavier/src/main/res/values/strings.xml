@@ -18,6 +18,11 @@
     <string name="onboarding_test_label">Essaie le clavier ici</string>
     <string name="onboarding_test_placeholder">Touche ce champ, puis tape…</string>
 
+    <string name="preferences_typing_title">Frappe</string>
+    <string name="preferences_auto_capitalize">Majuscule automatique en début de phrase</string>
+    <string name="preferences_double_space_period">Double espace pour un point</string>
+    <string name="preferences_non_breaking_space">Espace insécable avant ; : ! ?</string>
+
     <!-- Descriptions TalkBack des touches (spec §11). -->
     <string name="key_shift">Majuscule</string>
     <string name="key_shift_on">Majuscule activée</string>

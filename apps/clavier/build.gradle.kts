@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.savedstate)
+    implementation(libs.androidx.datastore.preferences)
 
     testImplementation(libs.junit)
 

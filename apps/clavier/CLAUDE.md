@@ -29,8 +29,8 @@ Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12).
   réglages avec la mise en route.
 - Lot 2 (frappe AZERTY, issue #11) : fait, sauf le réglage de l'aperçu de touche (désactivable)
   et des icônes de touche Entrée par action, reportés au lot 8 avec l'écran de préférences.
-- Lot 3 (règles françaises, issue #12) : la majuscule automatique est déjà faite (§6.3). Restent
-  le double espace → point, les élisions, l'espace insécable.
+- Lot 3 (règles françaises, issue #12) : fait. `FrenchTypography.splitElision` est prêt pour les
+  suggestions du lot 4 (le mot après `l'`, `qu'`… est cherché seul).
 - Lots 4 à 8 : pas commencés.
 
 ## Architecture
@@ -42,13 +42,13 @@ Même découpage que la Galerie (Clean Architecture allégée, séparation par p
 dev.ybdn.ciao.clavier/
 ├── domain/
 │   ├── layout/    touches, dispositions (AZERTY, symboles, pavés), variantes (Kotlin pur, testé)
-│   └── input/     majuscule, curseur sur l'espace, effacement par mot (Kotlin pur, testé)
+│   └── input/     majuscule, règles françaises, curseur, effacement par mot (Kotlin pur, testé)
+├── data/          préférences de frappe (DataStore)
 ├── ime/           InputMethodService, interface Compose du clavier
 └── settings/      activité de réglages et de mise en route (Compose)
 ```
 
-Le package `data/` (dictionnaire, presse-papiers, préférences) sera ajouté à partir du lot 4/5/7,
-pas avant : pas de package vide « au cas où ».
+Le dictionnaire (lot 4/5) et le presse-papiers (lot 7) rejoindront `data/`.
 
 - **Compose dans l'`InputMethodService`** : le service n'est pas un `LifecycleOwner` /
   `ViewModelStoreOwner` / `SavedStateRegistryOwner` par défaut (contrairement à `ComponentActivity`) ;
@@ -72,11 +72,18 @@ pas avant : pas de package vide « au cas où ».
 - **Aperçu et variantes** (`ime/KeyOverlay.kt`) : dessinés dans la vue du clavier, par-dessus le
   bandeau, pas dans une `Popup` (fenêtre supplémentaire depuis celle de l'IME). Seul `KeyOverlay`
   lit leur état : un appui ne recompose que la touche et la couche flottante (spec §5.4).
+- **Règles françaises** (§6.3) : appliquées par le service dans `commitText`, qui relit quelques
+  caractères avant le curseur et remplace le texte en un `beginBatchEdit`. Seulement dans un champ
+  de texte ordinaire : jamais mot de passe (`isPasswordField`), e-mail ni URL. Double espace :
+  les deux espaces doivent être tapées à moins d'une seconde d'écart, sans autre action entre.
+- **Réglages** : `TypingPreferences` (DataStore `clavier_settings`), lus en continu par le
+  service (`lifecycleScope`) : un changement s'applique sans redémarrer le clavier.
 - **Claviers spécialisés** : `keyboardModeFor(inputType)` choisit le `KeyboardMode` ; pavé
   téléphone avec pause (`,`) et attente (`;`) par appui long sur `*` et `#`, `+` aussi sur `0`.
 - Testé sur émulateur/Pixel : voir « Tests sur appareil » dans le `CLAUDE.md` racine — un clavier
   doit en plus être activé (réglages système) puis sélectionné (`showInputMethodPicker`) avant de
-  pouvoir taper avec.
+  pouvoir taper avec. Après une réinstallation ou un `am force-stop`, Android revient sur Gboard :
+  resélectionner avec `adb shell ime set dev.ybdn.ciao.clavier/.ime.ClavierInputMethodService`.
 
 ## Conventions
 

@@ -30,3 +30,8 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
   entière et ne coupe plus un emoji en deux.
 - Majuscule maintenue : les lettres tapées pendant l'appui sont en majuscules ; le double appui
   verrouille sans délai sur le premier appui.
+- Double espace pour un point, en fin de mot.
+- Espace insécable avant ; : ! ? (réglage désactivé par défaut), sauf dans une heure (« 10:30 »)
+  ou une adresse web.
+- Réglages de frappe dans l'app : majuscule automatique, double espace, espace insécable.
+- Les règles typographiques ne s'appliquent jamais aux mots de passe, e-mails et adresses web.
