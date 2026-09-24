@@ -1,6 +1,6 @@
 # Politique de confidentialité — C!ao Clavier
 
-Dernière mise à jour : 22 septembre 2026.
+Dernière mise à jour : 23 septembre 2026.
 
 ## Résumé
 
@@ -18,22 +18,25 @@ Tout ce que le clavier traite reste **exclusivement sur l'appareil de l'utilisat
 |---|---|
 | Texte tapé | Affiché dans le champ actif via l'API standard des claviers Android (`InputConnection`) ; jamais journalisé ni transmis. |
 | Mots appris, dictionnaire personnel | Stockés localement pour proposer des suggestions ; consultables et effaçables depuis les réglages (à partir du lot 5). |
-| Historique du presse-papiers | Stocké localement, durée limitée, contenus sensibles exclus (à partir du lot 7). |
+| Historique du presse-papiers | Textes copiés (25 au plus), stockés localement 1 heure par défaut (24 heures ou 7 jours au choix), sauf ceux épinglés. Les copies marquées sensibles (gestionnaires de mots de passe) ne sont jamais enregistrées. Désactivable et effaçable depuis les réglages. |
+| Emojis récents, couleurs de peau choisies | Stockés localement ; jamais enregistrés dans un champ mot de passe ni en navigation privée ; effaçables depuis les réglages. |
 | Champs mot de passe, navigation privée | Aucune suggestion, aucune autocorrection, aucun apprentissage, aucun enregistrement (à partir du lot 5). |
 
 ## Ce que l'application ne fait pas
 
 - Pas de permission réseau, pas de télémétrie, pas d'analytics, pas de rapport de plantage tiers.
 - Pas de compte utilisateur, pas d'authentification.
-- Pas de synchronisation cloud, pas de sauvegarde à distance.
+- Pas de synchronisation cloud, pas de sauvegarde à distance : les données du clavier sont exclues
+  des sauvegardes Android et du transfert vers un nouvel appareil.
 - Pas de publicité.
 - Pas de partage de données avec des tiers.
 
 ## Suppression de données
 
-Les données persistées (préférences, dictionnaire personnel, historique du presse-papiers) sont
-stockées localement sur l'appareil et supprimées automatiquement en désinstallant l'application ;
-un effacement manuel depuis les réglages sera aussi proposé (lots 5 et 7).
+Les données persistées (préférences, emojis récents, historique du presse-papiers, puis
+dictionnaire personnel) sont stockées localement sur l'appareil et supprimées automatiquement en
+désinstallant l'application. Les emojis récents et l'historique du presse-papiers s'effacent aussi
+depuis les réglages, section « Données » ; le dictionnaire personnel le sera également.
 
 ## Contact
 

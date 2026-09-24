@@ -31,9 +31,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.ybdn.ciao.clavier.R
+import dev.ybdn.ciao.clavier.domain.clipboard.ClipboardItem
 import dev.ybdn.ciao.clavier.domain.input.EffectiveShift
 import dev.ybdn.ciao.clavier.domain.input.ShiftState
 import dev.ybdn.ciao.clavier.domain.input.SpaceCursorDrag
@@ -125,9 +127,10 @@ fun KeyboardScreen(
     autoCapitalize: Boolean,
     inputSession: Int,
     emojiData: EmojiPanelData,
+    clipboardData: ClipboardPanelData,
     actions: KeyboardActions,
 ) {
-    var emojiPanelOpen by remember(inputSession) { mutableStateOf(false) }
+    var panel by remember(inputSession) { mutableStateOf(Panel.Keys) }
     var page by remember(inputSession) { mutableStateOf(KeyboardPage.Letters) }
     var shiftState by remember(inputSession) { mutableStateOf(ShiftState.Off) }
     // ⇧ maintenue : les lettres tapées pendant l'appui sont en majuscules, puis ⇧ retombe.
@@ -167,9 +170,14 @@ fun KeyboardScreen(
             // Bord supérieur du clavier : séparateur de section (anatomie §5.1 de la spec).
             HorizontalDivider(thickness = BorderWidth, color = palette.outline)
 
-            SuggestionStrip()
+            SuggestionStrip(
+                clipboardOpen = panel == Panel.Clipboard,
+                pasteChip = clipboardData.pasteChip,
+                onClipboard = { panel = if (panel == Panel.Clipboard) Panel.Keys else Panel.Clipboard },
+                actions = actions,
+            )
 
-            if (emojiPanelOpen) {
+            if (panel == Panel.Emoji) {
                 Box(modifier = Modifier.padding(horizontal = SidePadding)) {
                     EmojiPanel(
                         height = KeysAreaHeight,
@@ -178,7 +186,17 @@ fun KeyboardScreen(
                         overlay = overlay,
                         variantGeometry = variantGeometry,
                         actions = actions,
-                        onClose = { emojiPanelOpen = false },
+                        onClose = { panel = Panel.Keys },
+                    )
+                }
+            } else if (panel == Panel.Clipboard) {
+                Box(modifier = Modifier.padding(horizontal = SidePadding)) {
+                    ClipboardPanel(
+                        height = KeysAreaHeight,
+                        data = clipboardData,
+                        container = container,
+                        actions = actions,
+                        onClose = { panel = Panel.Keys },
                     )
                 }
             } else {
@@ -351,8 +369,8 @@ fun KeyboardScreen(
                                         container = container,
                                         touch = KeyTouch(
                                             onDown = { _, _ -> actions.keyFeedback() },
-                                            onUp = { emojiPanelOpen = true },
-                                            onAccessibilityClick = { emojiPanelOpen = true },
+                                            onUp = { panel = Panel.Emoji },
+                                            onAccessibilityClick = { panel = Panel.Emoji },
                                         ),
                                     ) {
                                         Icon(
@@ -390,6 +408,9 @@ fun KeyboardScreen(
     }
 }
 
+/** Ce qu'affiche la zone sous le bandeau. */
+private enum class Panel { Keys, Emoji, Clipboard }
+
 /** Position d'une touche dans la disposition affichée. */
 private data class KeyId(val page: KeyboardPage, val row: Int, val column: Int)
 
@@ -403,12 +424,16 @@ private class GestureMemory {
 }
 
 /**
- * Bandeau de 48 dp au-dessus des touches. Pour l'instant, seuls le bouton presse-papiers (inactif
- * jusqu'au lot 7) et le séparateur sont affichés ; les suggestions arrivent au lot 4. Le bandeau est
- * posé dès maintenant pour que le clavier ait la même hauteur que Gboard.
+ * Bandeau de 48 dp au-dessus des touches : bouton de l'historique du presse-papiers, séparateur,
+ * puis la puce « Coller » juste après une copie (spec §9). Les suggestions arrivent au lot 4.
  */
 @Composable
-private fun SuggestionStrip() {
+private fun SuggestionStrip(
+    clipboardOpen: Boolean,
+    pasteChip: ClipboardItem?,
+    onClipboard: () -> Unit,
+    actions: KeyboardActions,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -419,10 +444,8 @@ private fun SuggestionStrip() {
     ) {
         NeoKey(
             modifier = Modifier.width(ClipboardButtonWidth).height(ClipboardButtonHeight),
-            tone = NeoTone.Muted,
-            // Historique du presse-papiers : lot 7.
-            enabled = false,
-            onClick = {},
+            tone = if (clipboardOpen) NeoTone.Selected else NeoTone.Muted,
+            onClick = onClipboard,
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_key_clipboard),
@@ -436,5 +459,21 @@ private fun SuggestionStrip() {
                 .height(StripDividerHeight)
                 .background(NeoTheme.palette.outline),
         )
+        if (pasteChip != null) {
+            NeoKey(
+                modifier = Modifier.weight(1f, fill = false).height(ClipboardButtonHeight),
+                tone = NeoTone.Primary,
+                onClick = { actions.pasteClip(pasteChip.text) },
+                onLongClick = actions::dismissPasteChip,
+            ) {
+                Text(
+                    stringResource(R.string.clipboard_paste_chip, pasteChip.text.replace('\n', ' ')),
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                )
+            }
+        }
     }
 }

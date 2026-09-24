@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.ciao.android.application)
     alias(libs.plugins.ciao.android.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -13,6 +14,11 @@ android {
     }
 }
 
+ksp {
+    // Schémas Room versionnés : base des migrations explicites (jamais de migration destructive).
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(project(":core:designsystem"))
 
@@ -23,6 +29,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.savedstate)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
 
