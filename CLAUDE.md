@@ -52,7 +52,7 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
 ```
 
 - JDK 17 via `brew install openjdk@17`. Android SDK via `brew install --cask android-commandlinetools`
-  (`platform-tools`, `platforms;android-35`, `build-tools;35.0.0`, licences acceptées).
+  (`platform-tools`, `platforms;android-37`, `build-tools;37.0.0`, licences acceptées).
 - `local.properties` (non versionné, à la racine) : `sdk.dir=/opt/homebrew/share/android-commandlinetools`.
 - `keystore.properties` (non versionné, à la racine) : clé d'importation release commune à toutes les apps.
 - Émulateur : AVD `ciaocloud35` (Android 15, arm64), `$ANDROID_SDK_ROOT/emulator/emulator -avd ciaocloud35`.
