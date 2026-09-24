@@ -6,7 +6,12 @@ de la suite.
 
 ## Non publié
 
-Version de développement `0.1.0`, pas encore publiée sur le Play Store. Fonctionnalités :
+Rien pour l'instant.
+
+## 0.1.1 — 2026-09-23
+
+Version de développement, pas encore publiée sur le Play Store. Sert aussi de premier essai du
+workflow de release (APK signé, somme SHA-256, attestation de provenance). Fonctionnalités :
 
 - Délestage des photos et vidéos vers un SSD en USB-C, rangées par date, avec vérification
   avant suppression du téléphone.
