@@ -19,9 +19,15 @@ data class Suggestions(
  * ([TypingCosts]) calculée rangée par rangée : chaque nœud prolonge la rangée de son parent, et
  * une branche est abandonnée dès que plus aucun mot n'y peut être assez proche ou assez fréquent.
  *
+ * Les mots appris ([personal], §7.3) sont cherchés de la même façon dans leur propre petit arbre ;
+ * les mots embarqués souvent choisis dans la barre reçoivent un bonus.
+ *
  * Travaille sur un mot seul : l'élision (`l'`) et la casse sont gérées par l'appelant.
  */
-class SuggestionEngine(private val dictionary: Dictionary) {
+class SuggestionEngine(
+    private val dictionary: Dictionary,
+    private val personal: PersonalLexicon = PersonalLexicon.Empty,
+) {
 
     /**
      * Propositions pour [typed], au plus [limit]. [previousWord] (le mot tapé juste avant)
@@ -30,11 +36,13 @@ class SuggestionEngine(private val dictionary: Dictionary) {
     fun suggest(typed: String, previousWord: String? = null, limit: Int = 3): Suggestions {
         if (typed.isEmpty() || typed.length > MaxTypedLength) return Suggestions(typed, emptyList(), null)
         val context = previousWord?.let(::findAnyCase)?.let(dictionary::nextWords).orEmpty()
+        val learned = personal.learned?.let { Search(it, typed, emptyList(), emptyMap()).run() }.orEmpty()
         // Le mot tapé aux accents près passe avant toute autre correction : `ile` → `île`, pas `le`.
-        val ranked = (Search(typed, context).run().map { it.ranked() } + elisionCandidates(typed))
+        val ranked = (Search(dictionary, typed, context, personal.boosts).run() + learned).map { it.ranked() }
+            .plus(elisionCandidates(typed))
             .sortedWith(compareBy<Ranked> { !it.isAccentVariant }.thenByDescending { it.score })
         // Un mot connu passe en tête : c'est ce que l'utilisateur a voulu taper.
-        val known = findAnyCase(typed)?.let(dictionary::word)
+        val known = knownWord(typed)
         val words = (listOfNotNull(known) + ranked.map { it.word }).distinct().take(limit)
         return Suggestions(typed, words, if (known == null) autocorrection(typed, ranked) else null)
     }
@@ -49,12 +57,20 @@ class SuggestionEngine(private val dictionary: Dictionary) {
      * [word] est dans le dictionnaire : tel quel, ou en minuscules quand il est tapé avec une
      * majuscule (début de phrase, verrouillage). Un mot connu n'est jamais corrigé.
      */
-    fun isKnown(word: String): Boolean = findAnyCase(word) != null
+    fun isKnown(word: String): Boolean = knownWord(word) != null
 
-    private fun findAnyCase(word: String): Int? =
-        sequenceOf(word, word.replaceFirstChar { it.lowercaseChar() }, word.lowercase())
-            .map(dictionary::find)
-            .firstOrNull { it >= 0 }
+    /** [word] est dans le dictionnaire embarqué, et pas seulement parmi les mots appris. */
+    fun isInDictionary(word: String): Boolean = findAnyCase(word) != null
+
+    /** Le même moteur avec un autre dictionnaire personnel. */
+    fun withPersonal(personal: PersonalLexicon) = SuggestionEngine(dictionary, personal)
+
+    /** Forme connue de [word] : dictionnaire embarqué, puis mots appris. */
+    private fun knownWord(word: String): String? =
+        findAnyCase(word)?.let(dictionary::word)
+            ?: personal.learned?.let { learned -> learned.findAnyCase(word).takeIf { it >= 0 }?.let(learned::word) }
+
+    private fun findAnyCase(word: String): Int? = dictionary.findAnyCase(word).takeIf { it >= 0 }
 
     /**
      * Apostrophe d'élision oubliée : `jai` → `j'ai`, `cest` → `c'est`, `quil` → `qu'il`. Le
@@ -71,7 +87,7 @@ class SuggestionEngine(private val dictionary: Dictionary) {
             }
             val elision = dictionary.find("$prefix'")
             val context = if (elision >= 0) dictionary.nextWords(elision) else emptyList()
-            Search(rest, context).run()
+            Search(dictionary, rest, context, emptyMap()).run()
                 // Un reste très court n'est pris que s'il suit souvent l'élision : `na` → `n'a`,
                 // mais pas `ca` → `c'a` ni `mon` → `m'on`.
                 .filter { !it.completion && it.cost <= TypingCosts.WrongAccent && (rest.length > 2 || it.node in context) }
@@ -98,18 +114,33 @@ class SuggestionEngine(private val dictionary: Dictionary) {
         val isAccentVariant: Boolean get() = !completion && cost <= TypingCosts.WrongAccent
     }
 
-    private inner class Candidate(val node: Int, val cost: Float, val completion: Boolean, val score: Float) {
+    private class Candidate(
+        val dictionary: Dictionary,
+        val node: Int,
+        val cost: Float,
+        val completion: Boolean,
+        val score: Float,
+    ) {
         fun ranked() = Ranked(dictionary.word(node), cost, completion, score)
     }
 
-    /** Une recherche : l'état du parcours pour un mot tapé. */
-    private inner class Search(typed: String, private val context: List<Int>) {
+    /**
+     * Une recherche : l'état du parcours de [dictionary] pour un mot tapé. [boosts] : bonus de
+     * score par nœud (mots souvent choisis dans la barre).
+     */
+    private class Search(
+        private val dictionary: Dictionary,
+        typed: String,
+        private val context: List<Int>,
+        private val boosts: Map<Int, Int>,
+    ) {
         private val raw = typed.toCharArray()
         private val folded = CharArray(raw.size) { TypingCosts.fold(raw[it]) }
         private val n = raw.size
         private val maxCost = maxCost(n)
         private val maxCompletionCost = maxCompletionCost(n)
         private val contextBonus = if (context.isEmpty()) 0f else ContextBonus
+        private val maxBoost = if (boosts.isEmpty()) 0f else PersonalDictionaryRules.MaxBoost.toFloat()
 
         /** Une rangée de distance par profondeur : rows[d][j] = coût du préfixe de d lettres contre les j premières lettres tapées. */
         private val rows = Array(n + MaxExtraDepth + 2) { FloatArray(n + 1) }
@@ -159,7 +190,7 @@ class SuggestionEngine(private val dictionary: Dictionary) {
                 // Meilleur score encore possible dans ce sous-arbre : inutile d'y descendre s'il ne
                 // peut pas entrer dans les meilleurs candidats.
                 val lowestCost = minOf(rowMin, base + CompletionPenalty + CompletionLetterPenalty)
-                if (best.size >= Kept && score(dictionary.maxFrequency(child), lowestCost) + contextBonus <= best.last().score) continue
+                if (best.size >= Kept && score(dictionary.maxFrequency(child), lowestCost) + contextBonus + maxBoost <= best.last().score) continue
 
                 val frequency = dictionary.frequency(child)
                 if (frequency > 0) {
@@ -175,10 +206,10 @@ class SuggestionEngine(private val dictionary: Dictionary) {
         }
 
         private fun offer(node: Int, cost: Float, completion: Boolean, frequency: Int) {
-            val score = score(frequency, cost) + if (node in context) contextBonus else 0f
+            val score = score(frequency, cost) + (if (node in context) contextBonus else 0f) + (boosts[node] ?: 0)
             if (best.size >= Kept && score <= best.last().score) return
             val index = best.indexOfFirst { it.score < score }.let { if (it < 0) best.size else it }
-            best.add(index, Candidate(node, cost, completion, score))
+            best.add(index, Candidate(dictionary, node, cost, completion, score))
             if (best.size > Kept) best.removeAt(best.lastIndex)
         }
     }

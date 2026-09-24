@@ -52,3 +52,8 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
   tapé reste proposé pour le garder.
 - Prédiction du mot suivant après une espace.
 - Réglages : suggestions et correction automatique activables séparément.
+- Dictionnaire personnel : un mot inconnu tapé et gardé deux fois est appris, puis proposé et
+  jamais corrigé ; les mots choisis dans la barre remontent dans les suggestions. Rien n'est
+  appris dans un mot de passe ni en navigation privée.
+- Réglages : liste des mots appris avec recherche, ajout et suppression d'un mot, effacement
+  total (confirmé par un second appui).

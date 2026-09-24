@@ -27,6 +27,26 @@
     <string name="preferences_suggestions">Suggestions de mots</string>
     <string name="preferences_autocorrect">Correction automatique à l’espace (un retour arrière l’annule)</string>
     <string name="preferences_dictionary_attribution">Dictionnaire construit à partir de la Leipzig Corpora Collection (Université de Leipzig), sous licence CC BY 4.0 (creativecommons.org/licenses/by/4.0). Mots filtrés et compilés pour C!ao Clavier.</string>
+    <string name="personal_title">Dictionnaire personnel</string>
+    <string name="personal_intro">Un mot inconnu que tu tapes et gardes deux fois est appris : il est ensuite proposé, jamais corrigé. Rien n’est appris dans un mot de passe ni en navigation privée.</string>
+    <plurals name="personal_count">
+        <item quantity="one">%1$d mot appris</item>
+        <item quantity="many">%1$d de mots appris</item>
+        <item quantity="other">%1$d mots appris</item>
+    </plurals>
+    <string name="personal_manage">Gérer les mots appris</string>
+    <string name="personal_back">Retour</string>
+    <string name="personal_add_label">Ajouter un mot</string>
+    <string name="personal_add_placeholder">Un surnom, un mot familier…</string>
+    <string name="personal_add_action">Ajouter</string>
+    <string name="personal_add_invalid">Un seul mot, en lettres (apostrophe et trait d’union permis).</string>
+    <string name="personal_search_label">Rechercher</string>
+    <string name="personal_empty">Aucun mot appris pour l’instant.</string>
+    <string name="personal_no_match">Aucun mot ne correspond.</string>
+    <string name="personal_delete">Supprimer « %1$s »</string>
+    <string name="personal_clear">Effacer le dictionnaire personnel</string>
+    <string name="personal_clear_confirm">Confirmer : tout effacer</string>
+
     <string name="data_title">Données</string>
     <string name="data_clear_recent_emojis">Effacer les emojis récents</string>
 

@@ -65,6 +65,18 @@ class Dictionary private constructor(
         return if (isWord(node)) node else -1
     }
 
+    /**
+     * Comme [find], mais aussi en minuscules quand [word] est tapé avec une majuscule (début de
+     * phrase, verrouillage) : `Bonjour` → `bonjour`, mais `Paris` reste `Paris`.
+     */
+    fun findAnyCase(word: String): Int {
+        for (candidate in arrayOf(word, word.replaceFirstChar { it.lowercaseChar() }, word.lowercase())) {
+            val node = find(candidate)
+            if (node >= 0) return node
+        }
+        return -1
+    }
+
     /** Mots qui suivent le plus souvent le mot [node], du plus au moins fréquent. */
     fun nextWords(node: Int): List<Int> {
         val index = bigramKeys.binarySearch(node)
@@ -92,6 +104,51 @@ class Dictionary private constructor(
         private const val Magic = 0x43444943 // "CDIC"
         private const val Version = 1
         private const val BigramsPerWord = 3
+
+        /**
+         * Construit en mémoire un petit dictionnaire de [words] (mot → fréquence 1..255), sans
+         * bigrammes : le dictionnaire personnel (§7.3), au même format que le dictionnaire embarqué.
+         */
+        fun build(words: Map<String, Int>): Dictionary {
+            class Node(val char: Char) {
+                val children = java.util.TreeMap<Char, Node>()
+                var frequency = 0
+                var maxFrequency = 0
+                var firstChild = 0
+
+                fun computeMaxFrequency(): Int {
+                    maxFrequency = maxOf(frequency, children.values.maxOfOrNull { it.computeMaxFrequency() } ?: 0)
+                    return maxFrequency
+                }
+            }
+
+            val root = Node('\u0000')
+            for ((word, frequency) in words) {
+                if (word.isEmpty()) continue
+                var node = root
+                for (char in word) node = node.children.getOrPut(char) { Node(char) }
+                node.frequency = maxOf(node.frequency, frequency.coerceIn(1, 255))
+            }
+            root.computeMaxFrequency()
+            // Parcours en largeur : les enfants de chaque nœud reçoivent des indices contigus.
+            val nodes = ArrayList<Node>()
+            nodes += root
+            var head = 0
+            while (head < nodes.size) {
+                val node = nodes[head++]
+                node.firstChild = nodes.size
+                nodes += node.children.values
+            }
+            return Dictionary(
+                chars = CharArray(nodes.size) { nodes[it].char },
+                firstChild = IntArray(nodes.size) { nodes[it].firstChild },
+                childCount = ByteArray(nodes.size) { nodes[it].children.size.coerceAtMost(255).toByte() },
+                frequencies = ByteArray(nodes.size) { nodes[it].frequency.toByte() },
+                maxFrequencies = ByteArray(nodes.size) { nodes[it].maxFrequency.toByte() },
+                bigramKeys = IntArray(0),
+                bigramTargets = IntArray(0),
+            )
+        }
 
         /** Lit un dictionnaire compilé : lecture en bloc, sans analyse, pour tenir sous 300 ms (§7.2). */
         fun read(input: InputStream): Dictionary {
