@@ -23,6 +23,10 @@
     <string name="preferences_double_space_period">Double espace pour un point</string>
     <string name="preferences_non_breaking_space">Espace insécable avant ; : ! ?</string>
 
+    <string name="preferences_correction_title">Correction</string>
+    <string name="preferences_suggestions">Suggestions de mots</string>
+    <string name="preferences_autocorrect">Correction automatique à l’espace (un retour arrière l’annule)</string>
+    <string name="preferences_dictionary_attribution">Dictionnaire construit à partir de la Leipzig Corpora Collection (Université de Leipzig), sous licence CC BY 4.0 (creativecommons.org/licenses/by/4.0). Mots filtrés et compilés pour C!ao Clavier.</string>
     <string name="data_title">Données</string>
     <string name="data_clear_recent_emojis">Effacer les emojis récents</string>
 

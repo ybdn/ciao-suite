@@ -60,14 +60,17 @@ object FrenchTypography {
     private fun lastWord(text: CharSequence): String = text.takeLastWhile { it.isLetter() }.toString()
 
     /** Élisions du français : le mot qui suit est cherché seul par les suggestions (§6.3, §7). */
-    private val ElidedPrefixes = listOf("jusqu", "lorsqu", "puisqu", "quoiqu", "qu", "l", "d", "j", "m", "n", "s", "t", "c")
+    val ElidedPrefixes = listOf("jusqu", "lorsqu", "puisqu", "quoiqu", "qu", "l", "d", "j", "m", "n", "s", "t", "c")
+
+    /** [prefix] (sans apostrophe) s'élide : `l`, `qu`, `jusqu`… */
+    fun isElidedPrefix(prefix: String): Boolean = prefix.lowercase() in ElidedPrefixes
 
     /** `l'ecole` → `l'` + `ecole` ; null si [word] ne commence pas par une élision. */
     fun splitElision(word: String): Elision? {
         val apostrophe = word.indexOfFirst { it == '\'' || it == '’' }
         if (apostrophe <= 0 || apostrophe == word.lastIndex) return null
         val prefix = word.substring(0, apostrophe)
-        if (prefix.lowercase() !in ElidedPrefixes) return null
+        if (!isElidedPrefix(prefix)) return null
         return Elision(prefix = word.substring(0, apostrophe + 1), word = word.substring(apostrophe + 1))
     }
 }

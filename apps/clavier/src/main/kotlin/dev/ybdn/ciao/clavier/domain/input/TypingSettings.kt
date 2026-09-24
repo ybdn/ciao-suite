@@ -5,4 +5,6 @@ data class TypingSettings(
     val autoCapitalize: Boolean = true,
     val doubleSpacePeriod: Boolean = true,
     val nonBreakingSpace: Boolean = false,
+    val suggestions: Boolean = true,
+    val autocorrect: Boolean = true,
 )

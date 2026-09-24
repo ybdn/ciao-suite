@@ -32,6 +32,9 @@ interface KeyboardActions {
     /** Masque la puce « Coller » jusqu'à la prochaine copie. */
     fun dismissPasteChip()
 
+    /** Applique une proposition de la barre de suggestions au mot en cours. */
+    fun pickSuggestion(item: SuggestionItem)
+
     /** Retour haptique d'une frappe. */
     fun keyFeedback()
 }

@@ -19,6 +19,8 @@ class TypingPreferences(context: Context) {
             autoCapitalize = prefs[AutoCapitalize] ?: defaults.autoCapitalize,
             doubleSpacePeriod = prefs[DoubleSpacePeriod] ?: defaults.doubleSpacePeriod,
             nonBreakingSpace = prefs[NonBreakingSpace] ?: defaults.nonBreakingSpace,
+            suggestions = prefs[Suggestions] ?: defaults.suggestions,
+            autocorrect = prefs[Autocorrect] ?: defaults.autocorrect,
         )
     }
 
@@ -28,6 +30,10 @@ class TypingPreferences(context: Context) {
 
     suspend fun setNonBreakingSpace(enabled: Boolean) = set(NonBreakingSpace, enabled)
 
+    suspend fun setSuggestions(enabled: Boolean) = set(Suggestions, enabled)
+
+    suspend fun setAutocorrect(enabled: Boolean) = set(Autocorrect, enabled)
+
     private suspend fun set(key: Preferences.Key<Boolean>, value: Boolean) {
         dataStore.edit { it[key] = value }
     }
@@ -36,5 +42,7 @@ class TypingPreferences(context: Context) {
         val AutoCapitalize = booleanPreferencesKey("auto_capitalize")
         val DoubleSpacePeriod = booleanPreferencesKey("double_space_period")
         val NonBreakingSpace = booleanPreferencesKey("non_breaking_space")
+        val Suggestions = booleanPreferencesKey("suggestions")
+        val Autocorrect = booleanPreferencesKey("autocorrect")
     }
 }
