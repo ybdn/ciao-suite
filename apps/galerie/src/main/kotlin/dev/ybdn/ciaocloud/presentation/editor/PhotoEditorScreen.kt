@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -105,6 +106,7 @@ fun PhotoEditorScreen(
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
     var interacting by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val resources = LocalResources.current
 
     // Le ViewModel survit à la fermeture de l'éditeur (il appartient à la visionneuse) : chaque
     // nouvelle ouverture doit repartir d'une recette vierge.
@@ -124,9 +126,9 @@ fun PhotoEditorScreen(
                     onSaved(outcome)
                 }
                 SaveEditOutcome.Cancelled, SaveEditOutcome.NothingToSave -> Unit
-                SaveEditOutcome.SsdUnavailable -> context.toast(context.getString(R.string.editor_plug_ssd))
-                is SaveEditOutcome.Unavailable -> context.toast(context.getString(outcome.reason.messageRes()))
-                is SaveEditOutcome.Failed -> context.toast(context.getString(R.string.editor_save_failed, outcome.message))
+                SaveEditOutcome.SsdUnavailable -> context.toast(resources.getString(R.string.editor_plug_ssd))
+                is SaveEditOutcome.Unavailable -> context.toast(resources.getString(outcome.reason.messageRes()))
+                is SaveEditOutcome.Failed -> context.toast(resources.getString(R.string.editor_save_failed, outcome.message))
             }
         }
     }

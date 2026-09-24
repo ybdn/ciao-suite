@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -89,6 +90,7 @@ fun GalleryScreen(
         )
     }
     val context = LocalContext.current
+    val resources = LocalResources.current
     if (showMetadataSheet) {
         GroupMetadataSheet(
             count = selectedKeys.size,
@@ -114,13 +116,13 @@ fun GalleryScreen(
         viewModel.metadataResults.collect { summary ->
             val message = when {
                 summary.cancelled -> null
-                summary.ssdUnavailable -> context.getString(R.string.editor_plug_ssd)
+                summary.ssdUnavailable -> resources.getString(R.string.editor_plug_ssd)
                 else -> buildList {
-                    add(context.resources.getQuantityString(R.plurals.group_metadata_modified, summary.modified, summary.modified))
-                    if (summary.moved > 0) add(context.resources.getQuantityString(R.plurals.group_metadata_moved, summary.moved, summary.moved))
-                    if (summary.skipped > 0) add(context.resources.getQuantityString(R.plurals.group_metadata_skipped, summary.skipped, summary.skipped))
+                    add(resources.getQuantityString(R.plurals.group_metadata_modified, summary.modified, summary.modified))
+                    if (summary.moved > 0) add(resources.getQuantityString(R.plurals.group_metadata_moved, summary.moved, summary.moved))
+                    if (summary.skipped > 0) add(resources.getQuantityString(R.plurals.group_metadata_skipped, summary.skipped, summary.skipped))
                     if (summary.failedNames.isNotEmpty()) {
-                        add(context.resources.getQuantityString(R.plurals.group_metadata_failed, summary.failedNames.size, summary.failedNames.size))
+                        add(resources.getQuantityString(R.plurals.group_metadata_failed, summary.failedNames.size, summary.failedNames.size))
                     }
                 }.joinToString(", ")
             }

@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -154,15 +155,16 @@ class GalleryActions(
 @Composable
 fun GalleryEventsEffect(events: SharedFlow<GalleryEvent>) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     LaunchedEffect(events) {
         events.collect { event ->
             when (event) {
                 is GalleryEvent.Share -> context.shareMedia(event.media)
                 is GalleryEvent.Deleted -> context.deletedMessage(event.outcome)?.let { context.toast(it) }
-                GalleryEvent.ShareSsdUnavailable -> context.toast(context.getString(R.string.gallery_share_ssd_unavailable))
+                GalleryEvent.ShareSsdUnavailable -> context.toast(resources.getString(R.string.gallery_share_ssd_unavailable))
                 is GalleryEvent.ShareInsufficientSpace ->
-                    context.toast(context.getString(R.string.share_strip_insufficient_space, formatBytes(event.requiredBytes)))
-                is GalleryEvent.Error -> context.toast(context.getString(R.string.gallery_action_error, event.message))
+                    context.toast(resources.getString(R.string.share_strip_insufficient_space, formatBytes(event.requiredBytes)))
+                is GalleryEvent.Error -> context.toast(resources.getString(R.string.gallery_action_error, event.message))
             }
         }
     }

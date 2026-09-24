@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -86,6 +87,7 @@ fun ViewerScreen(
     var itemToDelete by remember { mutableStateOf<GalleryItem?>(null) }
     var itemForInfo by remember { mutableStateOf<GalleryItem?>(null) }
     val context = LocalContext.current
+    val resources = LocalResources.current
     val transferRunning by viewModel.transferRunning.collectAsStateWithLifecycle()
     // Clé de l'élément en cours d'édition (éditeur plein écran), et élément à afficher après une copie.
     var editingKey by rememberSaveable { mutableStateOf<String?>(null) }
@@ -103,9 +105,9 @@ fun ViewerScreen(
         viewModel.metadataResults.collect { summary ->
             val message = when {
                 summary.cancelled -> null
-                summary.ssdUnavailable -> context.getString(R.string.editor_plug_ssd)
-                summary.failedNames.isNotEmpty() -> context.getString(R.string.editor_save_failed, summary.failedNames.joinToString())
-                summary.modified > 0 -> context.getString(R.string.metadata_saved)
+                summary.ssdUnavailable -> resources.getString(R.string.editor_plug_ssd)
+                summary.failedNames.isNotEmpty() -> resources.getString(R.string.editor_save_failed, summary.failedNames.joinToString())
+                summary.modified > 0 -> resources.getString(R.string.metadata_saved)
                 else -> null
             }
             message?.let { context.toast(it) }
@@ -291,9 +293,9 @@ fun ViewerScreen(
                     when (outcome) {
                         is SaveEditOutcome.Copied -> {
                             focusKey = outcome.key
-                            context.toast(context.getString(R.string.editor_copy_saved))
+                            context.toast(resources.getString(R.string.editor_copy_saved))
                         }
-                        else -> context.toast(context.getString(R.string.editor_replaced))
+                        else -> context.toast(resources.getString(R.string.editor_replaced))
                     }
                 },
             )
@@ -308,12 +310,13 @@ fun ViewerScreen(
 @Composable
 private fun EditAction(capabilities: EditCapabilities, onEdit: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val entry = listOf(capabilities.editCopy, capabilities.replace)
     if (entry.all { it is EditAvailability.Unavailable && it.reason.hidesAction }) return
     val blockedReason = entry.filterIsInstance<EditAvailability.Unavailable>().takeIf { it.size == entry.size }?.first()?.reason
     IconButton(
         onClick = {
-            if (blockedReason == null) onEdit() else context.toast(context.getString(blockedReason.messageRes()))
+            if (blockedReason == null) onEdit() else context.toast(resources.getString(blockedReason.messageRes()))
         },
         modifier = Modifier.alpha(if (blockedReason == null) 1f else 0.4f),
     ) {
