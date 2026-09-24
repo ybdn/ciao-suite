@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import android.widget.Toast
@@ -42,13 +43,14 @@ fun SettingsScreen() {
     val shareStripMetadata by viewModel.shareStripMetadata.collectAsState()
     var showTriageResetDialog by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
+    val resources = LocalResources.current
 
     if (showTriageResetDialog) {
         TriageResetDialog(
             onConfirm = {
                 showTriageResetDialog = false
                 viewModel.resetTriage {
-                    Toast.makeText(context, context.getString(R.string.settings_triage_reset_done), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, resources.getString(R.string.settings_triage_reset_done), Toast.LENGTH_SHORT).show()
                 }
             },
             onDismiss = { showTriageResetDialog = false },
