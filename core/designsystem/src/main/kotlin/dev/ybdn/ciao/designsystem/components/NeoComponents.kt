@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
@@ -166,17 +167,21 @@ fun Modifier.neoSurface(
     .background(color, RectangleShape)
     .border(borderWidth, outline, RectangleShape)
 
-/** Structure commune des écrans : barre de titre, en-tête optionnel, contenu défilant. */
+/**
+ * Structure commune des écrans : barre de titre (avec un bouton de retour éventuel, [navigation]),
+ * en-tête optionnel, contenu défilant.
+ */
 @Composable
 fun NeoScreen(
     title: String,
+    navigation: @Composable () -> Unit = {},
     header: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Scaffold(
         topBar = {
             Column {
-                NeoTopBar(title)
+                NeoTopBar(title, navigation = navigation)
                 header()
             }
         },
@@ -503,6 +508,7 @@ fun NeoTextField(
     placeholder: String? = null,
     error: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     val palette = NeoTheme.palette
     val interactionSource = remember { MutableInteractionSource() }
@@ -518,6 +524,7 @@ fun NeoTextField(
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = palette.content),
             cursorBrush = SolidColor(palette.content),
             keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
             modifier = Modifier
                 .fillMaxWidth()
                 .offset(if (isFocused) (-1).dp else 0.dp, if (isFocused) (-1).dp else 0.dp)

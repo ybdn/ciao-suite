@@ -2,7 +2,6 @@ package dev.ybdn.ciao.clavier.data
 
 import android.content.Context
 import dev.ybdn.ciao.clavier.domain.suggest.Dictionary
-import dev.ybdn.ciao.clavier.domain.suggest.SuggestionEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -14,9 +13,9 @@ import kotlinx.coroutines.withContext
 object FrenchDictionary {
 
     @Volatile
-    private var cached: SuggestionEngine? = null
+    private var cached: Dictionary? = null
 
-    suspend fun load(context: Context): SuggestionEngine = cached ?: withContext(Dispatchers.IO) {
-        cached ?: context.assets.open("dictionary/fr.dict").use { SuggestionEngine(Dictionary.read(it)) }.also { cached = it }
+    suspend fun load(context: Context): Dictionary = cached ?: withContext(Dispatchers.IO) {
+        cached ?: context.assets.open("dictionary/fr.dict").use(Dictionary::read).also { cached = it }
     }
 }

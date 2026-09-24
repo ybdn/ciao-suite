@@ -32,9 +32,11 @@ Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12).
 - Lot 3 (règles françaises, issue #12) : fait.
 - Lot 4 (dictionnaire et suggestions, issue #13) : fait. Source Leipzig Corpora Collection
   (CC BY 4.0), prédiction du mot suivant incluse (spec §7.2).
+- Lot 5 (apprentissage et vie privée, issue #14) : fait. Champs sensibles et exclusion des
+  sauvegardes étaient déjà en place depuis les lots 4, 6 et 7.
 - Lot 6 (emojis, issue #15) : fait.
 - Lot 7 (presse-papiers, issue #16) : fait.
-- Lots 5, 8 : pas commencés.
+- Lot 8 : pas commencé.
 
 ## Architecture
 
@@ -46,16 +48,16 @@ dev.ybdn.ciao.clavier/
 ├── domain/
 │   ├── layout/    touches, dispositions (AZERTY, symboles, pavés), variantes (Kotlin pur, testé)
 │   ├── input/     majuscule, règles françaises, curseur, effacement par mot (Kotlin pur, testé)
-│   ├── suggest/   dictionnaire (trie), moteur de suggestions, mot sous le curseur (Kotlin pur, testé)
+│   ├── suggest/   dictionnaire (trie), moteur de suggestions, mot sous le curseur, règles du
+│   │              dictionnaire personnel (Kotlin pur, testé)
 │   ├── emoji/     lecture de emoji-test.txt, couleurs de peau, récents (Kotlin pur, testé)
 │   └── clipboard/ règles de l'historique : durée, limite, épinglage, puce Coller (testé)
 ├── data/          DataStore partagé (réglages, emojis récents), catalogue emojis, dictionnaire,
-│                  clipboard/ : base Room `clavier.db` (schémas dans apps/clavier/schemas)
+│                  base Room `ClavierDatabase` (`clavier.db`, schémas dans apps/clavier/schemas) :
+│                  clipboard/ (historique) et personal/ (dictionnaire personnel)
 ├── ime/           InputMethodService, interface Compose du clavier
 └── settings/      activité de réglages et de mise en route (Compose)
 ```
-
-Le dictionnaire personnel (lot 5) rejoindra `data/`.
 
 - **Compose dans l'`InputMethodService`** : le service n'est pas un `LifecycleOwner` /
   `ViewModelStoreOwner` / `SavedStateRegistryOwner` par défaut (contrairement à `ComponentActivity`) ;
@@ -100,6 +102,16 @@ Le dictionnaire personnel (lot 5) rejoindra `data/`.
   un retour arrière immédiat (`AutocorrectionUndo`) ; les mots rétablis vont dans `rejectedWords`
   jusqu'au champ suivant. Après un remplacement de même longueur, Android ne rappelle pas
   `onUpdateSelection` : rafraîchir la barre à la main.
+- **Dictionnaire personnel** (§7.3) : table Room `personal_word` (clé sans casse, forme la moins
+  capitalisée retenue). Un mot inconnu du dictionnaire embarqué compte comme « conservé » quand
+  un séparateur le termine sans autocorrection, quand sa correction est annulée ou quand la puce
+  « mot tapé » est choisie : appris à la deuxième fois (`PersonalDictionaryRules`), 500 candidats
+  au plus. Un mot connu choisi dans la barre gagne un bonus de score. `PersonalLexicon` range les
+  mots appris dans un petit trie au format du dictionnaire embarqué (`Dictionary.build`), cherché
+  par le même parcours ; le service le refait à chaque changement de la table. Rien n'est appris
+  quand les suggestions sont coupées (`learningEnabled`), donc jamais en navigation privée ni dans
+  un champ sensible. Réglages : `PersonalDictionaryScreen` (liste, recherche, ajout, suppression),
+  effacement total en deux appuis (`ConfirmingDangerButton`).
 - **Réglages** : `TypingPreferences` (DataStore `clavier_settings`), lus en continu par le
   service (`lifecycleScope`) : un changement s'applique sans redémarrer le clavier.
 - **Emojis** : `assets/emoji/emoji-test.txt` d'Unicode (Emoji 18.0, licence Unicode v3 dans

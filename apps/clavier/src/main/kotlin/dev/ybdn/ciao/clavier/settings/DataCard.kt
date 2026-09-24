@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ybdn.ciao.clavier.R
 import dev.ybdn.ciao.clavier.data.EmojiPreferences
 import dev.ybdn.ciao.clavier.data.clipboard.ClipboardHistory
+import dev.ybdn.ciao.clavier.data.personal.PersonalDictionary
 import dev.ybdn.ciao.designsystem.components.NeoButton
 import dev.ybdn.ciao.designsystem.components.NeoCard
 import dev.ybdn.ciao.designsystem.components.NeoSectionHeader
@@ -18,8 +19,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Données mémorisées par le clavier (apps/clavier/docs/spec-v1.md §3.4, §10.3) : chacune
- * s'efface en un geste (épinglés compris pour le presse-papiers). Le dictionnaire personnel
- * rejoindra cette carte au lot 5.
+ * s'efface en un geste (épinglés compris pour le presse-papiers). Le dictionnaire personnel, fruit
+ * d'un long apprentissage, demande un second appui pour confirmer.
  */
 @Composable
 fun DataCard(index: String) {
@@ -28,6 +29,8 @@ fun DataCard(index: String) {
     val recents by emojis.recents.collectAsStateWithLifecycle(initialValue = emptyList())
     val clipboard = remember { ClipboardHistory(context) }
     val clips by clipboard.items.collectAsStateWithLifecycle(initialValue = emptyList())
+    val personal = remember { PersonalDictionary(context) }
+    val words by personal.words.collectAsStateWithLifecycle(initialValue = emptyList())
     val scope = rememberCoroutineScope()
 
     NeoCard {
@@ -43,6 +46,12 @@ fun DataCard(index: String) {
             tone = NeoTone.Danger,
             enabled = clips.isNotEmpty(),
             onClick = { scope.launch { clipboard.clear() } },
+        )
+        ConfirmingDangerButton(
+            text = stringResource(R.string.personal_clear),
+            confirmText = stringResource(R.string.personal_clear_confirm),
+            enabled = words.isNotEmpty(),
+            onConfirm = { scope.launch { personal.clear() } },
         )
     }
 }

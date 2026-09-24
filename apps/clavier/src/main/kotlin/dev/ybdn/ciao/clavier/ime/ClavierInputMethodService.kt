@@ -31,6 +31,7 @@ import dev.ybdn.ciao.clavier.data.FrenchDictionary
 import dev.ybdn.ciao.clavier.data.TypingPreferences
 import dev.ybdn.ciao.clavier.data.clipboard.ClipboardHistory
 import dev.ybdn.ciao.clavier.data.clipboard.ClipboardPreferences
+import dev.ybdn.ciao.clavier.data.personal.PersonalDictionary
 import dev.ybdn.ciao.clavier.domain.clipboard.ClipboardRules
 import dev.ybdn.ciao.clavier.domain.clipboard.ClipboardSettings
 import dev.ybdn.ciao.clavier.domain.input.FrenchTypography
@@ -38,6 +39,7 @@ import dev.ybdn.ciao.clavier.domain.input.TextEdit
 import dev.ybdn.ciao.clavier.domain.input.TypingSettings
 import dev.ybdn.ciao.clavier.domain.input.wordDeletionLength
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardMode
+import dev.ybdn.ciao.clavier.domain.suggest.PersonalLexicon
 import dev.ybdn.ciao.clavier.domain.suggest.SuggestionEngine
 import dev.ybdn.ciao.clavier.domain.suggest.WordAtCursor
 import dev.ybdn.ciao.designsystem.theme.CiaoTheme
@@ -94,7 +96,7 @@ class ClavierInputMethodService :
 
     /**
      * Navigation privée ou champ mot de passe (§3) : le clavier n'y retient rien (emojis récents,
-     * couleurs de peau, puis mots appris au lot 5).
+     * couleurs de peau, mots appris).
      */
     private var incognito = false
 
@@ -118,8 +120,12 @@ class ClavierInputMethodService :
     /** Instant de la dernière espace tapée seule, pour le double espace → point ; 0 sinon. */
     private var lastSpaceAt = 0L
 
-    /** Moteur de suggestions, une fois le dictionnaire chargé (en arrière-plan, au démarrage). */
+    /**
+     * Moteur de suggestions, une fois le dictionnaire chargé (en arrière-plan, au démarrage),
+     * refait avec les mots appris à chaque changement du dictionnaire personnel.
+     */
     private var engine: SuggestionEngine? = null
+    private val personalDictionary by lazy { PersonalDictionary(this) }
     private var suggestionBar by mutableStateOf(SuggestionBar())
 
     /** Calcul des suggestions hors du fil principal ; celui d'une frappe précédente est annulé (§4). */
@@ -168,8 +174,14 @@ class ClavierInputMethodService :
             }
         }
         lifecycleScope.launch {
-            engine = FrenchDictionary.load(this@ClavierInputMethodService)
+            val dictionary = FrenchDictionary.load(this@ClavierInputMethodService)
+            val base = SuggestionEngine(dictionary)
+            engine = base
             refreshSuggestions()
+            personalDictionary.words.collect { words ->
+                engine = withContext(suggestDispatcher) { base.withPersonal(PersonalLexicon.build(dictionary, words)) }
+                refreshSuggestions()
+            }
         }
         lifecycleScope.launch {
             val categories = EmojiCatalog.load(this@ClavierInputMethodService)
@@ -289,7 +301,11 @@ class ClavierInputMethodService :
         if (afterAutoSpace && replacesAutoSpace(text) && connection.getTextBeforeCursor(1, 0)?.toString() == " ") {
             connection.deleteSurroundingText(1, 0)
         }
-        if (isWordSeparator(text) && autocorrectEnabled() && !hasSelection && autocorrectBefore(text)) return
+        if (isWordSeparator(text) && !hasSelection) {
+            if (autocorrectEnabled() && autocorrectBefore(text)) return
+            // Après une suggestion choisie, le mot a déjà compté (pickSuggestion).
+            if (!afterAutoSpace) learnWordBeforeCursor()
+        }
         val edit = typographyEdit(text, afterAutoSpace) { connection.getTextBeforeCursor(TypographyLookBehind, 0) }
         if (edit == null) {
             connection.commitText(text, 1)
@@ -351,6 +367,33 @@ class ClavierInputMethodService :
 
     private fun suggestionsEnabled() = suggestionsApply && settings.suggestions
 
+    /**
+     * Apprentissage personnel (§7.3) : seulement là où les suggestions servent, donc jamais en
+     * navigation privée ni dans un champ sensible (§3).
+     */
+    private fun learningEnabled() = suggestionsEnabled()
+
+    /**
+     * Le mot avant le curseur est terminé par un séparateur sans avoir été corrigé : s'il est
+     * inconnu du dictionnaire embarqué, il compte pour son apprentissage.
+     */
+    private fun learnWordBeforeCursor() {
+        val connection = currentInputConnection ?: return
+        val word = WordAtCursor.read(
+            connection.getTextBeforeCursor(WordLookBehind, 0) ?: return,
+            connection.getTextAfterCursor(1, 0) ?: "",
+        )?.word ?: return
+        keepTypedWord(word)
+    }
+
+    /** [word] tapé est conservé tel quel : appris à la deuxième fois s'il est inconnu (§7.3). */
+    private fun keepTypedWord(word: String) {
+        val engine = engine ?: return
+        if (!learningEnabled() || word.isEmpty() || engine.isInDictionary(word)) return
+        val now = System.currentTimeMillis()
+        lifecycleScope.launch { personalDictionary.keep(word, now) }
+    }
+
     private fun autocorrectEnabled() = autocorrectApply && settings.suggestions && settings.autocorrect
 
     /**
@@ -396,7 +439,10 @@ class ClavierInputMethodService :
         connection.beginBatchEdit()
         when (item.kind) {
             // Garder le mot tapé : plus de correction pour lui.
-            SuggestionItem.Kind.Typed -> rejectedWords += word.word.lowercase()
+            SuggestionItem.Kind.Typed -> {
+                rejectedWords += word.word.lowercase()
+                keepTypedWord(word.word)
+            }
             SuggestionItem.Kind.Prediction -> connection.commitText(item.text, 1)
             SuggestionItem.Kind.Word, SuggestionItem.Kind.Autocorrection -> {
                 connection.deleteSurroundingText(word.word.length, 0)
@@ -406,6 +452,11 @@ class ClavierInputMethodService :
         connection.commitText(space, 1)
         connection.endBatchEdit()
         autoSpacePending = space.isNotEmpty()
+        // Un mot connu choisi dans la barre remonte dans les suggestions (§7.3).
+        if (item.kind != SuggestionItem.Kind.Typed && learningEnabled() && engine?.isKnown(item.text) == true) {
+            val now = System.currentTimeMillis()
+            lifecycleScope.launch { personalDictionary.used(item.text, now) }
+        }
     }
 
     override fun deleteBackward() {
@@ -435,6 +486,7 @@ class ClavierInputMethodService :
         connection.commitText(undo.typed + undo.separator, 1)
         connection.endBatchEdit()
         rejectedWords += undo.typed.lowercase()
+        keepTypedWord(undo.typed)
         // Même longueur, même curseur : Android ne rappelle pas onUpdateSelection.
         refreshSuggestions()
         return true

@@ -49,10 +49,10 @@ private fun isSelected(context: Context): Boolean {
 
 /**
  * Accueil / mise en route (apps/clavier/docs/spec-v1.md §10.1) : tant que le clavier n'est pas
- * activé puis choisi, un parcours en deux étapes, suivi d’une zone de test et des réglages de frappe.
+ * activé puis choisi, un parcours en deux étapes, suivi d’une zone de test et des réglages.
  */
 @Composable
-fun OnboardingScreen() {
+fun OnboardingScreen(onManagePersonalDictionary: () -> Unit) {
     val context = LocalContext.current
     var enabled by remember { mutableStateOf(isEnabled(context)) }
     var selected by remember { mutableStateOf(isSelected(context)) }
@@ -124,6 +124,8 @@ fun OnboardingScreen() {
 
         ClipboardPreferencesCard(index = "06")
 
-        DataCard(index = "07")
+        PersonalDictionaryCard(index = "07", onManage = onManagePersonalDictionary)
+
+        DataCard(index = "08")
     }
 }
