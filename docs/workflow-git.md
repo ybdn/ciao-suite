@@ -66,7 +66,7 @@ main ──●──●──●──────●──●──●───
   `feat(galerie)!: …` et un paragraphe `BREAKING CHANGE: …` dans le corps.
 - 🔒 Première ligne de 100 caractères maximum (viser 72).
 - Exemples : `feat(galerie): albums personnalisés`, `fix(clavier): accents sur les majuscules`,
-  `chore(galerie): version 1.2.0`, `build: AGP 8.8`.
+  `chore(galerie): version 1.2.0`, `build: AGP 9.5`.
 
 ## 3. Fusion (pull requests)
 

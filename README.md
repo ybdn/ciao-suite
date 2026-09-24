@@ -89,12 +89,16 @@ Après un clone, activer les hooks qui vérifient ces règles : `git config core
 Un seul workflow, `.github/workflows/ci.yml` (PR et push vers `main` ou `release/**`) :
 
 - un job par app, lancé seulement si l'app, `core/`, `build-logic/` ou la configuration Gradle
-  ont changé ; il appelle `_android-app.yml` (build debug + tests unitaires ; APK en artifact sur push) ;
+  ont changé ; il appelle `_android-app.yml` (vérification du wrapper Gradle, build debug, tests
+  unitaires, lint, build release R8 ; APK en artifact sur push) ;
+- un job `actionlint` qui valide les workflows dès que `.github/` change ;
 - un job **CI OK** qui agrège les résultats : c'est le check exigé pour fusionner.
 
-`pr-title.yml` (**Titre de PR**) vérifie le format du titre des PR. Dependabot (`.github/dependabot.yml`)
-propose chaque mois une PR groupée pour les actions et une pour les dépendances Gradle. Pas de
-publication automatique sur le Play Store.
+`pr-title.yml` (**Titre de PR**) vérifie le format du titre des PR. `release.yml` publie un APK
+signé (avec SHA-256 et attestation de provenance) en release GitHub pour chaque tag
+`<app>-v<semver>` posé sur `main` ou `release/*`. Dependabot (`.github/dependabot.yml`) propose
+chaque mois une PR groupée pour les actions et une pour les dépendances Gradle (majeures comprises,
+sans rebase automatique). Pas de publication automatique sur le Play Store.
 
 ## Ajouter une app
 

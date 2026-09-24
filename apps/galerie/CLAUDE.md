@@ -36,7 +36,7 @@ C!ao (anciennement CiaoCloud ; package `dev.ybdn.ciaocloud`) est une application
 - Room pour persister l'état de transfert (éviter re-scan/doublons)
 - DataStore (pas SharedPreferences) pour l'URI SAF persistée et les préférences
 - `androidx.exifinterface` pour la lecture EXIF, `MediaMetadataRetriever` pour les métadonnées vidéo
-- `minSdk`/`targetSdk` : dernière version stable Android (app mono-device, pas de contrainte de compatibilité descendante)
+- `minSdk` 33, `compileSdk` 37, `targetSdk` 35 : communs à la suite (`CiaoSdk` dans `build-logic`) ; montée de `targetSdk` suivie dans #47
 - Aucune dépendance réseau/backend/authentification
 
 ## Architecture : Clean Architecture allégée, séparation par package (pas de multi-module Gradle)
