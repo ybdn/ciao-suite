@@ -45,3 +45,10 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
 - Puce « Coller » dans le bandeau pendant une minute après une copie.
 - Réglages : activer l'historique, durée de conservation, effacer l'historique.
 - Les données du clavier sont exclues des sauvegardes et du transfert vers un nouvel appareil.
+- Suggestions de mots au-dessus des touches : complétion (« bonj » → « bonjour »), correction
+  des fautes de frappe selon les touches voisines, accents restitués (« ecole » → « école »),
+  apostrophe d'élision ajoutée (« jai » → « j'ai »).
+- Correction automatique à l'espace ou à la ponctuation, annulée par un retour arrière ; le mot
+  tapé reste proposé pour le garder.
+- Prédiction du mot suivant après une espace.
+- Réglages : suggestions et correction automatique activables séparément.

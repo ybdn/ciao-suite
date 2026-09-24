@@ -31,11 +31,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.ybdn.ciao.clavier.R
-import dev.ybdn.ciao.clavier.domain.clipboard.ClipboardItem
 import dev.ybdn.ciao.clavier.domain.input.EffectiveShift
 import dev.ybdn.ciao.clavier.domain.input.ShiftState
 import dev.ybdn.ciao.clavier.domain.input.SpaceCursorDrag
@@ -47,9 +45,7 @@ import dev.ybdn.ciao.clavier.domain.layout.KeyVariants
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardLayout
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardMode
 import dev.ybdn.ciao.clavier.domain.layout.KeyboardPage
-import dev.ybdn.ciao.designsystem.components.BorderThin
 import dev.ybdn.ciao.designsystem.components.BorderWidth
-import dev.ybdn.ciao.designsystem.components.NeoKey
 import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciao.designsystem.theme.DisplayFont
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
@@ -80,19 +76,6 @@ private val BottomPadding = 8.dp
 
 /** Hauteur de la zone des touches, que le panneau emojis reprend à l'identique. */
 private val KeysAreaHeight = TopPadding + KeyHeight * 4 + RowGap * 3 + BottomPadding
-
-/**
- * Bandeau au-dessus des touches (suggestions, presse-papiers), comme la barre d'outils de Gboard :
- * `height: 48px; padding: 0px 8px; gap: 6px` dans la maquette, bouton presse-papiers de 36 × 34 px
- * suivi d'un séparateur vertical de 2 × 24 px.
- */
-private val StripHeight = 48.dp
-private val StripHorizontalPadding = 8.dp
-private val StripGap = 6.dp
-private val ClipboardButtonWidth = 36.dp
-private val ClipboardButtonHeight = 34.dp
-private val ClipboardIconSize = 18.dp
-private val StripDividerHeight = 24.dp
 
 /** Marge droite de chaque rangée, pour que l'ombre de la dernière touche ne soit pas coupée. */
 private val RowEndPadding = 3.dp
@@ -128,6 +111,7 @@ fun KeyboardScreen(
     inputSession: Int,
     emojiData: EmojiPanelData,
     clipboardData: ClipboardPanelData,
+    suggestions: () -> SuggestionBar,
     actions: KeyboardActions,
 ) {
     var panel by remember(inputSession) { mutableStateOf(Panel.Keys) }
@@ -173,6 +157,7 @@ fun KeyboardScreen(
             SuggestionStrip(
                 clipboardOpen = panel == Panel.Clipboard,
                 pasteChip = clipboardData.pasteChip,
+                suggestions = suggestions,
                 onClipboard = { panel = if (panel == Panel.Clipboard) Panel.Keys else Panel.Clipboard },
                 actions = actions,
             )
@@ -421,59 +406,4 @@ private class GestureMemory {
     var keyBounds = Rect.Zero
     var spaceDrag: SpaceCursorDrag? = null
     var spaceDownX = 0f
-}
-
-/**
- * Bandeau de 48 dp au-dessus des touches : bouton de l'historique du presse-papiers, séparateur,
- * puis la puce « Coller » juste après une copie (spec §9). Les suggestions arrivent au lot 4.
- */
-@Composable
-private fun SuggestionStrip(
-    clipboardOpen: Boolean,
-    pasteChip: ClipboardItem?,
-    onClipboard: () -> Unit,
-    actions: KeyboardActions,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(StripHeight)
-            .padding(horizontal = StripHorizontalPadding),
-        horizontalArrangement = Arrangement.spacedBy(StripGap),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        NeoKey(
-            modifier = Modifier.width(ClipboardButtonWidth).height(ClipboardButtonHeight),
-            tone = if (clipboardOpen) NeoTone.Selected else NeoTone.Muted,
-            onClick = onClipboard,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_key_clipboard),
-                contentDescription = stringResource(R.string.keyboard_clipboard_history),
-                modifier = Modifier.size(ClipboardIconSize),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .width(BorderThin)
-                .height(StripDividerHeight)
-                .background(NeoTheme.palette.outline),
-        )
-        if (pasteChip != null) {
-            NeoKey(
-                modifier = Modifier.weight(1f, fill = false).height(ClipboardButtonHeight),
-                tone = NeoTone.Primary,
-                onClick = { actions.pasteClip(pasteChip.text) },
-                onLongClick = actions::dismissPasteChip,
-            ) {
-                Text(
-                    stringResource(R.string.clipboard_paste_chip, pasteChip.text.replace('\n', ' ')),
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-            }
-        }
-    }
 }

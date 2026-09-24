@@ -23,7 +23,7 @@ qui gèrent correctement le français (accents, apostrophes, typographie).
 |---|---|
 | Frappe | Disposition AZERTY, majuscules et verrouillage, accents par appui long, chiffres et symboles, claviers adaptés au champ (numérique, téléphone, e-mail, URL) |
 | Français | Majuscule automatique, double espace → point, apostrophe, restitution des accents par les suggestions |
-| Suggestions | Barre de suggestions, complétion, correction des fautes de frappe, autocorrection annulable |
+| Suggestions | Barre de suggestions, complétion, correction des fautes de frappe, autocorrection annulable, prédiction du mot suivant |
 | Apprentissage | Mots personnels appris localement, gérables et effaçables |
 | Emojis | Panneau par catégories, récents, variantes de couleur de peau |
 | Presse-papiers | Historique local limité dans le temps, épinglage, exclusion des contenus sensibles |
@@ -32,8 +32,7 @@ qui gèrent correctement le français (accents, apostrophes, typographie).
 ### Hors v1 (candidats pour la suite)
 
 Saisie par glissement, saisie vocale hors ligne, autres langues et dispositions (anglais, QWERTY,
-BÉPO), prédiction du mot suivant (sauf si les données du dictionnaire le permettent sans surcoût,
-voir §7.2), recherche d'emojis, GIF et stickers (impossibles sans service en ligne), mode une main,
+BÉPO), recherche d'emojis, GIF et stickers (impossibles sans service en ligne), mode une main,
 clavier flottant, traduction.
 
 ## 3. Principes non négociables
@@ -214,7 +213,14 @@ verrouillée) ; suggestion appliquée = étiquette bordée et gras ; épinglé =
   (la version sans accent reste proposée à côté).
 - **Autocorrection** à l'espace ou à la ponctuation, seulement si la confiance est suffisante.
   Un **retour arrière immédiatement après** annule la correction et rétablit le mot tapé, qui
-  n'est plus corrigé pour la suite de la saisie.
+  n'est plus corrigé pour la suite de la saisie. Quand une correction est prévue, le mot tel que
+  tapé est proposé à gauche, pour le garder. Jamais un mot connu du dictionnaire n'est corrigé,
+  ni un mot tapé en minuscules remplacé par un sigle. Comme le clavier d'AOSP, l'autocorrection
+  ne s'applique que si le champ la demande (`TYPE_TEXT_FLAG_AUTO_CORRECT`) ou s'il est sur
+  plusieurs lignes : un identifiant ou un nom n'est pas corrigé.
+- **Apostrophe d'élision oubliée** : `jai` → `j'ai`, `cest` → `c'est`, `quil` → `qu'il`.
+- Une suggestion choisie est suivie d'une espace, que la ponctuation tapée ensuite remplace
+  (`bonjour.`) ; pas d'espace après une élision (`l'`).
 - **Pas de suggestions** dans les champs sensibles (§3) ni quand l'app les refuse
   (`TYPE_TEXT_FLAG_NO_SUGGESTIONS`, champs non textuels).
 - Réglages : suggestions (activées), autocorrection (activée).
@@ -225,16 +231,22 @@ verrouillée) ; suggestion appliquée = étiquette bordée et gras ; épinglé =
   embarqué dans l'APK dans un format compact et rapide à charger (précompilé au build ; l'app
   ne lit jamais la liste brute). Budget indicatif : moins de 5 Mo dans l'APK, chargement en moins de
   300 ms.
-- **Source à arrêter au lot 4, licence comprise** : elle doit être compatible avec une
-  redistribution dans une app MIT, et l'attribution sera affichée dans les réglages. Pistes :
-  - la liste de mots française d'AOSP / OpenBoard (`fr_wordlist.combined`, reprise par HeliBoard),
-    avec des fréquences, mais sa licence exacte reste à confirmer ;
-  - Lexique 3 (fréquences issues de corpus ; CC BY-SA 4.0, contrainte de partage à l'identique
-    sur les données) ;
-  - le dictionnaire Hunspell de Grammalecte (MPL 2.0 ; formes fléchies, sans fréquences, à
-    combiner avec une autre source).
-- Si la source retenue fournit des bigrammes, la prédiction du mot suivant pourra entrer en v1 ;
-  sinon, elle est repoussée.
+- **Source (arrêtée au lot 4)** : la [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/)
+  (Université de Leipzig), sous licence CC BY 4.0, compatible avec une redistribution dans une app
+  MIT ; l'attribution est affichée dans les réglages. Huit corpus d'un million de phrases (presse
+  2019 à 2024, Wikipédia 2021, web 2013, mixte 2009) donnent les 200 000 mots les plus fréquents,
+  après filtrage des fautes courantes. Détails et régénération : `apps/clavier/dictionary/README.md`.
+  Écartées : la liste d'AOSP / OpenBoard (licence jamais établie), la liste de HeliBoard (dérivée,
+  dans un dépôt GPL-3), Lexique 3 (partage à l'identique, sans bigrammes).
+- **Compilation** : `PrepareWordListTask` (`build-logic`, lancée à la main) produit les listes
+  versionnées `apps/clavier/dictionary/fr_*.tsv` ; `CompileDictionaryTask` les compile au build en
+  arbre de préfixes à plat (`assets/dictionary/fr.dict`, 5,6 Mo, 2,4 Mo compressé dans l'APK), chargé
+  d'un bloc.
+- **Prédiction du mot suivant** : dans la v1. Les cooccurrences de voisins des corpus donnent, pour
+  56 000 mots, les trois mots qui les suivent le plus souvent ; ils sont proposés après une espace
+  et favorisent les suggestions du mot en cours.
+- Limite connue : la source est surtout journalistique ; le registre familier (`mdr`, `tkt`) y est
+  rare. L'apprentissage personnel (§7.3) compense.
 
 ### 7.3 Apprentissage personnel
 
@@ -323,9 +335,8 @@ Les lots 6 et 7 sont indépendants des lots 3 à 5 et peuvent avancer en parall�
 
 ## 13. Points ouverts
 
-1. **Source du dictionnaire** et sa licence (lot 4) : c'est le seul point qui peut remettre en cause
-   la qualité des suggestions.
-2. **Prédiction du mot suivant** : v1 ou v2, selon les données disponibles (lot 4).
+1. ~~Source du dictionnaire et sa licence~~ : tranché au lot 4, Leipzig Corpora Collection (§7.2).
+2. ~~Prédiction du mot suivant~~ : tranché au lot 4, dans la v1 (§7.2).
 3. **Rangée de chiffres permanente** au-dessus des lettres : option ou non (lot 8, selon l'usage).
 4. **Icône et nom affiché** : « C!ao Clavier » dans le lanceur et dans la liste des claviers du
    système.

@@ -1,0 +1,48 @@
+# Jeu de cas français du moteur de suggestions (apps/clavier/docs/spec-v1.md §7.4).
+# Colonnes (tabulation) : mot tapé, mot précédent (- si aucun), proposition attendue en tête,
+# autocorrection attendue (le mot corrigé, ou - pour aucune correction).
+#
+# Complétion : jamais appliquée par l'autocorrection.
+bonj	-	bonjour	-
+aujourd	-	aujourd'hui	-
+mer	-	mer	-
+# Fautes de frappe, touches voisines AZERTY.
+bonjoir	-	bonjour	bonjour
+nonjour	-	bonjour	bonjour
+mzrci	-	merci	merci
+beaicoup	-	beaucoup	beaucoup
+maintenznt	-	maintenant	maintenant
+# Lettres inversées, doublées, oubliées.
+bonjuor	-	bonjour	bonjour
+bonnjour	-	bonjour	bonjour
+bonjou	-	bonjour	-
+beacoup	-	beaucoup	beaucoup
+# Accents restitués.
+ecole	-	école	école
+etre	-	être	être
+tres	-	très	très
+deja	-	déjà	déjà
+francais	-	français	français
+ca	-	ça	ça
+ile	-	île	île
+noel	-	Noël	Noël
+# Mot connu : jamais corrigé, même si la forme accentuée est proposée.
+ou	-	ou	-
+a	-	a	-
+la	-	la	-
+paris	-	paris	-
+# Apostrophe et trait d'union oubliés, y compris l'apostrophe d'une élision.
+aujourdhui	-	aujourd'hui	aujourd'hui
+peutetre	-	peut-être	peut-être
+jai	-	j'ai	j'ai
+cest	-	c'est	c'est
+quil	-	qu'il	qu'il
+# Lettre doublée tapée une fois.
+coment	-	comment	comment
+# Jamais un sigle à la place d'un mot en minuscules.
+mrc	-	MRC	-
+# Ligatures : « coeur » et « soeur » sont aussi des graphies admises, donc connues.
+coeur	-	coeur	-
+soeur	-	soeur	-
+# Noms propres.
+Paris	-	Paris	-

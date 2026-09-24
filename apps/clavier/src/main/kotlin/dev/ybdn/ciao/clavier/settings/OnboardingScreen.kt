@@ -120,8 +120,10 @@ fun OnboardingScreen() {
 
         TypingPreferencesCard(index = "04")
 
-        ClipboardPreferencesCard(index = "05")
+        CorrectionPreferencesCard(index = "05")
 
-        DataCard(index = "06")
+        ClipboardPreferencesCard(index = "06")
+
+        DataCard(index = "07")
     }
 }

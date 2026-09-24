@@ -29,11 +29,12 @@ Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12).
   réglages avec la mise en route.
 - Lot 2 (frappe AZERTY, issue #11) : fait, sauf le réglage de l'aperçu de touche (désactivable)
   et des icônes de touche Entrée par action, reportés au lot 8 avec l'écran de préférences.
-- Lot 3 (règles françaises, issue #12) : fait. `FrenchTypography.splitElision` est prêt pour les
-  suggestions du lot 4 (le mot après `l'`, `qu'`… est cherché seul).
+- Lot 3 (règles françaises, issue #12) : fait.
+- Lot 4 (dictionnaire et suggestions, issue #13) : fait. Source Leipzig Corpora Collection
+  (CC BY 4.0), prédiction du mot suivant incluse (spec §7.2).
 - Lot 6 (emojis, issue #15) : fait.
 - Lot 7 (presse-papiers, issue #16) : fait.
-- Lots 4, 5, 8 : pas commencés.
+- Lots 5, 8 : pas commencés.
 
 ## Architecture
 
@@ -45,15 +46,16 @@ dev.ybdn.ciao.clavier/
 ├── domain/
 │   ├── layout/    touches, dispositions (AZERTY, symboles, pavés), variantes (Kotlin pur, testé)
 │   ├── input/     majuscule, règles françaises, curseur, effacement par mot (Kotlin pur, testé)
+│   ├── suggest/   dictionnaire (trie), moteur de suggestions, mot sous le curseur (Kotlin pur, testé)
 │   ├── emoji/     lecture de emoji-test.txt, couleurs de peau, récents (Kotlin pur, testé)
 │   └── clipboard/ règles de l'historique : durée, limite, épinglage, puce Coller (testé)
-├── data/          DataStore partagé (réglages, emojis récents), catalogue emojis,
+├── data/          DataStore partagé (réglages, emojis récents), catalogue emojis, dictionnaire,
 │                  clipboard/ : base Room `clavier.db` (schémas dans apps/clavier/schemas)
 ├── ime/           InputMethodService, interface Compose du clavier
 └── settings/      activité de réglages et de mise en route (Compose)
 ```
 
-Le dictionnaire (lot 4/5) et le presse-papiers (lot 7) rejoindront `data/`.
+Le dictionnaire personnel (lot 5) rejoindra `data/`.
 
 - **Compose dans l'`InputMethodService`** : le service n'est pas un `LifecycleOwner` /
   `ViewModelStoreOwner` / `SavedStateRegistryOwner` par défaut (contrairement à `ComponentActivity`) ;
@@ -81,6 +83,23 @@ Le dictionnaire (lot 4/5) et le presse-papiers (lot 7) rejoindront `data/`.
   caractères avant le curseur et remplace le texte en un `beginBatchEdit`. Seulement dans un champ
   de texte ordinaire : jamais mot de passe (`isPasswordField`), e-mail ni URL. Double espace :
   les deux espaces doivent être tapées à moins d'une seconde d'écart, sans autre action entre.
+- **Dictionnaire** (§7.2) : `apps/clavier/dictionary/fr_*.tsv` (versionnés, générés depuis les
+  corpus Leipzig par la tâche manuelle `prepareFrenchWordList`, voir `dictionary/README.md`), compilés
+  au build par `compileFrenchDictionary` (`CompileDictionaryTask`, `build-logic`, qui documente le
+  format) en `assets/dictionary/fr.dict`, ajouté aux assets générés de chaque variant. Les tests
+  unitaires tournent sur ce vrai fichier (propriété système `clavier.dictionary`) avec le jeu de cas
+  versionné `src/test/resources/suggest/cas-francais.tsv` : **tout réglage du moteur ou de la
+  liste doit garder ce jeu vert**, et un cas nouveau s'y ajoute.
+- **Suggestions** (§7.1) : `SuggestionEngine` parcourt le trie avec une distance d'édition pondérée
+  (`TypingCosts` : accents, touches voisines AZERTY, inversions, lettres doublées, ligatures),
+  élagué par la fréquence maximale de chaque sous-arbre. Le mot après une élision est cherché seul
+  (`WordAtCursor`), la casse suit le mot tapé (`matchCasing`). Le service relit le mot avant le
+  curseur à chaque `onUpdateSelection` (pas de texte en composition), calcule sur un dispatcher à
+  un fil et annule le calcul précédent. Seule `SuggestionStrip` lit la barre (une frappe ne
+  recompose pas le clavier). Autocorrection dans `commitText` avant un séparateur, annulée par
+  un retour arrière immédiat (`AutocorrectionUndo`) ; les mots rétablis vont dans `rejectedWords`
+  jusqu'au champ suivant. Après un remplacement de même longueur, Android ne rappelle pas
+  `onUpdateSelection` : rafraîchir la barre à la main.
 - **Réglages** : `TypingPreferences` (DataStore `clavier_settings`), lus en continu par le
   service (`lifecycleScope`) : un changement s'applique sans redémarrer le clavier.
 - **Emojis** : `assets/emoji/emoji-test.txt` d'Unicode (Emoji 18.0, licence Unicode v3 dans

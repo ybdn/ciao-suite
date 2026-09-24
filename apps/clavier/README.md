@@ -8,9 +8,12 @@ Spécification de référence : [`docs/spec-v1.md`](docs/spec-v1.md). Contexte p
 
 ## État
 
-En développement (lot 1 du jalon « C!ao Clavier v1 ») : squelette de l'app (service de clavier,
-écran de mise en route). La disposition AZERTY, les suggestions, les emojis et le presse-papiers
-arrivent aux lots suivants — voir la spec, §12.
+En développement (jalon « C!ao Clavier v1 ») : frappe AZERTY, règles typographiques françaises,
+suggestions et correction, emojis et presse-papiers sont faits ; l'apprentissage personnel et les
+finitions arrivent aux lots suivants — voir la spec, §12.
+
+Dictionnaire : [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/), CC BY 4.0 — voir
+[`dictionary/README.md`](dictionary/README.md).
 
 ## Commandes
 
