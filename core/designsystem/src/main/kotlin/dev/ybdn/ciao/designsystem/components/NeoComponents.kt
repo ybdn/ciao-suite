@@ -545,7 +545,7 @@ fun NeoTextField(
 /**
  * Touche de clavier : bordure fine et petite ombre (anatomie §5.1 de la spec clavier), appui
  * instantané et retour animé comme [NeoButton], mais dimensionnée par l'appelant (pas de taille
- * minimale imposée) et avec un appui long optionnel (accents, répétition du retour arrière).
+ * minimale imposée) et avec un appui long optionnel.
  */
 @Composable
 fun NeoKey(
@@ -559,9 +559,40 @@ fun NeoKey(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    NeoKeyFace(
+        pressed = isPressed,
+        modifier = modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            enabled = enabled,
+            role = Role.Button,
+            onLongClick = onLongClick,
+            onDoubleClick = onDoubleClick,
+            onClick = onClick,
+        ),
+        tone = tone,
+        enabled = enabled,
+        content = content,
+    )
+}
+
+/**
+ * Apparence d'une touche de clavier, sans gestion du toucher : l'appelant fournit l'état
+ * [pressed] et pose ses propres gestes sur un conteneur fixe (glissement, appui long, répétition),
+ * que [NeoKey] ne permet pas d'observer. La face glisse de [PressOffset] à l'appui ; le
+ * conteneur, lui, ne bouge pas, pour que les coordonnées du doigt restent stables.
+ */
+@Composable
+fun NeoKeyFace(
+    pressed: Boolean,
+    modifier: Modifier = Modifier,
+    tone: NeoTone = NeoTone.Surface,
+    enabled: Boolean = true,
+    content: @Composable BoxScope.() -> Unit,
+) {
     val pressOffset by animateDpAsState(
-        targetValue = if (isPressed && enabled) PressOffset else 0.dp,
-        animationSpec = tween(durationMillis = if (isPressed) 0 else PressReleaseMillis),
+        targetValue = if (pressed && enabled) PressOffset else 0.dp,
+        animationSpec = tween(durationMillis = if (pressed) 0 else PressReleaseMillis),
         label = "keyPressOffset",
     )
     Box(
@@ -573,20 +604,34 @@ fun NeoKey(
                 outline = NeoTheme.palette.outline,
                 shadowOffset = if (enabled && pressOffset == 0.dp) ShadowSmall else 0.dp,
                 borderWidth = BorderThin,
-            )
-            .combinedClickable(
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = enabled,
-                role = Role.Button,
-                onLongClick = onLongClick,
-                onDoubleClick = onDoubleClick,
-                onClick = onClick,
             ),
         contentAlignment = Alignment.Center,
     ) {
         // Sans ça, le texte retombe sur le noir par défaut de Compose (LocalContentColor),
         // invisible sur une touche sombre : cf. NeoCard, qui pose la même règle.
         CompositionLocalProvider(LocalContentColor provides tone.contentColor) { content() }
+    }
+}
+
+/**
+ * Élément flottant (aperçu de touche, fenêtre de variantes) : bordure pleine et grande ombre
+ * (anatomie §5.1 de la spec clavier), sur le fond `surface` de la palette.
+ */
+@Composable
+fun NeoFloatingSurface(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val palette = NeoTheme.palette
+    Box(
+        modifier = modifier.neoSurface(
+            color = palette.surface,
+            outline = palette.outline,
+            shadowOffset = ShadowLarge,
+            borderWidth = BorderWidth,
+        ),
+        contentAlignment = Alignment.Center,
+    ) {
+        CompositionLocalProvider(LocalContentColor provides palette.content) { content() }
     }
 }

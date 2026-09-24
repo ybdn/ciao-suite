@@ -12,7 +12,6 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
   (activation et sélection du clavier dans les réglages système, zone de test).
 - Page lettres du clavier AZERTY : majuscule (simple/verrouillage), retour arrière avec
   répétition à l'appui long, touche Entrée adaptée au champ actif, vibration à la frappe.
-  Accents et claviers spécialisés à venir.
 - Dimensions du clavier alignées sur Gboard, mesurées sur l'appareil : touches de 58 dp de haut,
   bandeau de 48 dp au-dessus des touches, barre d'espace plus large.
 - Deux pages de symboles : chiffres et ponctuation, puis symboles rares.
@@ -21,3 +20,13 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
 - Majuscule automatique en début de champ et après un point, quand le champ la demande.
 - Place réservée sous le clavier pour les boutons d'Android (masquer le clavier, changer de
   clavier).
+- Accents et variantes par appui long, choisis en glissant le doigt (é è ê ë €, à â æ ä, ç, ù û
+  ü, î ï, ô œ ö, ÿ, ñ, ’ « », … ! ?, ; :).
+- Aperçu de la touche appuyée au-dessus du doigt.
+- Claviers adaptés au champ : pavé numérique, pavé de date, pavé téléphonique ; « @ » pour les
+  e-mails ; « / » et « .fr » (.com, .org… par appui long) pour les adresses web.
+- Glisser sur la barre d'espace déplace le curseur.
+- Retour arrière maintenu : caractère par caractère, puis mot par mot ; il efface la sélection
+  entière et ne coupe plus un emoji en deux.
+- Majuscule maintenue : les lettres tapées pendant l'appui sont en majuscules ; le double appui
+  verrouille sans délai sur le premier appui.

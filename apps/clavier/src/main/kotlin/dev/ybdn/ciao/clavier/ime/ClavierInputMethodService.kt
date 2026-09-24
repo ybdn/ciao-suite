@@ -2,9 +2,11 @@ package dev.ybdn.ciao.clavier.ime
 
 import android.inputmethodservice.InputMethodService
 import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
@@ -19,7 +21,10 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import dev.ybdn.ciao.clavier.domain.input.wordDeletionLength
+import dev.ybdn.ciao.clavier.domain.layout.KeyboardMode
 import dev.ybdn.ciao.designsystem.theme.CiaoTheme
+import kotlin.math.abs
 
 /**
  * Aucune permission réseau (garde-fou build-logic) : le service ne fait que composer l'interface
@@ -33,7 +38,8 @@ class ClavierInputMethodService :
     InputMethodService(),
     LifecycleOwner,
     ViewModelStoreOwner,
-    SavedStateRegistryOwner {
+    SavedStateRegistryOwner,
+    KeyboardActions {
 
     private val lifecycleRegistry = LifecycleRegistry(this)
     override val lifecycle: Lifecycle get() = lifecycleRegistry
@@ -46,6 +52,13 @@ class ClavierInputMethodService :
     private var keyboardView: ComposeView? = null
     private var enterAction by mutableStateOf(EnterKeyAction.Newline)
     private var autoCapitalize by mutableStateOf(false)
+    private var keyboardMode by mutableStateOf(KeyboardMode.Text)
+
+    /** Incrémenté à chaque nouveau champ : le clavier repart de la page lettres, sans majuscule. */
+    private var inputSession by mutableIntStateOf(0)
+
+    /** Suivie par [onUpdateSelection] : le retour arrière efface alors la sélection entière. */
+    private var hasSelection = false
 
     override fun onCreate() {
         super.onCreate()
@@ -69,12 +82,11 @@ class ClavierInputMethodService :
             setContent {
                 CiaoTheme {
                     KeyboardScreen(
+                        mode = keyboardMode,
                         enterAction = enterAction,
                         autoCapitalize = autoCapitalize,
-                        onCommitText = { text -> currentInputConnection?.commitText(text, 1) },
-                        onDeleteBeforeCursor = { currentInputConnection?.deleteSurroundingText(1, 0) },
-                        onEnter = ::performEnter,
-                        onKeyPress = { performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
+                        inputSession = inputSession,
+                        actions = this@ClavierInputMethodService,
                     )
                 }
             }
@@ -84,6 +96,9 @@ class ClavierInputMethodService :
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         enterAction = info.enterKeyAction()
+        keyboardMode = keyboardModeFor(info?.inputType ?: 0)
+        if (!restarting) inputSession++
+        hasSelection = info != null && info.initialSelStart != info.initialSelEnd
         refreshAutoCapitalize()
         lifecycleRegistry.currentState = Lifecycle.State.RESUMED
     }
@@ -104,6 +119,7 @@ class ClavierInputMethodService :
             candidatesStart,
             candidatesEnd,
         )
+        hasSelection = newSelStart != newSelEnd
         // Le champ vient d'être modifié (par le clavier ou par l'app) : la position du curseur
         // décide de la majuscule automatique.
         refreshAutoCapitalize()
@@ -121,8 +137,39 @@ class ClavierInputMethodService :
         super.onDestroy()
     }
 
-    private fun performHapticFeedback(constant: Int) {
-        keyboardView?.performHapticFeedback(constant)
+    override fun commitText(text: String) {
+        currentInputConnection?.commitText(text, 1)
+    }
+
+    override fun deleteBackward() {
+        val connection = currentInputConnection ?: return
+        when {
+            hasSelection -> connection.commitText("", 1)
+            // Champ vide : certaines apps attendent la touche elle-même (supprimer un destinataire…).
+            connection.getTextBeforeCursor(1, 0).isNullOrEmpty() -> sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+            // En points de code, pour ne pas couper un emoji en deux (paire de substitution).
+            else -> connection.deleteSurroundingTextInCodePoints(1, 0)
+        }
+    }
+
+    override fun deleteWordBackward() {
+        val connection = currentInputConnection ?: return
+        if (hasSelection) {
+            connection.commitText("", 1)
+            return
+        }
+        val before = connection.getTextBeforeCursor(WordLookBehind, 0) ?: return
+        val length = wordDeletionLength(before)
+        if (length > 0) connection.deleteSurroundingText(length, 0)
+    }
+
+    override fun moveCursor(steps: Int) {
+        val keyCode = if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
+        repeat(abs(steps)) { sendDownUpKeyEvents(keyCode) }
+    }
+
+    override fun keyFeedback() {
+        keyboardView?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
     }
 
     /**
@@ -139,7 +186,7 @@ class ClavierInputMethodService :
     }
 
     /** Envoie l'action du champ (Envoyer, Rechercher…) si `imeOptions` en demande une, sinon un retour à la ligne. */
-    private fun performEnter() {
+    override fun enter() {
         val editorInfo = currentInputEditorInfo
         val action = (editorInfo?.imeOptions ?: EditorInfo.IME_ACTION_UNSPECIFIED) and EditorInfo.IME_MASK_ACTION
         val noEnterFlag = (editorInfo?.imeOptions ?: 0) and EditorInfo.IME_FLAG_NO_ENTER_ACTION
@@ -152,5 +199,10 @@ class ClavierInputMethodService :
         } else {
             currentInputConnection?.commitText("\n", 1)
         }
+    }
+
+    private companion object {
+        /** Assez pour contenir le plus long mot français et les espaces qui le suivent. */
+        const val WordLookBehind = 64
     }
 }

@@ -23,6 +23,7 @@
     <string name="key_shift_on">Majuscule activée</string>
     <string name="key_caps_lock">Majuscules verrouillées</string>
     <string name="key_backspace">Effacer</string>
+    <string name="key_space">Espace</string>
     <string name="key_emoji">Emojis</string>
     <string name="key_enter_send">Envoyer</string>
     <string name="key_enter_search">Rechercher</string>
