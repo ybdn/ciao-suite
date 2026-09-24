@@ -258,8 +258,9 @@ verrouillée) ; suggestion appliquée = étiquette bordée et gras ; épinglé =
   objets, symboles, drapeaux), plus un onglet **Récents** (30 derniers, locaux).
 - **Couleur de peau** par appui long sur les emojis qui la supportent ; le dernier choix devient
   la valeur par défaut de cet emoji.
-- Données : fichier `emoji-test.txt` d'Unicode (licence Unicode, permissive), filtré au build selon
-  la version d'emoji affichable par la police système (`EmojiCompat` si nécessaire).
+- Données : fichier `emoji-test.txt` d'Unicode (licence Unicode, permissive), embarqué tel quel et
+  filtré **sur l'appareil** (`Paint.hasGlyph`) selon ce que la police système sait afficher : plus
+  juste qu'un filtre au build, et suit les mises à jour de la police emoji.
 - Pas d'emojis récents enregistrés en navigation privée.
 
 ## 9. Presse-papiers

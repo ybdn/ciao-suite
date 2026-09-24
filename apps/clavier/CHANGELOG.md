@@ -35,3 +35,7 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
   ou une adresse web.
 - Réglages de frappe dans l'app : majuscule automatique, double espace, espace insécable.
 - Les règles typographiques ne s'appliquent jamais aux mots de passe, e-mails et adresses web.
+- Panneau emojis : neuf catégories et les 30 derniers emojis utilisés ; couleur de peau par appui
+  long, retenue pour chaque emoji. Seuls les emojis que le téléphone sait afficher sont proposés.
+  Rien n'est retenu en navigation privée ni dans un mot de passe.
+- Réglages : effacer les emojis récents.
