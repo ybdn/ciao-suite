@@ -87,7 +87,7 @@ fun GroupMetadataSheet(
             Text(pluralStringResource(R.plurals.group_metadata_title, count, count), style = MaterialTheme.typography.titleLarge)
 
             NeoCard {
-                NeoTag(stringResource(R.string.group_metadata_shift), tone = NeoTone.Yellow)
+                NeoTag(stringResource(R.string.group_metadata_shift), tone = NeoTone.Muted)
                 NeoSegmentedChoice(
                     options = listOf(stringResource(R.string.group_metadata_forward), stringResource(R.string.group_metadata_backward)),
                     selectedIndex = if (backwards) 1 else 0,
@@ -104,12 +104,12 @@ fun GroupMetadataSheet(
                     stringResource(R.string.group_metadata_apply),
                     onClick = { onApply(MetadataChanges(dateShift = shift)) },
                     enabled = !shift.isZero,
-                    tone = NeoTone.Pink,
+                    tone = NeoTone.Primary,
                 )
             }
 
             NeoCard {
-                NeoTag(stringResource(R.string.group_metadata_time_zone), tone = NeoTone.Sky)
+                NeoTag(stringResource(R.string.group_metadata_time_zone), tone = NeoTone.Muted)
                 Text(stringResource(R.string.group_metadata_time_zone_hint), style = MaterialTheme.typography.bodySmall)
                 OffsetPicker(offsetMinutes = offset, onSelect = { offset = it })
                 NeoButton(
@@ -117,12 +117,12 @@ fun GroupMetadataSheet(
                     onClick = {
                         onApply(MetadataChanges(utcOffsetMinutes = offset?.let { FieldChange.Set(it) } ?: FieldChange.Remove))
                     },
-                    tone = NeoTone.Pink,
+                    tone = NeoTone.Primary,
                 )
             }
 
             NeoCard {
-                NeoTag(stringResource(R.string.info_location), tone = NeoTone.Lavender)
+                NeoTag(stringResource(R.string.info_location), tone = NeoTone.Muted)
                 NeoTextField(
                     label = stringResource(R.string.metadata_coordinates),
                     value = location,
@@ -148,7 +148,7 @@ fun GroupMetadataSheet(
                         if (point == null) locationError = true else onApply(MetadataChanges(location = FieldChange.Set(point)))
                     },
                     enabled = location.isNotBlank(),
-                    tone = NeoTone.Pink,
+                    tone = NeoTone.Primary,
                 )
                 NeoButton(
                     stringResource(R.string.metadata_remove_location),
@@ -158,7 +158,7 @@ fun GroupMetadataSheet(
             }
 
             NeoCard {
-                NeoTag(stringResource(R.string.metadata_texts), tone = NeoTone.Green)
+                NeoTag(stringResource(R.string.metadata_texts), tone = NeoTone.Muted)
                 Text(stringResource(R.string.group_metadata_texts_hint), style = MaterialTheme.typography.bodySmall)
                 NeoTextField(stringResource(R.string.metadata_description), description, { description = it }, singleLine = false)
                 NeoTextField(stringResource(R.string.metadata_artist), artist, { artist = it })
@@ -168,14 +168,14 @@ fun GroupMetadataSheet(
                     stringResource(R.string.group_metadata_apply),
                     onClick = { onApply(MetadataChanges(change(description), change(artist), change(copyright))) },
                     enabled = description.isNotBlank() || artist.isNotBlank() || copyright.isNotBlank(),
-                    tone = NeoTone.Pink,
+                    tone = NeoTone.Primary,
                 )
             }
 
             NeoButton(
                 stringResource(R.string.metadata_remove_sensitive),
                 onClick = { onApply(MetadataChanges(removeSensitiveData = true)) },
-                tone = NeoTone.Pink,
+                tone = NeoTone.Danger,
             )
         }
     }
@@ -201,11 +201,11 @@ fun GroupMetadataConfirmDialog(
                         if (preview.toMove > 0) add(pluralStringResource(R.plurals.group_metadata_moved, preview.toMove, preview.toMove))
                         if (preview.skipped > 0) add(pluralStringResource(R.plurals.group_metadata_skipped, preview.skipped, preview.skipped))
                     }
-                    NeoNotice(lines.joinToString(", "), tone = NeoTone.Yellow)
+                    NeoNotice(lines.joinToString(", "), tone = NeoTone.Warning)
                     if (removesSensitiveData) {
                         Text(stringResource(R.string.metadata_remove_sensitive_list), style = MaterialTheme.typography.bodySmall)
                     }
-                    NeoButton(stringResource(R.string.group_metadata_confirm), onClick = onConfirm, enabled = preview.editable > 0, tone = NeoTone.Pink)
+                    NeoButton(stringResource(R.string.group_metadata_confirm), onClick = onConfirm, enabled = preview.editable > 0, tone = NeoTone.Primary)
                 }
                 NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = onDismiss, tone = NeoTone.Surface)
             }

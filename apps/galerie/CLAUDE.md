@@ -21,9 +21,10 @@ posé par le plugin de convention `ciao.android.compose` — pas d'annotation é
 
 Interface : thème, palette, polices et composants `Neo*` viennent de `core/designsystem` (règles
 dans `docs/design-system.md`, ADR 0003) ; ne rien redéfinir dans l'app. Les couleurs de la Galerie
-ont été transposées mécaniquement vers la palette canonique (teintes `NeoTone.Pink`, `.Green`…) ;
-leur passage aux rôles (`Primary`, `Danger`…) est suivi dans l'issue #5 : tout nouvel écran utilise
-directement les rôles.
+utilisent les rôles (`NeoTone.Primary`, `.Danger`…) plutôt que les teintes canoniques (issue #5) ;
+seules les teintes des vraies catégories de contenu (photos/vidéos) restent en dur. Les rôles
+équivalents en `Color` brut (`Primary`, `Danger`…) sont dans `core/designsystem` pour le dessin
+hors composants `Neo*` (icônes, pistes de curseur, tampons).
 
 ## Projet
 

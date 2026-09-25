@@ -202,12 +202,12 @@ fun GalleryScreen(
                     stringResource(
                         if (mediaAccess == MediaAccess.PARTIAL) R.string.gallery_permission_partial else R.string.gallery_permission_needed,
                     ),
-                    tone = NeoTone.Yellow,
+                    tone = NeoTone.Warning,
                 )
                 NeoButton(
                     text = stringResource(R.string.gallery_permission_grant),
                     onClick = { permissionLauncher.launch(MEDIA_PERMISSIONS) },
-                    tone = NeoTone.Yellow,
+                    tone = NeoTone.Primary,
                 )
                 NeoButton(
                     text = stringResource(R.string.home_open_app_settings),

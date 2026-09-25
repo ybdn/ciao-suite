@@ -50,7 +50,7 @@ fun SaveEditDialog(
                         stringResource(R.string.editor_save_copy),
                         onClick = { onSave(SaveMode.COPY) },
                         enabled = capabilities.editCopy.isAvailable,
-                        tone = NeoTone.Pink,
+                        tone = NeoTone.Primary,
                     )
                     val replace = capabilities.replace
                     if (replace !is EditAvailability.Unavailable || !replace.reason.hidesAction) {
@@ -69,12 +69,12 @@ fun SaveEditDialog(
                         stringResource(
                             if (item.location == GalleryLocation.BOTH) R.string.editor_replace_confirm_both else R.string.editor_replace_confirm,
                         ),
-                        tone = NeoTone.Pink,
+                        tone = NeoTone.Danger,
                     )
                     NeoButton(
                         stringResource(R.string.editor_replace_confirm_button),
                         onClick = { onSave(SaveMode.REPLACE) },
-                        tone = NeoTone.Pink,
+                        tone = NeoTone.Danger,
                     )
                     NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = { confirmReplace = false }, tone = NeoTone.Surface)
                 }
@@ -86,7 +86,7 @@ fun SaveEditDialog(
 @Composable
 private fun AvailabilityNotice(availability: EditAvailability) {
     val reason = (availability as? EditAvailability.Unavailable)?.reason ?: return
-    if (!reason.hidesAction) NeoNotice(stringResource(reason.messageRes()), tone = NeoTone.Yellow)
+    if (!reason.hidesAction) NeoNotice(stringResource(reason.messageRes()), tone = NeoTone.Warning)
 }
 
 @Composable
@@ -95,7 +95,7 @@ fun DiscardChangesDialog(onDiscard: () -> Unit, onDismiss: () -> Unit) {
         NeoCard(modifier = Modifier.padding(8.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.editor_discard_title), style = MaterialTheme.typography.titleLarge)
-                NeoButton(stringResource(R.string.editor_discard), onClick = onDiscard, tone = NeoTone.Pink)
+                NeoButton(stringResource(R.string.editor_discard), onClick = onDiscard, tone = NeoTone.Danger)
                 NeoButton(stringResource(R.string.editor_keep_editing), onClick = onDismiss, tone = NeoTone.Surface)
             }
         }

@@ -62,7 +62,7 @@ import dev.ybdn.ciao.designsystem.components.BorderWidth
 import dev.ybdn.ciao.designsystem.components.neoSurface
 import dev.ybdn.ciao.designsystem.theme.Ink
 import dev.ybdn.ciao.designsystem.theme.LabelMono
-import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.Primary
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import kotlinx.coroutines.delay
 
@@ -103,7 +103,7 @@ fun VideoPage(
                     contentDescription = null,
                     tint = Ink,
                     modifier = Modifier
-                        .neoSurface(Green, NeoTheme.palette.outline)
+                        .neoSurface(Primary, NeoTheme.palette.outline)
                         .padding(12.dp)
                         .size(40.dp),
                 )
@@ -204,7 +204,7 @@ private fun VideoControls(player: Player) {
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(44.dp)
-                    .neoSurface(Green, palette.outline, shadowOffset = 0.dp)
+                    .neoSurface(Primary, palette.outline, shadowOffset = 0.dp)
                     .clickable(enabled = playPauseState.isEnabled, onClick = playPauseState::onClick),
             ) {
                 Icon(
@@ -230,7 +230,7 @@ private fun VideoControls(player: Player) {
                 enabled = durationMs > 0,
                 colors = SliderDefaults.colors(
                     thumbColor = palette.outline,
-                    activeTrackColor = Green,
+                    activeTrackColor = Primary,
                     inactiveTrackColor = palette.surfaceMuted,
                 ),
                 modifier = Modifier.weight(1f),

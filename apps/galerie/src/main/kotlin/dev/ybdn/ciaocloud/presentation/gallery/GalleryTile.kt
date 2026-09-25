@@ -36,7 +36,7 @@ import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.GalleryLocation
 import dev.ybdn.ciaocloud.domain.model.MediaType
 import dev.ybdn.ciao.designsystem.theme.Ink
-import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.Selected
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -89,7 +89,7 @@ fun GalleryTile(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(6.dp)
-                    .background(if (selected) Green else BadgeScrim, CircleShape)
+                    .background(if (selected) Selected else BadgeScrim, CircleShape)
                     .size(22.dp),
             )
         }

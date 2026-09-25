@@ -27,6 +27,16 @@ val Lavender = Color(0xFFB8A9FA)
  */
 val FocusRing = Color(0xFF2E7BD6)
 
+// Rôles (mêmes teintes que NeoTone.Primary/Selected/…) pour du dessin hors composants Neo* :
+// icônes, pistes de curseur, tampons de décision. Pour une action, un état ou un message,
+// toujours passer par le rôle plutôt que la teinte (docs/design-system.md, ADR 0003).
+val Primary = Yellow
+val Selected = Sky
+val Danger = Pink
+val Success = Green
+val Warning = Orange
+val Info = Lavender
+
 /** Couleurs neutres qui s'inversent entre les thèmes clair et sombre. */
 @Immutable
 data class NeoPalette(

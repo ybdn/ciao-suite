@@ -50,11 +50,11 @@ import dev.ybdn.ciao.designsystem.components.NeoTone
 import dev.ybdn.ciao.designsystem.components.neoSurface
 import dev.ybdn.ciaocloud.presentation.gallery.GalleryImages
 import dev.ybdn.ciaocloud.presentation.gallery.formatDuration
-import dev.ybdn.ciao.designsystem.theme.Pink
+import dev.ybdn.ciao.designsystem.theme.Danger
 import dev.ybdn.ciao.designsystem.theme.Ink
-import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.Success
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
-import dev.ybdn.ciao.designsystem.theme.Yellow
+import dev.ybdn.ciao.designsystem.theme.Warning
 import dev.ybdn.ciaocloud.presentation.viewer.OriginalUri
 import dev.ybdn.ciaocloud.presentation.viewer.SsdUnpluggedNotice
 import dev.ybdn.ciaocloud.presentation.viewer.VideoPage
@@ -210,6 +210,7 @@ private fun PhotoContent(item: GalleryItem, originalUri: OriginalUri) {
 @Composable
 private fun VideoContent(item: GalleryItem, originalUri: OriginalUri, interactive: Boolean) {
     val context = LocalContext.current
+    val palette = NeoTheme.palette
     var playing by remember(item.key) { mutableStateOf(false) }
     var controlsVisible by remember(item.key) { mutableStateOf(true) }
 
@@ -245,7 +246,7 @@ private fun VideoContent(item: GalleryItem, originalUri: OriginalUri, interactiv
                 contentDescription = stringResource(R.string.viewer_play),
                 tint = Ink,
                 modifier = Modifier
-                    .neoSurface(Green, NeoTheme.palette.outline)
+                    .neoSurface(palette.surface, palette.outline)
                     .padding(12.dp)
                     .size(40.dp),
             )
@@ -256,9 +257,9 @@ private fun VideoContent(item: GalleryItem, originalUri: OriginalUri, interactiv
 @Composable
 private fun BackupTag(location: GalleryLocation) {
     when (location) {
-        GalleryLocation.PHONE -> NeoTag(stringResource(R.string.triage_badge_not_backed_up), tone = NeoTone.Yellow)
-        GalleryLocation.BOTH -> NeoTag(stringResource(R.string.triage_badge_backed_up), tone = NeoTone.Green)
-        GalleryLocation.SSD -> NeoTag(stringResource(R.string.triage_badge_ssd), tone = NeoTone.Sky)
+        GalleryLocation.PHONE -> NeoTag(stringResource(R.string.triage_badge_not_backed_up), tone = NeoTone.Warning)
+        GalleryLocation.BOTH -> NeoTag(stringResource(R.string.triage_badge_backed_up), tone = NeoTone.Success)
+        GalleryLocation.SSD -> NeoTag(stringResource(R.string.triage_badge_ssd), tone = NeoTone.Success)
     }
 }
 
@@ -282,9 +283,9 @@ private fun BoxScope.DecisionStampOverlay(state: SwipeCardState) {
 @Composable
 private fun DecisionStamp(decision: TriageDecision, alpha: Float, modifier: Modifier = Modifier) {
     val (label, color) = when (decision) {
-        TriageDecision.KEPT -> R.string.triage_keep to Green
-        TriageDecision.QUEUED_FOR_DELETION -> R.string.triage_delete to Pink
-        TriageDecision.SNOOZED -> R.string.triage_later to Yellow
+        TriageDecision.KEPT -> R.string.triage_keep to Success
+        TriageDecision.QUEUED_FOR_DELETION -> R.string.triage_delete to Danger
+        TriageDecision.SNOOZED -> R.string.triage_later to Warning
     }
     Text(
         text = stringResource(label).uppercase(),

@@ -20,7 +20,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import dev.ybdn.ciaocloud.domain.util.CropGeometry
-import dev.ybdn.ciao.designsystem.theme.Pink
+import dev.ybdn.ciao.designsystem.theme.Primary
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import java.util.Locale
 import kotlin.math.floor
@@ -88,7 +88,7 @@ fun StraightenDial(
                     strokeWidth = if (major) 2.dp.toPx() else 1.dp.toPx(),
                 )
             }
-            drawLine(Pink, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 3.dp.toPx())
+            drawLine(Primary, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 3.dp.toPx())
         }
     }
 }

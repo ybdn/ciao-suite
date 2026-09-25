@@ -114,13 +114,13 @@ fun TrashScreen(onBack: () -> Unit) {
                 NeoButton(
                     stringResource(R.string.trash_restore),
                     onClick = { viewModel.restoreSelection() },
-                    tone = NeoTone.Green,
+                    tone = NeoTone.Success,
                     enabled = selectedIds.isNotEmpty(),
                 )
                 NeoButton(
                     stringResource(R.string.trash_delete_forever),
                     onClick = { viewModel.deleteSelectionForever() },
-                    tone = NeoTone.Pink,
+                    tone = NeoTone.Danger,
                     enabled = selectedIds.isNotEmpty(),
                 )
             }

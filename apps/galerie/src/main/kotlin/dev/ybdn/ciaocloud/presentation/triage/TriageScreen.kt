@@ -175,9 +175,9 @@ private fun TriagePile(
                 .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 20.dp),
         ) {
             listOf(
-                Triple(TriageDecision.QUEUED_FOR_DELETION, R.string.triage_delete, NeoTone.Pink),
-                Triple(TriageDecision.SNOOZED, R.string.triage_later, NeoTone.Yellow),
-                Triple(TriageDecision.KEPT, R.string.triage_keep, NeoTone.Green),
+                Triple(TriageDecision.QUEUED_FOR_DELETION, R.string.triage_delete, NeoTone.Danger),
+                Triple(TriageDecision.SNOOZED, R.string.triage_later, NeoTone.Warning),
+                Triple(TriageDecision.KEPT, R.string.triage_keep, NeoTone.Success),
             ).forEach { (decision, label, tone) ->
                 NeoButton(
                     text = stringResource(label),
@@ -235,13 +235,13 @@ private fun TriageSummaryContent(
             NeoStat(
                 value = summary.kept.toString(),
                 caption = pluralStringResource(R.plurals.triage_stat_kept, summary.kept),
-                tone = NeoTone.Green,
+                tone = NeoTone.Success,
                 modifier = Modifier.fillMaxWidth(),
             )
             NeoStat(
                 value = summary.queued.toString(),
                 caption = pluralStringResource(R.plurals.triage_stat_queued, summary.queued),
-                tone = NeoTone.Pink,
+                tone = NeoTone.Danger,
                 modifier = Modifier.fillMaxWidth(),
             )
             if (summary.queued > 0) {
@@ -254,7 +254,7 @@ private fun TriageSummaryContent(
             NeoStat(
                 value = summary.snoozed.toString(),
                 caption = stringResource(R.string.triage_stat_snoozed),
-                tone = NeoTone.Yellow,
+                tone = NeoTone.Warning,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -267,9 +267,9 @@ private fun TriageSummaryContent(
                     summary.totalQueued,
                     formatBytes(summary.totalQueuedBytes),
                 ),
-                tone = NeoTone.Yellow,
+                tone = NeoTone.Warning,
             )
-            NeoButton(stringResource(R.string.triage_open_queue), onClick = onOpenDeletionQueue, tone = NeoTone.Pink)
+            NeoButton(stringResource(R.string.triage_open_queue), onClick = onOpenDeletionQueue, tone = NeoTone.Danger)
         }
         if (onUndo != null) {
             NeoButton(stringResource(R.string.triage_undo), onClick = onUndo, tone = NeoTone.Surface)

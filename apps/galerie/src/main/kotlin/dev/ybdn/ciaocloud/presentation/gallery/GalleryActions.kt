@@ -230,24 +230,24 @@ fun DeleteItemsDialog(
                         style = MaterialTheme.typography.titleLarge,
                     )
                     if (notBackedUp > 0) {
-                        NeoNotice(pluralStringResource(R.plurals.gallery_delete_not_backed_up, notBackedUp, notBackedUp), tone = NeoTone.Yellow)
+                        NeoNotice(pluralStringResource(R.plurals.gallery_delete_not_backed_up, notBackedUp, notBackedUp), tone = NeoTone.Warning)
                     }
                     if (hasPhone) {
-                        NeoButton(stringResource(R.string.gallery_delete_phone), onClick = { onDelete(DeleteTarget.PHONE) }, tone = NeoTone.Pink)
+                        NeoButton(stringResource(R.string.gallery_delete_phone), onClick = { onDelete(DeleteTarget.PHONE) }, tone = NeoTone.Danger)
                         Text(stringResource(R.string.gallery_delete_phone_hint), style = MaterialTheme.typography.bodySmall)
                     }
                     if (hasSsd) {
                         NeoButton(
                             stringResource(R.string.gallery_delete_ssd),
                             onClick = { pendingSsdTarget = DeleteTarget.SSD },
-                            tone = NeoTone.Pink,
+                            tone = NeoTone.Danger,
                         )
                     }
                     if (hasPhone && hasSsd) {
                         NeoButton(
                             stringResource(R.string.gallery_delete_everywhere),
                             onClick = { pendingSsdTarget = DeleteTarget.EVERYWHERE },
-                            tone = NeoTone.Pink,
+                            tone = NeoTone.Danger,
                         )
                     }
                     NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = onDismiss, tone = NeoTone.Surface)
@@ -259,12 +259,12 @@ fun DeleteItemsDialog(
                             items.count { it.ssd != null },
                             items.count { it.ssd != null },
                         ),
-                        tone = NeoTone.Pink,
+                        tone = NeoTone.Danger,
                     )
                     NeoButton(
                         stringResource(R.string.gallery_delete_ssd_confirm_button),
                         onClick = { onDelete(target) },
-                        tone = NeoTone.Pink,
+                        tone = NeoTone.Danger,
                     )
                     NeoButton(
                         stringResource(R.string.delete_confirm_cancel),
@@ -309,9 +309,9 @@ fun ShareDialogs(actions: GalleryActions) {
                         pluralStringResource(R.plurals.share_strip_failed_title, failed.size, failed.size),
                         style = MaterialTheme.typography.titleLarge,
                     )
-                    NeoNotice(failed.joinToString("\n"), tone = NeoTone.Pink)
+                    NeoNotice(failed.joinToString("\n"), tone = NeoTone.Danger)
                     if (dialog.outcome.media.isNotEmpty()) {
-                        NeoButton(stringResource(R.string.share_strip_share_others), onClick = actions::shareRemaining, tone = NeoTone.Pink)
+                        NeoButton(stringResource(R.string.share_strip_share_others), onClick = actions::shareRemaining, tone = NeoTone.Primary)
                     }
                     NeoButton(
                         stringResource(R.string.delete_confirm_cancel),

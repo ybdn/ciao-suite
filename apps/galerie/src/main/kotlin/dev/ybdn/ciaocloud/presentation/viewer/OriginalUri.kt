@@ -35,6 +35,6 @@ fun rememberOriginalUri(item: GalleryItem, ssdAvailable: Boolean, resolve: suspe
 @Composable
 fun SsdUnpluggedNotice(modifier: Modifier = Modifier) {
     Box(modifier = modifier.padding(24.dp)) {
-        NeoNotice(stringResource(R.string.viewer_plug_ssd), tone = NeoTone.Yellow)
+        NeoNotice(stringResource(R.string.viewer_plug_ssd), tone = NeoTone.Warning)
     }
 }
