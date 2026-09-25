@@ -346,23 +346,51 @@ class ClavierInputMethodService :
      */
     private fun autocorrectBefore(separator: String): Boolean {
         val connection = currentInputConnection ?: return false
-        val engine = engine ?: return false
-        val before = connection.getTextBeforeCursor(WordLookBehind, 0) ?: return false
-        val word = WordAtCursor.read(before, connection.getTextAfterCursor(1, 0) ?: "") ?: return false
-        if (word.word.isEmpty()) return false
-        // Le calcul affiché porte presque toujours sur ce mot ; sinon (frappe très rapide), on le refait.
-        val computed = lastComputed?.takeIf { it.word == word } ?: computeSuggestions(engine, word, autocorrect = true, rejectedWords)
-        val correction = computed.autocorrection ?: return false
-        val correctedBefore = before.subSequence(0, before.length - word.word.length).toString() + correction
+        val pending = pendingAutocorrection() ?: return false
+        val correctedBefore = pending.textBefore.subSequence(0, pending.textBefore.length - pending.word.length).toString() + pending.correction
         val edit = typographyEdit(separator, afterAutoSpace = false) { correctedBefore }?.takeIf { it.deleteBefore == 0 }
-        val inserted = correction + (edit?.insert ?: separator)
+        val inserted = pending.correction + (edit?.insert ?: separator)
         connection.beginBatchEdit()
-        connection.deleteSurroundingText(word.word.length, 0)
+        connection.deleteSurroundingText(pending.word.length, 0)
         connection.commitText(inserted, 1)
         connection.endBatchEdit()
-        lastAutocorrection = AutocorrectionUndo(typed = word.word, inserted = inserted, separator = inserted.removePrefix(correction))
+        lastAutocorrection = AutocorrectionUndo(typed = pending.word, inserted = inserted, separator = inserted.removePrefix(pending.correction))
         lastSpaceAt = if (separator == " ") SystemClock.uptimeMillis() else 0L
         return true
+    }
+
+    /**
+     * Autocorrection (§7.1) juste avant la touche Entrée : remplace le mot en cours par la
+     * correction retenue, suivie d'un retour à la ligne quand [newline] (Entrée sans action
+     * d'éditeur — avec une action, celle-ci part sur le champ déjà corrigé). Faux s'il n'y a rien
+     * à corriger.
+     */
+    private fun autocorrectBeforeEnter(newline: Boolean): Boolean {
+        val connection = currentInputConnection ?: return false
+        val pending = pendingAutocorrection() ?: return false
+        val separator = if (newline) "\n" else ""
+        val inserted = pending.correction + separator
+        connection.beginBatchEdit()
+        connection.deleteSurroundingText(pending.word.length, 0)
+        connection.commitText(inserted, 1)
+        connection.endBatchEdit()
+        lastAutocorrection = AutocorrectionUndo(typed = pending.word, inserted = inserted, separator = separator)
+        return true
+    }
+
+    /** Mot avant le curseur et sa correction retenue par le moteur, s'il y en a une (§7.1). */
+    private class PendingAutocorrection(val word: String, val correction: String, val textBefore: CharSequence)
+
+    private fun pendingAutocorrection(): PendingAutocorrection? {
+        val connection = currentInputConnection ?: return null
+        val engine = engine ?: return null
+        val before = connection.getTextBeforeCursor(WordLookBehind, 0) ?: return null
+        val word = WordAtCursor.read(before, connection.getTextAfterCursor(1, 0) ?: "") ?: return null
+        if (word.word.isEmpty()) return null
+        // Le calcul affiché porte presque toujours sur ce mot ; sinon (frappe très rapide), on le refait.
+        val computed = lastComputed?.takeIf { it.word == word } ?: computeSuggestions(engine, word, autocorrect = true, rejectedWords)
+        val correction = computed.autocorrection ?: return null
+        return PendingAutocorrection(word.word, correction, before)
     }
 
     private fun suggestionsEnabled() = suggestionsApply && settings.suggestions
@@ -586,9 +614,13 @@ class ClavierInputMethodService :
             connection.getCursorCapsMode(editorInfo.inputType) != 0
     }
 
-    /** Envoie l'action du champ (Envoyer, Rechercher…) si `imeOptions` en demande une, sinon un retour à la ligne. */
+    /**
+     * Envoie l'action du champ (Envoyer, Rechercher…) si `imeOptions` en demande une, sinon un
+     * retour à la ligne. Entrée termine le mot avant le curseur comme un séparateur ordinaire
+     * (§7.1, §7.3) : corrigé avant, sinon compté pour l'apprentissage.
+     */
     override fun enter() {
-        lastAutocorrection = null
+        val afterAutoSpace = autoSpacePending
         autoSpacePending = false
         val editorInfo = currentInputEditorInfo
         val action = (editorInfo?.imeOptions ?: EditorInfo.IME_ACTION_UNSPECIFIED) and EditorInfo.IME_MASK_ACTION
@@ -597,10 +629,16 @@ class ClavierInputMethodService :
             action != EditorInfo.IME_ACTION_UNSPECIFIED &&
             action != EditorInfo.IME_ACTION_NONE &&
             noEnterFlag == 0
-        if (hasAction) {
-            currentInputConnection?.performEditorAction(action)
-        } else {
-            currentInputConnection?.commitText("\n", 1)
+        val corrected = !hasSelection && autocorrectEnabled() && autocorrectBeforeEnter(newline = !hasAction)
+        if (!corrected) {
+            lastAutocorrection = null
+            if (!hasSelection && !afterAutoSpace) learnWordBeforeCursor()
+        }
+        when {
+            hasAction -> currentInputConnection?.performEditorAction(action)
+            !corrected -> currentInputConnection?.commitText("\n", 1)
+            // Le retour à la ligne a déjà été inséré avec la correction (autocorrectBeforeEnter).
+            else -> Unit
         }
     }
 
