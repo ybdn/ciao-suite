@@ -64,7 +64,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
 import dev.ybdn.ciao.designsystem.components.BorderWidth
-import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.Selected
 import dev.ybdn.ciaocloud.domain.model.EditUnavailableReason
 import dev.ybdn.ciaocloud.domain.model.GalleryItem
 import dev.ybdn.ciaocloud.domain.model.SaveEditOutcome
@@ -202,7 +202,7 @@ fun PhotoEditorScreen(
             NeoNotice(
                 stringResource(R.string.editor_motion_photo_still),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                tone = NeoTone.Yellow,
+                tone = NeoTone.Info,
             )
         }
 
@@ -458,7 +458,7 @@ private fun FilterThumbnail(
             modifier = Modifier
                 .size(72.dp)
                 .clip(RectangleShape)
-                .border(if (selected) BorderWidth else 1.dp, if (selected) Green else palette.outline, RectangleShape),
+                .border(if (selected) BorderWidth else 1.dp, if (selected) Selected else palette.outline, RectangleShape),
         )
         Text(label, style = MaterialTheme.typography.labelSmall, color = palette.content, maxLines = 1)
     }

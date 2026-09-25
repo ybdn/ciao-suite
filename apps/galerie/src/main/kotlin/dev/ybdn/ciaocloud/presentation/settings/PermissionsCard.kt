@@ -88,7 +88,7 @@ fun PermissionsCard(
     }
 
     NeoCard {
-        NeoTag(stringResource(R.string.permissions_label), tone = NeoTone.Pink)
+        NeoTag(stringResource(R.string.permissions_label), tone = NeoTone.Muted)
         Text(stringResource(R.string.permissions_hint), style = MaterialTheme.typography.bodyMedium)
 
         PermissionRow(
@@ -121,7 +121,7 @@ fun PermissionsCard(
             NeoButton(
                 text = stringResource(R.string.permissions_grant_all),
                 onClick = { request(MEDIA_PERMISSIONS + NOTIFICATION_PERMISSION) },
-                tone = NeoTone.Pink,
+                tone = NeoTone.Primary,
             )
         }
         NeoButton(
@@ -151,15 +151,15 @@ private fun PermissionRow(
                     },
                 ),
                 tone = when (status) {
-                    PermissionStatus.GRANTED -> NeoTone.Green
-                    PermissionStatus.PARTIAL -> NeoTone.Yellow
-                    PermissionStatus.MISSING -> NeoTone.Pink
+                    PermissionStatus.GRANTED -> NeoTone.Success
+                    PermissionStatus.PARTIAL -> NeoTone.Warning
+                    PermissionStatus.MISSING -> NeoTone.Danger
                 },
             )
         }
         Text(description, style = MaterialTheme.typography.bodySmall)
         if (status != PermissionStatus.GRANTED) {
-            NeoButton(text = stringResource(R.string.permissions_grant), onClick = onGrant, tone = NeoTone.Yellow)
+            NeoButton(text = stringResource(R.string.permissions_grant), onClick = onGrant, tone = NeoTone.Primary)
         }
     }
 }

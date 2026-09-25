@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import dev.ybdn.ciao.designsystem.components.BorderWidth
 import dev.ybdn.ciao.designsystem.theme.Ink
 import dev.ybdn.ciao.designsystem.theme.LabelMono
-import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.Primary
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import kotlin.math.roundToInt
 
@@ -106,11 +106,11 @@ fun AdjustmentSlider(
             drawRoundRect(palette.surface, Offset(0f, top), Size(size.width, trackHeight), radius)
             val zeroX = xOf(0.coerceIn(min, max))
             val valueX = xOf(value)
-            drawRect(Green, Offset(minOf(zeroX, valueX), top), Size(kotlin.math.abs(valueX - zeroX), trackHeight))
+            drawRect(Primary, Offset(minOf(zeroX, valueX), top), Size(kotlin.math.abs(valueX - zeroX), trackHeight))
             drawRoundRect(palette.outline, Offset(0f, top), Size(size.width, trackHeight), radius, style = Stroke(BorderWidth.toPx()))
             val thumb = 22.dp.toPx()
             val thumbLeft = (valueX - thumb / 2).coerceIn(0f, size.width - thumb)
-            drawRoundRect(if (dragging) Green else palette.surface, Offset(thumbLeft, (size.height - thumb) / 2), Size(thumb, thumb), radius)
+            drawRoundRect(if (dragging) Primary else palette.surface, Offset(thumbLeft, (size.height - thumb) / 2), Size(thumb, thumb), radius)
             drawRoundRect(Ink, Offset(thumbLeft, (size.height - thumb) / 2), Size(thumb, thumb), radius, style = Stroke(BorderWidth.toPx()))
         }
     }

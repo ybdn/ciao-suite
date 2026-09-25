@@ -68,7 +68,7 @@ fun SettingsScreen() {
         )
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_destination_label), tone = NeoTone.Yellow)
+            NeoTag(stringResource(R.string.settings_destination_label), tone = NeoTone.Muted)
             Text(
                 text = destinationUri?.toString() ?: stringResource(R.string.home_no_destination),
                 style = MaterialTheme.typography.bodyMedium,
@@ -82,7 +82,7 @@ fun SettingsScreen() {
         }
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_appearance_label), tone = NeoTone.Sky)
+            NeoTag(stringResource(R.string.settings_appearance_label), tone = NeoTone.Muted)
             val modes = ThemeMode.entries
             NeoSegmentedChoice(
                 options = modes.map { mode ->
@@ -100,7 +100,7 @@ fun SettingsScreen() {
         }
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_privacy_label), tone = NeoTone.Pink)
+            NeoTag(stringResource(R.string.settings_privacy_label), tone = NeoTone.Muted)
             NeoSwitchRow(
                 label = stringResource(R.string.settings_share_strip_metadata),
                 checked = shareStripMetadata,
@@ -110,13 +110,13 @@ fun SettingsScreen() {
         }
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_gallery_label), tone = NeoTone.Lavender)
+            NeoTag(stringResource(R.string.settings_gallery_label), tone = NeoTone.Muted)
             Text(stringResource(R.string.settings_ssd_index_hint), style = MaterialTheme.typography.bodyMedium)
             SsdIndexControls(state = ssdIndexState, onRefresh = viewModel::refreshSsdIndex)
         }
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_triage_label), tone = NeoTone.Yellow)
+            NeoTag(stringResource(R.string.settings_triage_label), tone = NeoTone.Muted)
             Text(stringResource(R.string.settings_triage_hint), style = MaterialTheme.typography.bodyMedium)
             NeoButton(
                 text = stringResource(R.string.settings_triage_reset),
@@ -126,7 +126,7 @@ fun SettingsScreen() {
         }
 
         NeoCard {
-            NeoTag(stringResource(R.string.settings_thumbnail_cache_label), tone = NeoTone.Green)
+            NeoTag(stringResource(R.string.settings_thumbnail_cache_label), tone = NeoTone.Muted)
             cacheUsedBytes?.let { used ->
                 Text(
                     stringResource(R.string.settings_thumbnail_cache_usage, formatBytes(used), formatBytes(cacheMaxBytes)),
@@ -156,7 +156,7 @@ private fun TriageResetDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         NeoCard(modifier = Modifier.padding(8.dp)) {
             Text(stringResource(R.string.settings_triage_reset_title), style = MaterialTheme.typography.titleLarge)
             Text(stringResource(R.string.settings_triage_reset_message), style = MaterialTheme.typography.bodyMedium)
-            NeoButton(stringResource(R.string.settings_triage_reset_confirm), onClick = onConfirm, tone = NeoTone.Pink)
+            NeoButton(stringResource(R.string.settings_triage_reset_confirm), onClick = onConfirm, tone = NeoTone.Danger)
             NeoButton(stringResource(R.string.delete_confirm_cancel), onClick = onDismiss, tone = NeoTone.Surface)
         }
     }

@@ -40,7 +40,7 @@ import dev.ybdn.ciao.designsystem.components.BorderWidth
 import dev.ybdn.ciao.designsystem.components.neoSurface
 import dev.ybdn.ciao.designsystem.theme.Ink
 import dev.ybdn.ciao.designsystem.theme.LabelMono
-import dev.ybdn.ciao.designsystem.theme.Green
+import dev.ybdn.ciao.designsystem.theme.Selected
 import dev.ybdn.ciao.designsystem.theme.NeoTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -134,7 +134,7 @@ fun FastScroller(
                             maxLines = 1,
                             modifier = Modifier
                                 .padding(end = 10.dp)
-                                .neoSurface(Green, NeoTheme.palette.outline, shadowOffset = 3.dp)
+                                .neoSurface(Selected, NeoTheme.palette.outline, shadowOffset = 3.dp)
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                         )
                     }
@@ -144,7 +144,7 @@ fun FastScroller(
                             .padding(end = 4.dp)
                             .background(NeoTheme.palette.outline, RectangleShape)
                             .padding(start = BorderWidth, top = BorderWidth, bottom = BorderWidth)
-                            .background(Green, RectangleShape)
+                            .background(Selected, RectangleShape)
                             .pointerInput(trackHeightPx) {
                                 detectVerticalDragGestures(
                                     onDragStart = {

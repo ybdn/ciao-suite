@@ -21,7 +21,7 @@ fun SsdIndexControls(
         NeoButton(
             text = stringResource(R.string.ssd_index_refresh),
             onClick = onRefresh,
-            tone = NeoTone.Lavender,
+            tone = NeoTone.Primary,
             enabled = state !is SsdIndexState.Running,
         )
         when (state) {
@@ -30,9 +30,9 @@ fun SsdIndexControls(
                 stringResource(R.string.ssd_index_running, state.dayFoldersScanned, state.filesFound),
                 tone = NeoTone.Surface,
             )
-            is SsdIndexState.Done -> NeoNotice(stringResource(R.string.ssd_index_done, state.indexedCount), tone = NeoTone.Green)
-            SsdIndexState.DestinationUnavailable -> NeoNotice(stringResource(R.string.ssd_index_unavailable), tone = NeoTone.Pink)
-            is SsdIndexState.Failed -> NeoNotice(stringResource(R.string.ssd_index_failed, state.reason), tone = NeoTone.Pink)
+            is SsdIndexState.Done -> NeoNotice(stringResource(R.string.ssd_index_done, state.indexedCount), tone = NeoTone.Success)
+            SsdIndexState.DestinationUnavailable -> NeoNotice(stringResource(R.string.ssd_index_unavailable), tone = NeoTone.Danger)
+            is SsdIndexState.Failed -> NeoNotice(stringResource(R.string.ssd_index_failed, state.reason), tone = NeoTone.Danger)
         }
     }
 }

@@ -95,7 +95,7 @@ fun InfoSheet(
                 val context = LocalContext.current
                 NeoButton(
                     text = stringResource(R.string.metadata_edit),
-                    tone = NeoTone.Yellow,
+                    tone = NeoTone.Primary,
                     onClick = {
                         if (editReason == null) {
                             onEditMetadata(loaded)
@@ -107,7 +107,7 @@ fun InfoSheet(
             }
 
             NeoCard {
-                NeoTag(stringResource(R.string.info_file), tone = NeoTone.Sky)
+                NeoTag(stringResource(R.string.info_file), tone = NeoTone.Muted)
                 InfoLine(item.displayName, monospace = true)
                 val width = loaded?.width ?: item.phone?.width?.takeIf { it > 0 }
                 val height = loaded?.height ?: item.phone?.height?.takeIf { it > 0 }
@@ -126,15 +126,15 @@ fun InfoSheet(
 
             if (details == DetailsState.Loading) CircularProgressIndicator()
 
-            loaded?.let { cameraLines(it) }?.let { lines -> InfoCard(R.string.info_camera, NeoTone.Yellow, lines) }
-            loaded?.let { videoLines(it) }?.let { lines -> InfoCard(R.string.info_video, NeoTone.Pink, lines) }
+            loaded?.let { cameraLines(it) }?.let { lines -> InfoCard(R.string.info_camera, NeoTone.Muted, lines) }
+            loaded?.let { videoLines(it) }?.let { lines -> InfoCard(R.string.info_video, NeoTone.Muted, lines) }
 
             val latitude = loaded?.latitude
             val longitude = loaded?.longitude
             if (latitude != null && longitude != null) {
                 val context = LocalContext.current
                 NeoCard {
-                    NeoTag(stringResource(R.string.info_location), tone = NeoTone.Lavender)
+                    NeoTag(stringResource(R.string.info_location), tone = NeoTone.Muted)
                     InfoLine(String.format(Locale.US, "%.6f, %.6f", latitude, longitude), monospace = true)
                     loaded.altitudeMeters?.let {
                         InfoLine(stringResource(R.string.info_altitude, String.format(Locale.FRENCH, "%.0f", it)))
@@ -165,10 +165,10 @@ fun InfoSheet(
                 }
             }
 
-            loaded?.let { imageLines(it) }?.let { lines -> InfoCard(R.string.info_image, NeoTone.Sky, lines) }
+            loaded?.let { imageLines(it) }?.let { lines -> InfoCard(R.string.info_image, NeoTone.Muted, lines) }
 
             NeoCard {
-                NeoTag(stringResource(R.string.info_storage), tone = NeoTone.Green)
+                NeoTag(stringResource(R.string.info_storage), tone = NeoTone.Muted)
                 item.phone?.let { InfoLine(stringResource(R.string.info_on_phone, (it.relativePath.orEmpty()) + it.displayName), monospace = true) }
                 item.ssd?.let { InfoLine(stringResource(R.string.info_on_ssd, it.relativePath), monospace = true) }
                 InfoLine(
