@@ -5,12 +5,10 @@ plugins {
 }
 
 android {
-    // Identifiants historiques (CiaoCloud) conservés tant que le renommage n'est pas décidé :
-    // changer l'applicationId crée une nouvelle app (base Room, DataStore et accès SAF perdus).
-    namespace = "dev.ybdn.ciaocloud"
+    namespace = "dev.ybdn.ciao.galerie"
 
     defaultConfig {
-        applicationId = "dev.ybdn.ciaocloud"
+        applicationId = "dev.ybdn.ciao.galerie"
         versionCode = 2
         versionName = "0.1.1"
     }
