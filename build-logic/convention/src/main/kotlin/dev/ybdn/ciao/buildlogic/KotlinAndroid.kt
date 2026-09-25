@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 object CiaoSdk {
     // Compose (BOM 2026.09) exige de compiler contre l'API 37 ; la cible reste un choix distinct.
     const val COMPILE = 37
-    const val TARGET = 35
+    const val TARGET = 37
     const val MIN = 33
 }
 

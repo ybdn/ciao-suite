@@ -57,7 +57,7 @@ export ANDROID_SDK_ROOT="/opt/homebrew/share/android-commandlinetools"
   `platforms;android-37` n'existe pas.
 - Outils : Gradle 9.7.1 (wrapper), AGP 9.4 (Kotlin intégré), Kotlin 2.4, KSP 2.3 ; versions dans
   `gradle/libs.versions.toml`. SDK des apps dans `CiaoSdk` (`build-logic/.../KotlinAndroid.kt`) :
-  `compileSdk` 37, `targetSdk` 35 (montée suivie dans #47), `minSdk` 33.
+  `compileSdk` 37, `targetSdk` 37, `minSdk` 33.
 - `local.properties` (non versionné, à la racine) : `sdk.dir=/opt/homebrew/share/android-commandlinetools`.
 - `keystore.properties` (non versionné, à la racine) : clé d'importation release commune à toutes les apps.
 - Émulateur : AVD `ciaocloud35` (Android 15, arm64), `$ANDROID_SDK_ROOT/emulator/emulator -avd ciaocloud35`.
