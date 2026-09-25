@@ -29,6 +29,21 @@ fun TypingPreferencesCard(index: String) {
     NeoCard {
         NeoSectionHeader(index, stringResource(R.string.preferences_typing_title))
         NeoSwitchRow(
+            label = stringResource(R.string.preferences_vibration),
+            checked = settings.vibration,
+            onCheckedChange = { scope.launch { preferences.setVibration(it) } },
+        )
+        NeoSwitchRow(
+            label = stringResource(R.string.preferences_sound),
+            checked = settings.soundEnabled,
+            onCheckedChange = { scope.launch { preferences.setSoundEnabled(it) } },
+        )
+        NeoSwitchRow(
+            label = stringResource(R.string.preferences_key_preview),
+            checked = settings.keyPreview,
+            onCheckedChange = { scope.launch { preferences.setKeyPreview(it) } },
+        )
+        NeoSwitchRow(
             label = stringResource(R.string.preferences_auto_capitalize),
             checked = settings.autoCapitalize,
             onCheckedChange = { scope.launch { preferences.setAutoCapitalize(it) } },

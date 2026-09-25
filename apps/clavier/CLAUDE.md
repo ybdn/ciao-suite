@@ -36,7 +36,11 @@ Jalon GitHub **« C!ao Clavier v1 »**, une issue par lot de la spec (§12).
   sauvegardes étaient déjà en place depuis les lots 4, 6 et 7.
 - Lot 6 (emojis, issue #15) : fait.
 - Lot 7 (presse-papiers, issue #16) : fait.
-- Lot 8 : pas commencé.
+- Lot 8 (finitions, issue #17) : réglages complets (vibration, son, aperçu de touche), thème
+  (système/clair/sombre) et hauteur du clavier, écran « À propos » (version, licences, liens),
+  fiche Play Store rédigée (`docs/play-store-listing.md`), contrastes vérifiés par test unitaire
+  (`core/designsystem`). Reste à faire : test d'usage réel sur le Pixel 10 Pro (§12), à faire sur
+  l'appareil — impossible depuis cet environnement de développement sans matériel Android.
 
 ## Architecture
 
