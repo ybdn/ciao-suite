@@ -6,6 +6,12 @@ de la suite.
 
 ## Non publié
 
+Rien pour l'instant.
+
+## 0.2.0 — 2026-09-25
+
+Version de développement (beta), pas encore publiée sur le Play Store.
+
 - Identifiant de l'app (`applicationId`) aligné sur la convention de la suite :
   `dev.ybdn.ciaocloud` → `dev.ybdn.ciao.galerie`. L'app renommée s'installe à côté de l'ancienne ;
   elle ne reprend ni les transferts en cours, ni les réglages et l'accès au SSD, ni les favoris et
