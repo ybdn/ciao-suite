@@ -6,7 +6,11 @@ de la suite.
 
 ## Non publié
 
-Version de développement `0.1.0`, pas encore publiée sur le Play Store. Fonctionnalités :
+Rien pour l'instant.
+
+## 0.1.0 — 2026-09-25
+
+Version de développement (beta), pas encore publiée sur le Play Store. Fonctionnalités :
 
 - Squelette de l'app : service de clavier (`InputMethodService`), écran de mise en route
   (activation et sélection du clavier dans les réglages système, zone de test).
