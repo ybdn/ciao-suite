@@ -6,6 +6,10 @@ de la suite.
 
 ## Non publié
 
+- Identifiant de l'app (`applicationId`) aligné sur la convention de la suite :
+  `dev.ybdn.ciaocloud` → `dev.ybdn.ciao.galerie`. L'app renommée s'installe à côté de l'ancienne ;
+  elle ne reprend ni les transferts en cours, ni les réglages et l'accès au SSD, ni les favoris et
+  décisions de tri — désinstaller l'ancienne app et reconfigurer celle-ci.
 - Correction : hauteur égale entre les éléments d'une même rangée (stats, boutons, cartes de
   tri) quand leurs libellés tiennent sur un nombre de lignes différent.
 - Couleurs alignées sur les rôles du design system (principale, destructive, succès,

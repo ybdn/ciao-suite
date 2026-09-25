@@ -1,0 +1,253 @@
+package dev.ybdn.ciao.galerie.presentation.viewer
+
+import android.net.Uri
+import androidx.annotation.OptIn
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.compose.PlayerSurface
+import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
+import androidx.media3.ui.compose.state.rememberPresentationState
+import coil3.compose.AsyncImage
+import dev.ybdn.ciao.galerie.R
+import dev.ybdn.ciao.galerie.domain.model.GalleryItem
+import dev.ybdn.ciao.galerie.presentation.gallery.GalleryImages
+import dev.ybdn.ciao.galerie.presentation.gallery.formatDuration
+import dev.ybdn.ciao.designsystem.components.BorderWidth
+import dev.ybdn.ciao.designsystem.components.neoSurface
+import dev.ybdn.ciao.designsystem.theme.Ink
+import dev.ybdn.ciao.designsystem.theme.LabelMono
+import dev.ybdn.ciao.designsystem.theme.Primary
+import dev.ybdn.ciao.designsystem.theme.NeoTheme
+import kotlinx.coroutines.delay
+
+/**
+ * Page vidéo : le lecteur n'existe que pour la page affichée. Changer de page le libère (donc
+ * met la lecture en pause) ; quitter l'écran ou l'app met aussi en pause.
+ */
+@Composable
+fun VideoPage(
+    item: GalleryItem,
+    originalUri: OriginalUri,
+    isCurrentPage: Boolean,
+    chromeVisible: Boolean,
+    bottomInset: Dp,
+    onToggleChrome: () -> Unit,
+) {
+    val context = LocalContext.current
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onToggleChrome),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isCurrentPage && originalUri is OriginalUri.Available) {
+            VideoPlayer(item = item, uri = originalUri.uri, chromeVisible = chromeVisible, bottomInset = bottomInset)
+        } else {
+            AsyncImage(
+                model = remember(item.key) { GalleryImages.thumbnailRequest(context, item) },
+                contentDescription = item.displayName,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+            )
+            if (originalUri is OriginalUri.Unavailable) {
+                SsdUnpluggedNotice()
+            } else {
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = null,
+                    tint = Ink,
+                    modifier = Modifier
+                        .neoSurface(Primary, NeoTheme.palette.outline)
+                        .padding(12.dp)
+                        .size(40.dp),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(UnstableApi::class)
+@Composable
+private fun VideoPlayer(item: GalleryItem, uri: String, chromeVisible: Boolean, bottomInset: Dp) {
+    val context = LocalContext.current
+    val player = remember(uri) {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
+            prepare()
+            playWhenReady = true
+        }
+    }
+    DisposableEffect(player) {
+        onDispose { player.release() }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, player) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) player.pause()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val presentationState = rememberPresentationState(player)
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        // Surface plein écran tant que la taille de la vidéo est inconnue : une surface de taille nulle
+        // ne serait jamais créée, et la vidéo ne s'afficherait pas.
+        val videoSize = presentationState.videoSizeDp
+        PlayerSurface(
+            player = player,
+            modifier = if (videoSize == null || videoSize.width <= 0f || videoSize.height <= 0f) {
+                Modifier.fillMaxSize()
+            } else {
+                Modifier.aspectRatio(videoSize.width / videoSize.height)
+            },
+        )
+        // Vignette tant que la première image n'est pas rendue : pas de flash noir.
+        if (presentationState.coverSurface) {
+            AsyncImage(
+                model = remember(item.key) { GalleryImages.thumbnailRequest(context, item) },
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        AnimatedVisibility(
+            visible = chromeVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = bottomInset),
+        ) {
+            VideoControls(player)
+        }
+    }
+}
+
+/** Bandeau de lecture posé sur la barre d'actions : mêmes fond, filet et étiquettes que les barres de l'app. */
+@OptIn(UnstableApi::class)
+@Composable
+private fun VideoControls(player: Player) {
+    val palette = NeoTheme.palette
+    val playPauseState = rememberPlayPauseButtonState(player)
+    var durationMs by remember { mutableLongStateOf(0L) }
+    var positionMs by remember { mutableLongStateOf(0L) }
+    var seekingFraction by remember { mutableStateOf<Float?>(null) }
+    var muted by remember { mutableStateOf(player.volume == 0f) }
+
+    LaunchedEffect(player) {
+        while (true) {
+            durationMs = player.duration.coerceAtLeast(0L)
+            positionMs = player.currentPosition.coerceAtLeast(0L)
+            delay(POSITION_POLL_MS)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth().background(palette.page)) {
+        HorizontalDivider(thickness = BorderWidth, color = palette.outline)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(44.dp)
+                    .neoSurface(Primary, palette.outline, shadowOffset = 0.dp)
+                    .clickable(enabled = playPauseState.isEnabled, onClick = playPauseState::onClick),
+            ) {
+                Icon(
+                    imageVector = if (playPauseState.showPlay) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                    contentDescription = stringResource(if (playPauseState.showPlay) R.string.viewer_play else R.string.viewer_pause),
+                    tint = Ink,
+                )
+            }
+            val fraction = seekingFraction
+                ?: if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+            Text(
+                text = formatDuration(if (seekingFraction != null) (fraction * durationMs).toLong() else positionMs),
+                style = LabelMono,
+                color = palette.content,
+            )
+            Slider(
+                value = fraction,
+                onValueChange = { seekingFraction = it },
+                onValueChangeFinished = {
+                    seekingFraction?.let { player.seekTo((it * durationMs).toLong()) }
+                    seekingFraction = null
+                },
+                enabled = durationMs > 0,
+                colors = SliderDefaults.colors(
+                    thumbColor = palette.outline,
+                    activeTrackColor = Primary,
+                    inactiveTrackColor = palette.surfaceMuted,
+                ),
+                modifier = Modifier.weight(1f),
+            )
+            Text(text = formatDuration(durationMs), style = LabelMono, color = palette.content)
+            IconButton(onClick = {
+                muted = !muted
+                player.volume = if (muted) 0f else 1f
+            }) {
+                Icon(
+                    imageVector = if (muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                    contentDescription = stringResource(if (muted) R.string.viewer_unmute else R.string.viewer_mute),
+                    tint = palette.content,
+                )
+            }
+        }
+    }
+}
+
+private const val POSITION_POLL_MS = 250L

@@ -16,18 +16,18 @@
         android:required="true" />
 
     <application
-        android:name=".CiaoCloudApplication"
+        android:name=".GalerieApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.CiaoCloud">
+        android:theme="@style/Theme.Galerie">
 
         <activity
             android:name=".presentation.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.CiaoCloud">
+            android:theme="@style/Theme.Galerie">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -41,7 +41,7 @@
             android:label="@string/viewer_label"
             android:taskAffinity=""
             android:excludeFromRecents="false"
-            android:theme="@style/Theme.CiaoCloud">
+            android:theme="@style/Theme.Galerie">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

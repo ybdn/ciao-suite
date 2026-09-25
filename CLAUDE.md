@@ -35,8 +35,7 @@ la publication se fera quand toutes les apps seront développées.
   signature, opt-in Compose) va là, **pas** dans le `build.gradle.kts` d'un module.
 - `gradle/libs.versions.toml` : unique source des versions ; jamais de version en dur dans un module.
 - Aucune dépendance réseau/backend/analytics/publicité sans décision explicite (ADR).
-- `namespace`/`applicationId` des nouvelles apps : `dev.ybdn.ciao.<app>`. Exception historique :
-  la Galerie est encore en `dev.ybdn.ciaocloud` (voir son `CLAUDE.md`).
+- `namespace`/`applicationId` des nouvelles apps : `dev.ybdn.ciao.<app>`.
 
 ## Environnement de build (vérifié le 2026-09-24)
 
