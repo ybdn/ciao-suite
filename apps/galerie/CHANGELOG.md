@@ -6,7 +6,8 @@ de la suite.
 
 ## Non publié
 
-Rien pour l'instant.
+- Correction : hauteur égale entre les éléments d'une même rangée (stats, boutons, cartes de
+  tri) quand leurs libellés tiennent sur un nombre de lignes différent.
 
 ## 0.1.1 — 2026-09-23
 

@@ -4,8 +4,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -147,18 +150,21 @@ fun HomeScreen(
             if (files.isEmpty()) {
                 NeoNotice(stringResource(R.string.home_scan_nothing), tone = NeoTone.Muted)
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                ) {
                     NeoStat(
                         value = uiState.photoCount.toString(),
                         caption = stringResource(R.string.home_stat_photos),
                         tone = NeoTone.Lavender,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                     NeoStat(
                         value = uiState.videoCount.toString(),
                         caption = stringResource(R.string.home_stat_videos),
                         tone = NeoTone.Sky,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                 }
                 NeoStat(
