@@ -98,15 +98,18 @@ dev.ybdn.ciao.clavier/
   (`WordAtCursor`), la casse suit le mot tapé (`matchCasing`). Le service relit le mot avant le
   curseur à chaque `onUpdateSelection` (pas de texte en composition), calcule sur un dispatcher à
   un fil et annule le calcul précédent. Seule `SuggestionStrip` lit la barre (une frappe ne
-  recompose pas le clavier). Autocorrection dans `commitText` avant un séparateur, annulée par
-  un retour arrière immédiat (`AutocorrectionUndo`) ; les mots rétablis vont dans `rejectedWords`
-  jusqu'au champ suivant. Après un remplacement de même longueur, Android ne rappelle pas
-  `onUpdateSelection` : rafraîchir la barre à la main.
+  recompose pas le clavier). Autocorrection dans `commitText` avant un séparateur et dans `enter()`
+  avant un retour à la ligne ou l'action du champ (`autocorrectBefore`/`autocorrectBeforeEnter`,
+  logique commune dans `pendingAutocorrection`), annulée par un retour arrière immédiat
+  (`AutocorrectionUndo`) ; les mots rétablis vont dans `rejectedWords` jusqu'au champ suivant.
+  Après un remplacement de même longueur, Android ne rappelle pas `onUpdateSelection` : rafraîchir
+  la barre à la main.
 - **Dictionnaire personnel** (§7.3) : table Room `personal_word` (clé sans casse, forme la moins
   capitalisée retenue). Un mot inconnu du dictionnaire embarqué compte comme « conservé » quand
-  un séparateur le termine sans autocorrection, quand sa correction est annulée ou quand la puce
-  « mot tapé » est choisie : appris à la deuxième fois (`PersonalDictionaryRules`), 500 candidats
-  au plus. Un mot connu choisi dans la barre gagne un bonus de score. `PersonalLexicon` range les
+  un séparateur ou la touche Entrée le termine sans autocorrection, quand sa correction est
+  annulée ou quand la puce « mot tapé » est choisie : appris à la deuxième fois
+  (`PersonalDictionaryRules`), 500 candidats au plus. Un mot connu choisi dans la barre gagne un
+  bonus de score. `PersonalLexicon` range les
   mots appris dans un petit trie au format du dictionnaire embarqué (`Dictionary.build`), cherché
   par le même parcours ; le service le refait à chaque changement de la table. Rien n'est appris
   quand les suggestions sont coupées (`learningEnabled`), donc jamais en navigation privée ni dans

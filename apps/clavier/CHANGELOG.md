@@ -48,8 +48,9 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
 - Suggestions de mots au-dessus des touches : complétion (« bonj » → « bonjour »), correction
   des fautes de frappe selon les touches voisines, accents restitués (« ecole » → « école »),
   apostrophe d'élision ajoutée (« jai » → « j'ai »).
-- Correction automatique à l'espace ou à la ponctuation, annulée par un retour arrière ; le mot
-  tapé reste proposé pour le garder.
+- Correction automatique à l'espace, à la ponctuation ou à la touche Entrée (retour à la ligne ou
+  action Envoyer/Rechercher…), annulée par un retour arrière ; le mot tapé reste proposé pour le
+  garder.
 - Prédiction du mot suivant après une espace.
 - Réglages : suggestions et correction automatique activables séparément.
 - Dictionnaire personnel : un mot inconnu tapé et gardé deux fois est appris, puis proposé et
