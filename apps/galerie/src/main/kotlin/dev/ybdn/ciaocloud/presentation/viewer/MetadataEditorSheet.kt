@@ -6,8 +6,11 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -124,7 +127,10 @@ fun MetadataEditorSheet(
 
             NeoCard {
                 NeoTag(stringResource(R.string.metadata_date), tone = NeoTone.Yellow)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                ) {
                     NeoTextField(
                         label = stringResource(R.string.metadata_day),
                         value = date,
@@ -133,7 +139,7 @@ fun MetadataEditorSheet(
                             dateError = false
                         },
                         placeholder = "2025-04-20",
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                     NeoTextField(
                         label = stringResource(R.string.metadata_time),
@@ -143,7 +149,7 @@ fun MetadataEditorSheet(
                             dateError = false
                         },
                         placeholder = "18:45:00",
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                 }
                 OffsetPicker(offsetMinutes = offset, onSelect = { offset = it })
@@ -190,7 +196,10 @@ fun MetadataEditorSheet(
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                ) {
                     NeoButton(
                         stringResource(R.string.metadata_paste_location),
                         onClick = {
@@ -202,7 +211,7 @@ fun MetadataEditorSheet(
                         },
                         enabled = clipboardLocation != null,
                         tone = NeoTone.Surface,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                     NeoButton(
                         stringResource(R.string.metadata_remove_location),
@@ -213,7 +222,7 @@ fun MetadataEditorSheet(
                         },
                         enabled = location.isNotEmpty(),
                         tone = NeoTone.Surface,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                 }
                 NeoButton(

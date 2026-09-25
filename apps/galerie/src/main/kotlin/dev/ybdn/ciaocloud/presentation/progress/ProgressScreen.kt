@@ -2,7 +2,10 @@ package dev.ybdn.ciaocloud.presentation.progress
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -83,24 +86,27 @@ fun ProgressScreen(
         }
 
         if (uiState.isCompleted) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.height(IntrinsicSize.Min),
+            ) {
                 NeoStat(
                     value = uiState.succeeded.toString(),
                     caption = stringResource(R.string.progress_stat_succeeded),
                     tone = NeoTone.Green,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 NeoStat(
                     value = uiState.alreadyPresent.toString(),
                     caption = stringResource(R.string.progress_stat_already_present),
                     tone = if (uiState.alreadyPresent > 0) NeoTone.Sky else NeoTone.Surface,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 NeoStat(
                     value = uiState.failed.toString(),
                     caption = stringResource(R.string.progress_stat_failed),
                     tone = if (uiState.failed > 0) NeoTone.Pink else NeoTone.Surface,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
 
