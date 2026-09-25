@@ -66,16 +66,16 @@ private val SpaceDragStep = 10.dp
  * 58 dp au pas de 70 dp, 6 dp entre deux touches, 4 dp de marge latérale, 8 dp au-dessus de la
  * première rangée. Une touche plus courte paraît écrasée : Gboard tient un rapport hauteur sur
  * largeur de 1,36, pas 1,1.
+ *
+ * Ce sont les dimensions de la hauteur *Normale* (`KeyboardHeight.Standard`, §10.2) : le réglage
+ * de hauteur du clavier les multiplie par son échelle ([heightScale] de [KeyboardScreen]).
  */
-private val KeyHeight = 58.dp
-private val RowGap = 12.dp
+private val KeyHeightBase = 58.dp
+private val RowGapBase = 12.dp
 private val KeyGap = 6.dp
 private val SidePadding = 4.dp
 private val TopPadding = 8.dp
 private val BottomPadding = 8.dp
-
-/** Hauteur de la zone des touches, que le panneau emojis reprend à l'identique. */
-private val KeysAreaHeight = TopPadding + KeyHeight * 4 + RowGap * 3 + BottomPadding
 
 /** Marge droite de chaque rangée, pour que l'ombre de la dernière touche ne soit pas coupée. */
 private val RowEndPadding = 3.dp
@@ -113,6 +113,9 @@ fun KeyboardScreen(
     clipboardData: ClipboardPanelData,
     suggestions: () -> SuggestionBar,
     actions: KeyboardActions,
+    keyPreviewEnabled: Boolean = true,
+    // Échelle des dimensions calées sur Gboard (§5.1), d'après le réglage de hauteur (§10.2).
+    heightScale: Float = 1f,
 ) {
     var panel by remember(inputSession) { mutableStateOf(Panel.Keys) }
     var page by remember(inputSession) { mutableStateOf(KeyboardPage.Letters) }
@@ -128,7 +131,11 @@ fun KeyboardScreen(
     val variantGeometry = rememberVariantGeometryFactory()
     val density = LocalDensity.current
     val palette = NeoTheme.palette
-    val showPreview = mode == KeyboardMode.Text || mode == KeyboardMode.Email || mode == KeyboardMode.Url
+    val showPreview = keyPreviewEnabled && (mode == KeyboardMode.Text || mode == KeyboardMode.Email || mode == KeyboardMode.Url)
+    val keyHeight = KeyHeightBase * heightScale
+    val rowGap = RowGapBase * heightScale
+    // Hauteur de la zone des touches, que le panneau emojis reprend à l'identique.
+    val keysAreaHeight = TopPadding + keyHeight * 4 + rowGap * 3 + BottomPadding
 
     fun type(text: String) {
         actions.commitText(text)
@@ -165,7 +172,7 @@ fun KeyboardScreen(
             if (panel == Panel.Emoji) {
                 Box(modifier = Modifier.padding(horizontal = SidePadding)) {
                     EmojiPanel(
-                        height = KeysAreaHeight,
+                        height = keysAreaHeight,
                         data = emojiData,
                         container = container,
                         overlay = overlay,
@@ -177,7 +184,7 @@ fun KeyboardScreen(
             } else if (panel == Panel.Clipboard) {
                 Box(modifier = Modifier.padding(horizontal = SidePadding)) {
                     ClipboardPanel(
-                        height = KeysAreaHeight,
+                        height = keysAreaHeight,
                         data = clipboardData,
                         container = container,
                         actions = actions,
@@ -190,11 +197,11 @@ fun KeyboardScreen(
                         .fillMaxWidth()
                         .padding(horizontal = SidePadding)
                         .padding(top = TopPadding, bottom = BottomPadding),
-                    verticalArrangement = Arrangement.spacedBy(RowGap),
+                    verticalArrangement = Arrangement.spacedBy(rowGap),
                 ) {
                     KeyboardLayout.rows(page, mode).forEachIndexed { rowIndex, row ->
                         Row(
-                            modifier = Modifier.fillMaxWidth().height(KeyHeight).padding(end = RowEndPadding),
+                            modifier = Modifier.fillMaxWidth().height(keyHeight).padding(end = RowEndPadding),
                             horizontalArrangement = Arrangement.spacedBy(KeyGap),
                         ) {
                             row.forEachIndexed { columnIndex, slot ->

@@ -16,6 +16,9 @@ class TypingPreferences(context: Context) {
     val settings: Flow<TypingSettings> = dataStore.data.map { prefs ->
         val defaults = TypingSettings()
         TypingSettings(
+            vibration = prefs[Vibration] ?: defaults.vibration,
+            soundEnabled = prefs[SoundEnabled] ?: defaults.soundEnabled,
+            keyPreview = prefs[KeyPreview] ?: defaults.keyPreview,
             autoCapitalize = prefs[AutoCapitalize] ?: defaults.autoCapitalize,
             doubleSpacePeriod = prefs[DoubleSpacePeriod] ?: defaults.doubleSpacePeriod,
             nonBreakingSpace = prefs[NonBreakingSpace] ?: defaults.nonBreakingSpace,
@@ -23,6 +26,12 @@ class TypingPreferences(context: Context) {
             autocorrect = prefs[Autocorrect] ?: defaults.autocorrect,
         )
     }
+
+    suspend fun setVibration(enabled: Boolean) = set(Vibration, enabled)
+
+    suspend fun setSoundEnabled(enabled: Boolean) = set(SoundEnabled, enabled)
+
+    suspend fun setKeyPreview(enabled: Boolean) = set(KeyPreview, enabled)
 
     suspend fun setAutoCapitalize(enabled: Boolean) = set(AutoCapitalize, enabled)
 
@@ -39,6 +48,9 @@ class TypingPreferences(context: Context) {
     }
 
     private companion object {
+        val Vibration = booleanPreferencesKey("vibration")
+        val SoundEnabled = booleanPreferencesKey("sound_enabled")
+        val KeyPreview = booleanPreferencesKey("key_preview")
         val AutoCapitalize = booleanPreferencesKey("auto_capitalize")
         val DoubleSpacePeriod = booleanPreferencesKey("double_space_period")
         val NonBreakingSpace = booleanPreferencesKey("non_breaking_space")

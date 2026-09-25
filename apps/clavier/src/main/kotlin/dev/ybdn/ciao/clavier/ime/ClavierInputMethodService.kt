@@ -3,11 +3,13 @@ package dev.ybdn.ciao.clavier.ime
 import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.inputmethodservice.InputMethodService
+import android.media.AudioManager
 import android.os.SystemClock
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +27,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import dev.ybdn.ciao.clavier.data.AppearancePreferences
 import dev.ybdn.ciao.clavier.data.EmojiCatalog
 import dev.ybdn.ciao.clavier.data.EmojiPreferences
 import dev.ybdn.ciao.clavier.data.FrenchDictionary
@@ -32,6 +35,8 @@ import dev.ybdn.ciao.clavier.data.TypingPreferences
 import dev.ybdn.ciao.clavier.data.clipboard.ClipboardHistory
 import dev.ybdn.ciao.clavier.data.clipboard.ClipboardPreferences
 import dev.ybdn.ciao.clavier.data.personal.PersonalDictionary
+import dev.ybdn.ciao.clavier.domain.appearance.AppearanceSettings
+import dev.ybdn.ciao.clavier.domain.appearance.resolveDarkTheme
 import dev.ybdn.ciao.clavier.domain.clipboard.ClipboardRules
 import dev.ybdn.ciao.clavier.domain.clipboard.ClipboardSettings
 import dev.ybdn.ciao.clavier.domain.input.FrenchTypography
@@ -86,7 +91,10 @@ class ClavierInputMethodService :
     /** Suivie par [onUpdateSelection] : le retour arrière efface alors la sélection entière. */
     private var hasSelection = false
 
-    private var settings = TypingSettings()
+    // `mutableStateOf` : lu depuis `onCreateInputView` pour l'aperçu de touche et la hauteur du
+    // clavier (§10.2), qui doivent se recomposer dès que le réglage change (architecture, CLAUDE.md).
+    private var settings by mutableStateOf(TypingSettings())
+    private var appearance by mutableStateOf(AppearanceSettings())
 
     /**
      * Règles typographiques françaises (§6.3) applicables au champ actif : champ de texte
@@ -116,6 +124,9 @@ class ClavierInputMethodService :
 
     private val clipboardManager by lazy { getSystemService(ClipboardManager::class.java) }
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener(::onClipChanged)
+
+    /** Retour sonore optionnel (§6.1, désactivé par défaut) : le flux des sons système. */
+    private val audioManager by lazy { getSystemService(AudioManager::class.java) }
 
     /** Instant de la dernière espace tapée seule, pour le double espace → point ; 0 sinon. */
     private var lastSpaceAt = 0L
@@ -174,6 +185,9 @@ class ClavierInputMethodService :
             }
         }
         lifecycleScope.launch {
+            AppearancePreferences(this@ClavierInputMethodService).settings.collect { appearance = it }
+        }
+        lifecycleScope.launch {
             val dictionary = FrenchDictionary.load(this@ClavierInputMethodService)
             val base = SuggestionEngine(dictionary)
             engine = base
@@ -214,7 +228,9 @@ class ClavierInputMethodService :
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
         return ComposeView(this).apply {
             setContent {
-                CiaoTheme {
+                // Mode Système (§5.3) : suit le thème du téléphone en direct, même clavier affiché.
+                val darkTheme = appearance.themeMode.resolveDarkTheme(systemDark = isSystemInDarkTheme())
+                CiaoTheme(darkTheme = darkTheme) {
                     KeyboardScreen(
                         mode = keyboardMode,
                         enterAction = enterAction,
@@ -224,6 +240,8 @@ class ClavierInputMethodService :
                         clipboardData = clipboardData,
                         suggestions = { suggestionBar },
                         actions = this@ClavierInputMethodService,
+                        keyPreviewEnabled = settings.keyPreview,
+                        heightScale = appearance.keyboardHeight.scale,
                     )
                 }
             }
@@ -596,8 +614,10 @@ class ClavierInputMethodService :
         dismissedChipId.value = clipboardData.pasteChip?.id
     }
 
+    /** Retour à la frappe (§6.1) : vibration courte, activée par défaut ; son, désactivé par défaut. */
     override fun keyFeedback() {
-        keyboardView?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        if (settings.vibration) keyboardView?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        if (settings.soundEnabled) audioManager?.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD)
     }
 
     /**

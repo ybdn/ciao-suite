@@ -58,3 +58,10 @@ Version de développement `0.1.0`, pas encore publiée sur le Play Store. Foncti
   appris dans un mot de passe ni en navigation privée.
 - Réglages : liste des mots appris avec recherche, ajout et suppression d'un mot, effacement
   total (confirmé par un second appui).
+- Thème réglable : système (par défaut, suit le téléphone en direct), clair ou sombre, appliqué
+  au clavier et à l'app de réglages.
+- Hauteur du clavier réglable en trois tailles (compacte, normale, grande).
+- Réglages de frappe complétés : vibration et son à la frappe (son désactivé par défaut), aperçu
+  de la touche désactivable.
+- Écran « À propos » : version, licences (dictionnaire, données emoji Unicode, polices), lien
+  vers le code source et la politique de confidentialité.

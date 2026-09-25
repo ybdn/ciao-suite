@@ -19,6 +19,9 @@
     <string name="onboarding_test_placeholder">Touche ce champ, puis tape…</string>
 
     <string name="preferences_typing_title">Frappe</string>
+    <string name="preferences_vibration">Vibration à chaque frappe</string>
+    <string name="preferences_sound">Son à chaque frappe</string>
+    <string name="preferences_key_preview">Aperçu de la touche au-dessus du doigt</string>
     <string name="preferences_auto_capitalize">Majuscule automatique en début de phrase</string>
     <string name="preferences_double_space_period">Double espace pour un point</string>
     <string name="preferences_non_breaking_space">Espace insécable avant ; : ! ?</string>
@@ -64,6 +67,27 @@
     <string name="preferences_clipboard_retention_day">24 heures</string>
     <string name="preferences_clipboard_retention_week">7 jours</string>
     <string name="data_clear_clipboard">Effacer l’historique du presse-papiers</string>
+
+    <string name="preferences_appearance_title">Apparence</string>
+    <string name="preferences_theme">Thème</string>
+    <string name="preferences_theme_system">Système</string>
+    <string name="preferences_theme_light">Clair</string>
+    <string name="preferences_theme_dark">Sombre</string>
+    <string name="preferences_keyboard_height">Hauteur du clavier</string>
+    <string name="preferences_keyboard_height_compact">Compacte</string>
+    <string name="preferences_keyboard_height_standard">Normale</string>
+    <string name="preferences_keyboard_height_tall">Grande</string>
+
+    <string name="about_title">À propos</string>
+    <string name="about_open">Voir les informations sur l’app</string>
+    <string name="about_version">Version</string>
+    <string name="about_licenses_title">Licences</string>
+    <string name="about_license_dictionary">Dictionnaire construit à partir de la Leipzig Corpora Collection (Université de Leipzig), sous licence CC BY 4.0 (creativecommons.org/licenses/by/4.0).</string>
+    <string name="about_license_unicode">Données emoji (emoji-test.txt) d’Unicode, sous licence Unicode, permissive.</string>
+    <string name="about_license_fonts">Polices DM Sans et Archivo Black (Google Fonts), sous licence SIL Open Font License.</string>
+    <string name="about_links_title">Liens</string>
+    <string name="about_source_code">Voir le code source (MIT)</string>
+    <string name="about_privacy_policy">Lire la politique de confidentialité</string>
 
     <string name="emoji_recents_empty">Les emojis utilisés apparaîtront ici.</string>
     <string name="emoji_tab_recents">Récents</string>

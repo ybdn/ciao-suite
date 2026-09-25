@@ -52,7 +52,7 @@ private fun isSelected(context: Context): Boolean {
  * activé puis choisi, un parcours en deux étapes, suivi d’une zone de test et des réglages.
  */
 @Composable
-fun OnboardingScreen(onManagePersonalDictionary: () -> Unit) {
+fun OnboardingScreen(onManagePersonalDictionary: () -> Unit, onOpenAbout: () -> Unit) {
     val context = LocalContext.current
     var enabled by remember { mutableStateOf(isEnabled(context)) }
     var selected by remember { mutableStateOf(isSelected(context)) }
@@ -124,8 +124,12 @@ fun OnboardingScreen(onManagePersonalDictionary: () -> Unit) {
 
         ClipboardPreferencesCard(index = "06")
 
-        PersonalDictionaryCard(index = "07", onManage = onManagePersonalDictionary)
+        AppearancePreferencesCard(index = "07")
 
-        DataCard(index = "08")
+        PersonalDictionaryCard(index = "08", onManage = onManagePersonalDictionary)
+
+        DataCard(index = "09")
+
+        AboutCard(index = "10", onOpen = onOpenAbout)
     }
 }

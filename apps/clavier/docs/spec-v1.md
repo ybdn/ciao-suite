@@ -337,6 +337,9 @@ Les lots 6 et 7 sont indépendants des lots 3 à 5 et peuvent avancer en parall�
 
 1. ~~Source du dictionnaire et sa licence~~ : tranché au lot 4, Leipzig Corpora Collection (§7.2).
 2. ~~Prédiction du mot suivant~~ : tranché au lot 4, dans la v1 (§7.2).
-3. **Rangée de chiffres permanente** au-dessus des lettres : option ou non (lot 8, selon l'usage).
-4. **Icône et nom affiché** : « C!ao Clavier » dans le lanceur et dans la liste des claviers du
-   système.
+3. ~~Rangée de chiffres permanente~~ : tranché au lot 8, pas dans la v1. Sans usage réel à
+   observer (aucune télémétrie, principe non négociable) et sans mesure pour l'ajouter aux
+   dimensions déjà calées sur Gboard (§5.1), la garder hors v1 évite un choix arbitraire ; à
+   revoir si des retours d'usage le demandent.
+4. ~~Icône et nom affiché~~ : tranché dès le squelette (lot 1), « C!ao Clavier » dans le lanceur
+   et dans la liste des claviers du système.
