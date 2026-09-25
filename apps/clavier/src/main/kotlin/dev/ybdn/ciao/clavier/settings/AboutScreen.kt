@@ -1,5 +1,6 @@
 package dev.ybdn.ciao.clavier.settings
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -39,7 +40,11 @@ fun AboutScreen(onBack: () -> Unit) {
         .versionName ?: "?"
 
     fun openUrl(url: String) {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        // Aucun navigateur installé : rien à ouvrir, mais pas de plantage.
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (_: ActivityNotFoundException) {
+        }
     }
 
     NeoScreen(
